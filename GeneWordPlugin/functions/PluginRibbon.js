@@ -1,4 +1,4 @@
-/**********************************************************************************************************************/
+  /**********************************************************************************************************************/
 /*                                             Global Word Initialisation                                             */
 /**********************************************************************************************************************/
 //Global Constant Definitions
@@ -6,11 +6,15 @@ const fDEBUG = true;
 const sDEBUGVER = '0.0.01';
 
 //Setup our environment
-Office.onReady(function () {
-  // Office is ready
-  $(document).ready(function () {
-    // The document is ready
-  });
+Office.onReady(function(info) {
+    if (info.host === Office.HostType.Word) {
+        // Do Word-specific initialization (for example, make add-in task pane's
+        // appearance compatible with Word "green").
+    }
+    if (info.platform === Office.PlatformType.PC) {
+        // Make minor layout changes in the task pane.
+    }
+    console.log(`DEBUG:${sDEBUGVER}:Office.js is now ready in ${info.host} on ${info.platform}`);
 });
 
 /**********************************************************************************************************************/
@@ -33,7 +37,7 @@ function GeneTabPGInsertPTable(event) {
     insertHTML(`<b>DEBUG:</b>${sDEBUGVER}:You Have Pressed the Insert Properties Table Button`, 'Normal') : null
 
   //Provide Warning to User
-  insertHTML('<b>DELETE ME</b> Before Sending to your Customer', 'Normal');
+  insertHTML(`<b>DELETE ME</b> Before Sending to your Customer`, 'Normal');
 
   //Testing Insert Properties Table
   let oPropertiesTable = insertPropertiesTable();
@@ -83,7 +87,7 @@ function GeneTabPGUpdtAllProprty(event) {
 
   //Debug Button Press
   fDEBUG ?
-    insertHTML('DEBUG: You Have Pressed the Update All Properties Button', 'Normal') :
+    insertHTML(`DEBUG:${sDEBUGVER}:You Have Pressed the Update All Properties Button`, 'Normal') :
     null;
 
   //Event Completed
