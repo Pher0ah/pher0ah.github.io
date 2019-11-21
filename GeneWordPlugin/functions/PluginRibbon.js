@@ -3,6 +3,7 @@
 /**********************************************************************************************************************/
 //Global Constant Definitions
 const fDEBUG = true;
+const sDEBUGVER = '0.0.01';
 
 //Setup our environment
 Office.onReady(function () {
@@ -29,7 +30,7 @@ function GeneTabPGInsertPTable(event) {
 
   //Debug Button Press
   fDEBUG ?
-    insertHTML('<b>DEBUG:</b> You Have Pressed the Insert Properties Table Button', 'Normal') : null
+    insertHTML(`<b>DEBUG:</b>${sDEBUGVER}:You Have Pressed the Insert Properties Table Button`, 'Normal') : null
 
   //Provide Warning to User
   insertHTML('<b>DELETE ME</b> Before Sending to your Customer', 'Normal');
@@ -56,7 +57,7 @@ function GeneTabPGUpdateProperty(event) {
 
   //Debug Button Press
   fDEBUG ?
-    insertHTML('DEBUG: You Have Pressed the Update a Single Property Button', 'Normal') :
+    insertHTML(`<b>DEBUG:</b>${sDEBUGVER}:You Have Pressed the Update a Single Property Button`, 'Normal') :
     null;
 
   //Get current table
