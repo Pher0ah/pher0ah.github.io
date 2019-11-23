@@ -14,7 +14,7 @@
 
             // If not using Word 2016, use fallback logic.
             if (!Office.context.requirements.isSetSupported('WordApi', '1.1')) {
-                $("#template-description").text("This sample displays the selected text.");
+                $("#template-description").text("This not using 2016 sample displays the selected text.");
                 $('#button-text').text("Display!");
                 $('#button-desc').text("Display the selected text");
                 
@@ -22,7 +22,7 @@
                 return;
             }
 
-            $("#template-description").text("This is the hany sample highlights the longest word in the text you have selected in the document.");
+            $("#template-description").text("This is the using 2016 sample highlights the longest word in the text you have selected in the document.");
             $('#button-text').text("Highlight!");
             $('#button-desc').text("Highlights the longest word.");
             
