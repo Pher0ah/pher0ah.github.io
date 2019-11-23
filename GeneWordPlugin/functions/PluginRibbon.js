@@ -1,4 +1,4 @@
-  /**********************************************************************************************************************/
+/**********************************************************************************************************************/
 /*                                             Global Word Initialisation                                             */
 /**********************************************************************************************************************/
 //Global Constant Definitions
@@ -115,15 +115,15 @@ function GeneTabPGUpdtAllProprty(event) {
   *   @param {string} aSomeStyle  The Style to be used to write the text
   * 
 */
-function insertHTML(sSomeText, sSomeStyle) {
-  Word.run(function (context) {
+async function insertHTML(sSomeText, sSomeStyle) {
+  await Word.run(async (context) => {
 
     //Get the current selection range
-    var itsSelection = context.document.getSelection();
+    var itsRange = context.document.getSelection;
 
     //Add text after that selection
-    var itsSentance = itsSelection.insertHtml(`${sSomeText}`, Word.InsertLocation.end);
-   
+    var itsSentance = itsRange.insertHtml(`${sSomeText}`, Word.InsertLocation.end);
+
     // Use styleBuiltIn to use an enumeration of existing styles.
     // If your style is custom make sure to use: range.style = "name of your style";
     switch (sSomeStyle) {
@@ -144,16 +144,10 @@ function insertHTML(sSomeText, sSomeStyle) {
     }
 
     // Synchronize the document state by executing the queued commands, and return a promise to indicate task completion.
-    itsSentance = itsSentance.insertParagraph('', 'After');
-    itsSentance.select;
+    //itsSentance = itsSentance.insertParagraph('', 'After');
+    //itsSentance.select;
 
-    return context.sync(itsSentance);
-  })
-  .catch(function (error) {
-    console.log('Error: ' + JSON.stringify(error));
-    if (error instanceof OfficeExtension.Error) {
-      console.log('Debug info: ' + JSON.stringify(error.debugInfo));
-    }
+    await context.sync(itsSentance);
   });
 }
 
