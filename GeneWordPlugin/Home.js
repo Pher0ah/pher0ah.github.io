@@ -22,7 +22,7 @@
                 return;
             }
 
-            $("#template-description").text("This sample highlights the longest word in the text you have selected in the document.");
+            $("#template-description").text("This is the hany sample highlights the longest word in the text you have selected in the document.");
             $('#button-text').text("Highlight!");
             $('#button-desc').text("Highlights the longest word.");
             
