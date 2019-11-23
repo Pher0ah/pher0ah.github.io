@@ -1,4 +1,4 @@
-/**********************************************************************************************************************/
+  /**********************************************************************************************************************/
 /*                                             Global Word Initialisation                                             */
 /**********************************************************************************************************************/
 //Global Constant Definitions
@@ -115,15 +115,15 @@ function GeneTabPGUpdtAllProprty(event) {
   *   @param {string} aSomeStyle  The Style to be used to write the text
   * 
 */
-async function insertHTML(sSomeText, sSomeStyle) {
-  await Word.run(async (context) => {
+function insertHTML(sSomeText, sSomeStyle) {
+  Word.run(function (context) {
 
     //Get the current selection range
-    var itsRange = context.document.getSelection;
+    var itsSelection = context.document.getSelection();
 
     //Add text after that selection
-    var itsSentance = itsRange.insertHtml(`${sSomeText}`, Word.InsertLocation.end);
-
+    var itsSentance = itsSelection.insertHtml(`${sSomeText}`, Word.InsertLocation.end);
+   
     // Use styleBuiltIn to use an enumeration of existing styles.
     // If your style is custom make sure to use: range.style = "name of your style";
     switch (sSomeStyle) {
@@ -144,10 +144,16 @@ async function insertHTML(sSomeText, sSomeStyle) {
     }
 
     // Synchronize the document state by executing the queued commands, and return a promise to indicate task completion.
-    //itsSentance = itsSentance.insertParagraph('', 'After');
-    //itsSentance.select;
+    itsSentance = itsSentance.insertParagraph('', 'After');
+    itsSentance.select;
 
-    await context.sync(itsSentance);
+    return context.sync();
+  })
+  .catch(function (error) {
+    console.log('Error: ' + JSON.stringify(error));
+    if (error instanceof OfficeExtension.Error) {
+      console.log('Debug info: ' + JSON.stringify(error.debugInfo));
+    }
   });
 }
 
