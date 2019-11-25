@@ -1,4 +1,4 @@
-﻿/**********************************************************************************************************************/
+  /**********************************************************************************************************************/
 /*                                             Global Word Initialisation                                             */
 /**********************************************************************************************************************/
 //Global Constant Definitions
@@ -6,15 +6,15 @@ const fDEBUG = true;
 const sDEBUGVER = '0.0.01';
 
 //Setup our environment
-Office.onReady(function (info) {
-  if (info.host === Office.HostType.Word) {
-    // Do Word-specific initialization (for example, make add-in task pane's
-    // appearance compatible with Word "green").
-  }
-  if (info.platform === Office.PlatformType.PC) {
-    // Make minor layout changes in the task pane.
-  }
-  console.log(`DEBUG:${sDEBUGVER}:Office.js is now ready in ${info.host} on ${info.platform}`);
+Office.onReady(function(info) {
+    if (info.host === Office.HostType.Word) {
+        // Do Word-specific initialization (for example, make add-in task pane's
+        // appearance compatible with Word "green").
+    }
+    if (info.platform === Office.PlatformType.PC) {
+        // Make minor layout changes in the task pane.
+    }
+    console.log(`DEBUG:${sDEBUGVER}:Office.js is now ready in ${info.host} on ${info.platform}`);
 });
 
 /**********************************************************************************************************************/
@@ -30,14 +30,14 @@ Office.onReady(function (info) {
 *
 *  Status       : WiP
 */
-async function GeneTabPGInsertPTable(event) {
+function GeneTabPGInsertPTable(event) {
 
   //Debug Button Press
   fDEBUG ?
-    await insertHTML('<b>DEBUG:</b> You Have Pressed the Insert Properties Table Button', 'Normal') : null
+    insertHTML(`<b>DEBUG:</b>${sDEBUGVER}:You Have Pressed the Insert Properties Table Button`, 'Normal') : null
 
   //Provide Warning to User
-  await insertHTML('<b>DELETE ME</b> Before Sending to your Customer', 'Normal');
+  insertHTML(`<b>DELETE ME</b> Before Sending to your Customer`, 'Normal');
 
   //Testing Insert Properties Table
   let oPropertiesTable = insertPropertiesTable();
@@ -57,16 +57,16 @@ async function GeneTabPGInsertPTable(event) {
 *
 *  Status       : WiP
 */
-async function GeneTabPGUpdateProperty(event) {
+function GeneTabPGUpdateProperty(event) {
 
   //Debug Button Press
   fDEBUG ?
-    await insertHTML('DEBUG: You Have Pressed the Update a Single Property Button', 'Normal') :
+    insertHTML(`<b>DEBUG:</b>${sDEBUGVER}:You Have Pressed the Update a Single Property Button`, 'Normal') :
     null;
 
   //Get current table
-  //var oPropertiesTable = context.document.getSelection();
-  //getTableCell(oPropertiesTable, 2, 2, 'Hello World');
+  var oPropertiesTable = context.document.getSelection();
+  getTableCell(oPropertiesTable, 2, 2, 'Hello World');
 
   //Event Completed
   event.completed();
@@ -87,7 +87,7 @@ function GeneTabPGUpdtAllProprty(event) {
 
   //Debug Button Press
   fDEBUG ?
-    await insertHTML('DEBUG: You Have Pressed the Update All Properties Button', 'Normal') :
+    insertHTML(`DEBUG:${sDEBUGVER}:You Have Pressed the Update All Properties Button`, 'Normal') :
     null;
 
   //Event Completed
@@ -115,52 +115,47 @@ function GeneTabPGUpdtAllProprty(event) {
   *   @param {string} aSomeStyle  The Style to be used to write the text
   * 
 */
-async function insertHTML(sSomeText, sSomeStyle) {
-  await Word.run(async (context) => {
+function insertHTML(sSomeText, sSomeStyle) {
+  Word.run(function (context) {
 
-    //Get the current selection/position in the document
-    const theSelection = context.document.getSelection();
+    //Get the current selection range
+    var itsSelection = context.document.getSelection();
 
-    //Insert the text and capture it for processing
-    var theSentance = theSelection.insertHtml(sSomeText, Word.InsertLocation.end);
-
+    //Add text after that selection
+    var itsSentance = itsSelection.insertHtml(`${sSomeText}`, Word.InsertLocation.end);
+   
     // Use styleBuiltIn to use an enumeration of existing styles.
     // If your style is custom make sure to use: range.style = "name of your style";
     switch (sSomeStyle) {
+      case 'No Spacing':
+        itsSentance.styleBuiltIn = Word.Style.noSpacing;
+        break;
       case 'Heading 1':
-        theSentance.styleBuiltIn = Word.Style.heading1;
+        itsSentance.styleBuiltIn = Word.Style.heading1;
         break;
       case 'Heading 2':
-        theSentance.styleBuiltIn = Word.Style.heading2;
+        itsSentance.styleBuiltIn = Word.Style.heading2;
         break;
       case 'Heading 3':
-        theSentance.styleBuiltIn = Word.Style.heading3;
-        break;
-      case 'Heading 4':
-        theSentance.styleBuiltIn = Word.Style.heading4;
-        break;
-      case 'Heading 5':
-        theSentance.styleBuiltIn = Word.Style.heading5;
-        break;
-      case 'No Spacing':
-        theSentance.styleBuiltIn = Word.Style.noSpacing;
+        itsSentance.styleBuiltIn = Word.Style.heading3;
         break;
         deafult:
-        theSentance.styleBuiltIn = Word.Style.normal;
+        itsSentance.styleBuiltIn = Word.Style.normal;
     }
 
-    await context.sync();
+    // Synchronize the document state by executing the queued commands, and return a promise to indicate task completion.
+    itsSentance = itsSentance.insertParagraph('', 'After');
+    itsSentance.select;
 
-    return theSentance;
+    return context.sync();
   })
-    .catch(anError => {
-      console.log("Error: " + anError);
-      if (anError instanceof OfficeExtension.Error) {
-        console.log("Debug info: " + JSON.stringify(anError.debugInfo));
-      }
-    });
+  .catch(function (error) {
+    console.log('Error: ' + JSON.stringify(error));
+    if (error instanceof OfficeExtension.Error) {
+      console.log('Debug info: ' + JSON.stringify(error.debugInfo));
+    }
+  });
 }
-
 
 /**********************************************************************************************************************/
 
