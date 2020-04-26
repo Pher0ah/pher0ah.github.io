@@ -2,7 +2,7 @@ var counter = 0;
 
 BTQuestions = shuffle(BTQuestions);
 
-$(".container").on("click", function () {
+$(".card").on("click", function () {
   if (!document.getElementById("card").classList.contains("flipped")) {
     document.getElementById("question").innerHTML = "<p>" + BTQuestions[counter++];
     if(counter === BTQuestions.length){
