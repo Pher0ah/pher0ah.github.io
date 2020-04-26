@@ -20,8 +20,8 @@ body {
   align-items: center;
 }
 .container {
-  width: calc(50vh * 1.75);
-  height: 50vh;
+  width: 300px;
+  height: 200px;
   position: relative;
   -webkit-perspective: 800px;
   -ms-perspective: 800px;
