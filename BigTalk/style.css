@@ -40,7 +40,7 @@ body {
   transition: -webkit-transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275), -webkit-transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  border-radius: 6px;
+  border-radius: 20px;
   box-shadow: 0px 15px 25px 5px rgba(0,0,50,0.5);
   cursor: pointer;
 }
@@ -78,11 +78,12 @@ body {
   transform: rotateY(180deg);
 }
 
-.card .back p {
+#question {
   padding: 15%;
   box-sizing: border-box;
   font: 18px/1.5 "Helvetica Neue", Helvetica, Arial, sans-serif;
   text-align: center;
+  vertical-align: middle;
 }
 
 .card.flipped {
