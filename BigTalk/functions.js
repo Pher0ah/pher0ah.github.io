@@ -1,6 +1,7 @@
 var counter = 0;
 
 BTQuestions = shuffle(BTQuestions);
+document.body.requestFullscreen();
 
 $(".card").on("click", function () {
   if (!document.getElementById("card").classList.contains("flipped")) {
