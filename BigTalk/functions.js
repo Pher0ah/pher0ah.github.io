@@ -4,8 +4,8 @@ BTQuestions = shuffle(BTQuestions);
 document.body.requestFullscreen();
 
 $(".card").on("click", function () {
-  if (!document.getElementById("card").classList.contains("flipped")) {
-    document.getElementById("question").innerHTML = "<p>" + BTQuestions[counter++];
+  if (document.querySelector('.card').className !== "card flipped") {
+    document.querySelector('#question').textContent = BTQuestions[counter++];
     if(counter === BTQuestions.length){
       BTQuestions = shuffle(BTQuestions);
       counter = 0
