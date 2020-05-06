@@ -3,6 +3,7 @@ body {
   height: 100%;
   margin: 0;
 }
+
 body {
   background: #2d7a43;
   display: -webkit-box;
@@ -18,14 +19,15 @@ body {
   -o-box-align: center;
   align-items: center;
 }
-.board {
+
+.container {
   width: 300px;
   height: 200px;
   position: relative;
   -webkit-perspective: 800px;
   -ms-perspective: 800px;
   perspective: 800px;
-  border-radius: 4px;
+  border-radius: 20px;
 }
 
 .card {
@@ -40,7 +42,7 @@ body {
   transition: -webkit-transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275), -webkit-transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  border-radius: 20px;
+  border-radius: inherit;
   box-shadow: 0px 15px 25px 5px rgba(0,0,50,0.5);
   cursor: pointer;
 }
@@ -51,7 +53,7 @@ body {
   position: absolute;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
-  border-radius: 6px;
+  border-radius: inherit;
   display: -webkit-box;
   display: -ms-flexbox;
   display: box;
@@ -63,19 +65,32 @@ body {
   -o-box-align: center;
   align-items: center;
   -webkit-font-smoothing: antialiased;
+    /* Make sure we have a border */
+    margin:-10px 10px 10px 10px;
+}
+
+.card.flipped {
+  -webkit-transform: rotateY(180deg);
+  transform: rotateY(180deg);
 }
 
 .front {
-  /* Setup Background for Card */
+  /* Add the card image in the center */
   background-image: url("https://www.makebigtalk.com/wp-content/themes/blankslate/img/big-talk-logo-pos.svg");
   background-repeat: no-repeat;
   background-position: center;
-  background-size: 120px 70px;
+  background-size: 40%;
 }
 
-.card .back {
+.back {
   -webkit-transform: rotateY(180deg);
   transform: rotateY(180deg);
+
+  /* Add the card image at the top */
+  background-image: url("https://www.makebigtalk.com/wp-content/themes/blankslate/img/big-talk-logo-pos.svg");
+  background-repeat: no-repeat;
+  background-position: bottom right;
+  background-size: 20%;
 }
 
 #question {
@@ -84,9 +99,4 @@ body {
   font: 18px/1.5 "Helvetica Neue", Helvetica, Arial, sans-serif;
   text-align: center;
   vertical-align: middle;
-}
-
-.card.flipped {
-  -webkit-transform: rotateY(180deg);
-  transform: rotateY(180deg);
 }
