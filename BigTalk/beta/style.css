@@ -6,27 +6,35 @@ body {
 
 body {
   background: #2d7a43;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+ 
   display: -webkit-box;
   display: -ms-flexbox;
-  display: flex;
+
   -webkit-box-orient: vertical;
-  -o-box-orient: vertical;
-  flex-direction: column;
   -webkit-box-pack: center;
-  -o-box-pack: center;
-  justify-content: center;
   -webkit-box-align: center;
+
+  -o-box-orient: vertical;
+  -o-box-pack: center;
   -o-box-align: center;
-  align-items: center;
+  /**/
 }
 
 .container {
   width: 300px;
   height: 200px;
-  position: relative;
+  position: absolute;
+/* 
   -webkit-perspective: 800px;
   -ms-perspective: 800px;
   perspective: 800px;
+   */
   border-radius: 20px;
 }
 
@@ -76,10 +84,9 @@ body {
 
 .front {
   /* Add the card image in the center */
-  background-image: url("https://www.makebigtalk.com/wp-content/themes/blankslate/img/big-talk-logo-pos.svg");
   background-repeat: no-repeat;
   background-position: center;
-  background-size: 40%;
+  background-size: 35%;
 }
 
 .back {
