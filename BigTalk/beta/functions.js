@@ -47,6 +47,7 @@ function shuffleQuestions(array) {
     [array[i],array[j]] = [array[j],array[i]];
   }
 
+  //return a promise response
   return Promise.resolve(array);
 }
 
@@ -59,7 +60,6 @@ async function createCards(){
   await loadQuestions();
  
   //Shuffle The Questions
-  console.log(BTQuestions.length);
   shuffleQuestions(BTQuestions);
   
   //Loop through all questions and create card DIVs for them
