@@ -16,16 +16,18 @@ window.addEventListener('resize',redistributeCards);
 function redistributeCards(){
   const allCards = document.querySelectorAll('.container');
   allCards.forEach(card => {
-    console.log(card.computedStyleMap().get('left').value);
-     if(card.computedStyleMap().get('left').value >= (window.innerWidth - 300)) {
-      const posX = Math.floor(Math.random() * (window.innerWidth - 300));
-      card.style.left = `${posX}px`;
-    };
+    let posX = card.computedStyleMap().get('left').value;
+    deltaX = posX >= (window.innerWidth - 300) ? (Math.floor(Math.random() * (window.innerWidth - 300))) - posX : 0;
 
-    if(card.computedStyleMap().get('top').value >= (window.innerHeight - 200)){
-      const posY = Math.floor(Math.random() * (window.innerHeight- 200));
-      card.style.top = `${posY}px`;
-    }
+    let posY = card.computedStyleMap().get('top').value;
+    deltaY = posY >= (window.innerHeight - 200) ? (Math.floor(Math.random() * (window.innerHeight- 200))) - posY : 0;
+
+    const ct = card.computedStyleMap().get('transform'); 
+
+    let currentRotation = ct[ct.length -1].angle.value;
+    card.style.transform = `translate(${deltaX}px, ${deltaY}px)  rotate(${currentRotation}deg)`;
+    // card.style.left = `${posX}px`;
+    // card.style.top = `${posY}px`;
   });
 }
 
@@ -68,9 +70,10 @@ function moveCard(card, index){
 function flipCard() {
   //bring the card to the front
   const selectedCard = this.parentElement;
-  console.log(selectedCard.computedStyleMap.zIndex);
-  document.body.removeChild(selectedCard);
-  document.body.appendChild(selectedCard);
+  //selectedCard.style.transform = `translate3d(0px, 0px, -1000px)`;
+  // console.log(selectedCard.computedStyleMap.zIndex);
+  // document.body.removeChild(selectedCard);
+  // document.body.appendChild(selectedCard);
 
   //flip the card over
   this.classList.toggle("flipped");
