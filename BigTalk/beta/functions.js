@@ -8,11 +8,6 @@ const logoLocations = {BigTalk : 'https://www.makebigtalk.com/wp-content/themes/
                        Islamic : 'https://i.pinimg.com/originals/75/2a/0d/752a0dc0a3cd15ae456a8bb91895c8b0.png'};
 
 
-                       
-// //Create Cards First Time Around (NOT WORKING)
-// document.body.addEventListener('load', createCards);
-
-
 //Listen for Resize Window Event & move Cards around
 window.addEventListener('resize',redistributeCards);
 
@@ -30,7 +25,7 @@ async function loadQuestions(){
   }
   
   //Convert response into JSON
-  const data = await response.json()
+  const data = await response.json();
   
   //Parse the questions into the BTQuestions variable
   data.questions.forEach((question) => BTQuestions.push(question));
