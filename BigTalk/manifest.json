@@ -7,7 +7,7 @@
     "theme_color": "green",
     "icons": [
          {
-             "src": "/Images/bigtalk.ico",
+             "src": "/Images/BTicon.ico",
              "size": "192x192"
          } 
      ]

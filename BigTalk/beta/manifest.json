@@ -7,7 +7,7 @@
     "theme_color": "green",
     "icons": [
          {
-             "src": "/Images/icon.png",
+             "src": "/Images/BTicon.png",
              "size": "192x192"
          } 
      ]
