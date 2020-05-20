@@ -1,0 +1,14 @@
+{
+  "name": "Travel Log",  
+  "short_name": "Travel Log",
+  "lang": "en-US",
+  "start_url": "./",
+  "display": "standalone",
+  "theme_color": "orange",
+  "icons": [
+       {
+           "src": "icon.png",
+           "size": "192x192"
+       } 
+   ]
+}

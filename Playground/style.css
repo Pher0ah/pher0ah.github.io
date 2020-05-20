@@ -4,6 +4,26 @@ body {
   height: 100%;
 }
 
+img{
+  position: absolute;;
+  width: 600px;
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  flex-grow: 1;
+
+}
+
+img#us{
+  border:150px solid blue;
+  margin-right: 50px;
+  padding-right: 100px;
+  width:300px;
+
+
+}
+
+
 .menu{
   color: white;
   padding: 50px;
