@@ -40,7 +40,7 @@ createAutoComplete({
   root: document.querySelector("#left-autocomplete"),
   onOptionSelect(movie) {
     document.querySelector('.tutorial').classList.add('is-hidden');
-    onMovieSelect(movie, document.querySelector('#left-summary'),'left');
+    onMovieSelect(movie, document.querySelector('#left-summary'), 'left');
   }
 });
 
@@ -52,7 +52,7 @@ createAutoComplete({
   root: document.querySelector("#right-autocomplete"),
   onOptionSelect(movie) {
     document.querySelector('.tutorial').classList.add('is-hidden');
-    onMovieSelect(movie, document.querySelector('#right-summary'),'right');
+    onMovieSelect(movie, document.querySelector('#right-summary'), 'right');
   }
 });
 
@@ -64,7 +64,7 @@ createAutoComplete({
 //
 let leftMovie;
 let rightMovie;
-const onMovieSelect = async (movie,summaryElement,side) => {
+const onMovieSelect = async (movie, summaryElement, side) => {
   //Get the selected movie's details
   const response = await axios.get('http://www.omdbapi.com/', {
     params: {
@@ -77,14 +77,14 @@ const onMovieSelect = async (movie,summaryElement,side) => {
   summaryElement.innerHTML = movieTemplate(response.data);
 
   //Update variable
-  if(side === 'left'){
+  if (side === 'left') {
     leftMovie = response.data;
-  }else{
+  } else {
     rightMovie = response.data;
   };
 
   //If both movies selected; then compare them.
-  if(leftMovie && rightMovie){
+  if (leftMovie && rightMovie) {
     runComparison();
   };
 }
@@ -94,8 +94,23 @@ const onMovieSelect = async (movie,summaryElement,side) => {
 // Description
 //
 //
-const runComparison = () =>{
-  
+const runComparison = () => {
+  const leftSideStats = document.querySelectorAll('#left-summary .notification');
+  const rightSideStats = document.querySelectorAll('#right-summary .notification');
+
+  leftSideStats.forEach((leftStat, index) => {
+    const rightStat = rightSideStats[index];
+    
+    if(parseFloat(rightStat.dataset.value) > parseFloat(leftStat.dataset.value)){
+      leftStat.classList.remove('is-primary');
+      leftStat.classList.remove('is-warning');
+      rightStat.classList.add('is-warning');
+    }else{
+      rightStat.classList.remove('is-primary');
+      rightStat.classList.remove('is-warning');
+      leftStat.classList.remove('is-warning');
+    }
+  });
 }
 
 
@@ -104,6 +119,11 @@ const runComparison = () =>{
 //
 //
 const movieTemplate = (movieDetail) => {
+  const dollars = parseInt(movieDetail.BoxOffice.replace(/\$/g, '').replace(/,/g, ''));
+  const metascore = parseInt(movieDetail.Metascore);
+  const imdbRating = parseFloat(movieDetail.imdbRating);
+  const imdbVotes = parseInt(movieDetail.imdbVotes.replace(/,/g, ''));
+
   return `
     <!-- Movie Basic Information -->
     <article class="media">
@@ -128,25 +148,25 @@ const movieTemplate = (movieDetail) => {
     </article>
 
     <!-- Movie Box Office -->
-    <article class="notification is-primary">
+    <article data-value=${dollars} class="notification is-primary">
       <p class="title">${movieDetail.BoxOffice}</p>
       <p class="subtitle">Box Office</p>
     </article>
 
     <!-- Movie Metascore -->
-    <article class="notification is-primary">
+    <article data-value=${metascore} class="notification is-primary">
       <p class="title">${movieDetail.Metascore}</p>
       <p class="subtitle">Metascore</p>
     </article>
 
     <!-- Movie IMDB Rating -->
-    <article class="notification is-primary">
+    <article data-value=${imdbRating} class="notification is-primary">
       <p class="title">${movieDetail.imdbRating}</p>
       <p class="subtitle">IMDB Rating</p>
     </article>
 
     <!-- Movie IMDB Votes -->
-    <article class="notification is-primary">
+    <article data-value=${imdbVotes} class="notification is-primary">
       <p class="title">${movieDetail.imdbVotes}</p>
       <p class="subtitle">IMDB Votes</p>
     </article>
