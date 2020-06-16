@@ -105,6 +105,7 @@ const BTQuestions = [
   ["BigTalk","General","When was the last time you made someone else smile?"],
   ["BigTalk","General","When was the last time you were moved to tears?"],
   ["BigTalk","General","Where do you find peace?"],
+  ["BigTalk","General","Which hour of the day would you want to skip completely?"],
   ["BigTalk","General","Where would you like to wake up Tomorrow?"],
   ["BigTalk","General","Who do you need to get in touch with because it’s been too long?"],
   ["BigTalk","General","Who is your hero or role-model?"],

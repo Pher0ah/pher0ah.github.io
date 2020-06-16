@@ -9,7 +9,7 @@ BTQuestions = shuffle(BTQuestions);
 function flipCard(card) {
   //Change the question (for now)
   if (card.className !== "card flipped") {
-    card.children[1].textContent = BTQuestions[counter++];
+    card.children[1].textContent = BTQuestions[counter++][2];
     if (counter === BTQuestions.length) {
       BTQuestions = shuffle(BTQuestions);
       counter = 0
