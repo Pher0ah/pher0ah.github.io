@@ -10,7 +10,12 @@ import "../../assets/icon-80.png";
 
 /* global document, Office */
 
-Office.initialize = function() {};
+Office.initialize = () => {
+  render(
+    <App title={title} />,
+    document.querySelector('#container')
+  );
+};
 
 Office.onReady(info => {
   if (info.host === Office.HostType.Outlook) {
