@@ -10,6 +10,8 @@ import "../../assets/icon-80.png";
 
 /* global document, Office */
 
+Office.initialize = function() {};
+
 Office.onReady(info => {
   if (info.host === Office.HostType.Outlook) {
     document.getElementById("sideload-msg").style.display = "none";
