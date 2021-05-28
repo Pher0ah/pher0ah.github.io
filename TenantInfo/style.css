@@ -1,0 +1,33 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  background: #47525d;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -o-box-orient: vertical;
+  flex-direction: column;
+  -webkit-box-pack: center;
+  -o-box-pack: center;
+  justify-content: center;
+  -webkit-box-align: center;
+  -o-box-align: center;
+  align-items: center;
+}
+
+.tenant {
+
+}
+
+@media print{
+  body{
+    visibility: hidden;
+    display: none;
+  }
+}

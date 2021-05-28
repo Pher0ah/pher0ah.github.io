@@ -1,0 +1,14 @@
+{
+    "name": "Office 365 Tenant Information",  
+    "short_name": "O365",
+    "lang": "en-AU",
+    "start_url": "./",
+    "display": "standalone",
+    "theme_color": "grey",
+    "icons": [
+         {
+             "src": "https://portal.azure.com/favicon.ico",
+             "size": "192x192"
+         } 
+     ]
+  }

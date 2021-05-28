@@ -1,0 +1,18 @@
+{
+  "tenant": {
+     "@name": "MSDx485848",
+     "id": "e4fd8590-13e1-4bff-b0bc-8bf498f5347e",
+     "region": "North America",
+     "domains": {
+        "domain": "MSDx485848.onmicrosoft.com"
+     },
+     "expriy": "25/08/2021",
+     "user": {
+        "@displayName": "MOD Administrator",
+        "upn": "admin@MSDx485848.onmicrosoft.com",
+        "password": "thfv42UM1H",
+        "source": "Azure Active Directory",
+        "privileges": "Global Admin"
+     }
+  }
+}
