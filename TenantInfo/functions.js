@@ -20,7 +20,7 @@ function loadData(){
   readTextFile("./tenantInfo.json", function(text){
     tenantData = JSON.parse(text);
     alert("DEBUG: the count of tenant data read is ", tenantData.count);
-    document.getElementById("tenant").innerHTML = "DEBUG: the count of tenant data read is " + tenantData.count;
+    document.getElementById("tenant").innerHTML = 'DEBUG: the count of tenant data read is '+tenantData.count;
   });
 }
 
