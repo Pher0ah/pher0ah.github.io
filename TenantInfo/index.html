@@ -9,12 +9,10 @@
   <link rel='manifest' href='manifest.json'>
   <link rel="stylesheet" href='style.css'>
   <link rel="shortcut icon" href='https://portal.azure.com/favicon.ico' />
-  <script  src="./functions.js">
-    tenantData = LoadData();
-  </script>
+  <script  src="./functions.js"></script>
 
 </head>
-<body>
+<body onload="tenantData = loadData()">
 <div class="container">
   <div class="tenant" onclick="flipCard(this)">
   </div>
