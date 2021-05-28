@@ -1,4 +1,6 @@
-//Comment
+//Global Variables
+
+var tenantData = {};
 
 //Read a JSON File
 function readTextFile(file, callback) {
@@ -16,9 +18,8 @@ function readTextFile(file, callback) {
 //Load Information
 function loadData(){
   readTextFile("./tenantInfo.json", function(text){
-    var data = JSON.parse(text);
-    console.log("DEBUG: the data read is ", data);
-    return data;
+    tenantData = JSON.parse(text);
+    alert("DEBUG: the data read is ", tenantData);
   });
 }
 
