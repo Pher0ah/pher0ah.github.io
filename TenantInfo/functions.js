@@ -17,7 +17,8 @@ function readTextFile(file, callback) {
 function LoadData(){
   readTextFile("./tenantInfo.json", function(text){
     var data = JSON.parse(text);
-    console.log(data);
+    console.log("DEBUG: the data read is ", data);
+    return data;
   });
 }
 
