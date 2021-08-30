@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>JudgeDisplay</title>
+    <meta name="viewport" content="width=1920;">
+    <meta name="author" content="@pher0ah">
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/bootstrap-responsive.min.css" rel="stylesheet">
+    <style>
+    	body:not(.active){padding:20px;}
+    	body.active .navbar, body.active .inputs{
+    		display: none;
+    	}
+
+    	body.active .container{
+    		margin: 0px;
+    		padding: 0px;
+    	}
+      
+    	body .tabs{ display:none; }
+    	body.active .tabs{ display: block }
+    	body.active .tab{ display: none; }
+    	body.active .tab.active{ display: block; }
+    	.navbar select{
+    		margin: 5px;
+    	}
+    	.thumbnails li a{
+    		padding: 40px;
+    	}
+    	input[type=text]{width:100%;}
+    </style>
+  </head>
+  
+  <!-- Body Start -->
+  <body class="">
+  	<div class="navbar">
+  <div class="navbar-inner">
+    <a class="brand" href="#">My Tabs</a>
+    <button class="btn btn-medium btn-primary pull-right" id="run" type="button">Run Tabs</button>
+     <select id="time" class="select pull-right">
+        <option value="1">1 s</option>
+        <option value="10">10 s</option>
+        <option value="20">20 s</option>
+        <option value="30">30 s</option>
+        <option value="60">60 s</option>
+        <option value="90">90 s</option>
+    </select>
+    <select id="aspect" class="select pull-right">
+	    <option value="width=1920">1080p</option>
+	    <option value="width=1280">720p</option>
+	    <option value="width=device-width">mobile</option>
+    </select>
+  </div>
+</div>
+    <div class="container">
+    	<div class="tabs"></div>
+	    <div class="inputs">
+            <input type="text" value="http://example.com" placeholder="type in a url here" />
+            <input type="text" value="http://apple.com" placeholder="type in a url here" />
+            <input type="text" value="" placeholder="type in a url here" />
+            <button class="btn btn-primary" type="button" id="add">Add tab</button>
+	    </div>
+    </div> <!-- /container -->
+  <!--
+  ======================================================================
+  javaScript
+    - Always Placed at the end of the document so the pages load faster 
+  ======================================================================
+  -->
+    <script src="js/jquery-1.8.2.min.js"></script>
+
+    <!-- Javascript BootStrap-->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <script>
+    	var timer = null;
+
+    	function load_tab(url){
+    		$('.tabs').append('<iframe class="tab" frameborder="0" height="'+$(window).height()+'" width="'+$(window).width()+'" scrolling="no" seamless="seamless" src="'+url+'"></iframe>');
+    	}
+
+    	function rotate(){
+    		/* Rotate the tabs */
+    		var up = $('.tabs .tab.active'); // get active
+    		if( up.length>0 ){
+    			up.removeClass('active');
+    			if( up.next().length>0 ){
+    				up.next().addClass('active');
+    				return;
+	    		}
+	    	}
+		    $('.tabs .tab:first').addClass('active'); // display first if no next
+    	} // rotate 
+
+      
+    	$(function(){
+    		/* mouse move then show the navbar */
+    		$('#run').click(function(){
+    			viewport = document.querySelector("meta[name=viewport]");
+				viewport.setAttribute('content', $('#aspect').val());
+    			$('input[value!=""]').each(function(){
+    				load_tab($(this).val());
+    				
+    			});
+    			$('body').addClass('active');
+    			if( $('.tabs .tab').length > 1 ){
+	    			timer = setInterval(rotate, parseInt($('#time').val()*1000));
+	    		} else {
+	    			$('.tabs .tab:first').addClass('active')
+	    		}
+	    		
+    		});
+    		$('#add').click(function(){
+    			$(this).before('<input type="text" value="" placeholder="type in a url here" />')
+    		});
+    	});
+
+    	// Assure full screen.
+    	$(window).resize(function(){$('.tabs, .tabs .tab').height($(window).height()).width($(window).width());});
+    	$('.tabs').height($(window).height()).width($(window).width());
+    	$(window).keyup(function(e){
+	    	if (e.keyCode == 27){ 
+		    	if( $('body').hasClass('active') ){
+    				if( timer ) clearInterval(timer);
+    				$('body').removeClass('active');
+    				$('.tabs').empty();
+    			}
+	    	}
+		});
+    </script>
+  </body>
+</html>
