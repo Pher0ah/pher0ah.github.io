@@ -3,7 +3,7 @@ var counter = 0;
 
 // Description: Shuffle The Questions
 //
-BTQuestions = shuffle(BTQuestions);
+shuffle(BTQuestions);
 
 //flip the card over
 function flipCard(card) {

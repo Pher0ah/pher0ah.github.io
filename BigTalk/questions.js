@@ -1,4 +1,4 @@
-var BTQuestions = [
+const BTQuestions = [
   ["BigTalk","General","Describe your perfect day"],
   ["BigTalk","General","Do you fit-in or Stand-out and how?"],
   ["BigTalk","General","Do you prefer swimming in the ocean or the pool?"],
