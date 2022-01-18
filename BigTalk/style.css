@@ -6,18 +6,19 @@ body {
 }
 
 body {
-  background: #2d7a43;
+  background: #265834;
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
   -webkit-box-orient: vertical;
-  -o-box-orient: vertical;
-  flex-direction: column;
-  -webkit-box-pack: center;
-  -o-box-pack: center;
-  justify-content: center;
   -webkit-box-align: center;
+  -webkit-box-pack: center;
+  -webkit-user-select: none;
+  -o-box-orient: vertical;
   -o-box-align: center;
+  -o-box-pack: center;
+  flex-direction: column;
+  justify-content: center;
   align-items: center;
 }
 
@@ -97,7 +98,7 @@ body {
   padding: 15%;
   box-sizing: border-box;
   font: 18px/1.5 "Helvetica Neue", Helvetica, Arial, sans-serif;
-  -webkit-text-fill-color: rgba(0, 0, 0, 1); 
+  color: #000000 !important;
   text-align: center;
   vertical-align: middle;
 }
