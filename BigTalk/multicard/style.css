@@ -6,28 +6,36 @@ body {
 }
 
 body {
-  display: -webkit-box;
-  display: -ms-flexbox;
+  background: #2d7a43;
+
   display: flex;
-  -webkit-box-orient: vertical;
-  -webkit-box-align: center;
-  -webkit-box-pack: center;
-  -o-box-orient: vertical;
-  -o-box-align: center;
-  -o-box-pack: center;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  user-select: none;
+
+ 
+  display: -webkit-box;
+  display: -ms-flexbox;
+
+  -webkit-box-orient: vertical;
+  -webkit-box-pack: center;
+  -webkit-box-align: center;
+
+  -o-box-orient: vertical;
+  -o-box-pack: center;
+  -o-box-align: center;
+  /**/
 }
 
 .container {
   width: 300px;
   height: 200px;
-  position: relative;
+  position: absolute;
+/* 
   -webkit-perspective: 800px;
   -ms-perspective: 800px;
   perspective: 800px;
+   */
   border-radius: 20px;
 }
 
@@ -52,22 +60,22 @@ body {
   width: 100%;
   height: 100%;
   position: absolute;
-  justify-content: center;
-  align-items: center;
+  -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
   border-radius: inherit;
-  -webkit-backface-visibility: hidden;
-  -webkit-box-align: center;
-  -webkit-box-pack: center;
-  -webkit-font-smoothing: antialiased;
-  -o-box-align: center;
-  -o-box-pack: center;
   display: -webkit-box;
   display: -ms-flexbox;
   display: box;
   display: flex;
-  /* Make sure we have a border */
-  margin:-10px 10px 10px 10px;
+  -webkit-box-pack: center;
+  -o-box-pack: center;
+  justify-content: center;
+  -webkit-box-align: center;
+  -o-box-align: center;
+  align-items: center;
+  -webkit-font-smoothing: antialiased;
+    /* Make sure we have a border */
+    margin:-10px 10px 10px 10px;
 }
 
 .card.flipped {
@@ -77,10 +85,9 @@ body {
 
 .front {
   /* Add the card image in the center */
-  background-image: url("https://www.makebigtalk.com/wp-content/themes/blankslate/img/big-talk-logo-pos.svg");
   background-repeat: no-repeat;
   background-position: center;
-  background-size: 40%;
+  background-size: 35%;
 }
 
 .back {
@@ -96,15 +103,7 @@ body {
   /* format the question text */
   padding: 15%;
   box-sizing: border-box;
-  font: 18px/1.5 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif';
-  color: #000000 !important;
+  font: 18px/1.5 "Helvetica Neue", Helvetica, Arial, sans-serif;
   text-align: center;
   vertical-align: middle;
-}
-
-@media print{
-  body{
-    visibility: hidden;
-    display: none;
-  }
 }
