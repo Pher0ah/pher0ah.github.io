@@ -34,6 +34,10 @@
 </div>
   <!-- Load the Chosen Questions -->
   <script>
+    //Handle Resize
+    onresize = (event) => {resizeCard()};
+    onload = (event) => {resizeCard()};
+
     //Read URL parameters
     const queryString = window.location.search;
     const urlParams = new URLSearchParams(queryString);
@@ -54,6 +58,7 @@
     const scriptTag = document.createElement("script");
     scriptTag.src = `functions.js`;
     document.body.appendChild(scriptTag);
+
   </script>
 </body>
 </html>
