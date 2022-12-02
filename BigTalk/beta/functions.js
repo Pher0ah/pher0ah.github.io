@@ -70,6 +70,7 @@ function resizeCard() {
 
   document.getElementsByClassName('front')[0].style.backgroundSize = `${theCardWidth/2}px`;
   document.getElementsByClassName('back')[0].style.backgroundSize = `${theCardWidth/8}px`;
+  document.getElementsByClassName('back')[0].style.backgroundPosition = `bottom ${theCardWidth/30}px right ${theCardWidth/30}px`;
   document.getElementsByClassName('back')[0].style.fontSize = `${theFontSize}px`;
   
 };
