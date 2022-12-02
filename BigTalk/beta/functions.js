@@ -1,6 +1,16 @@
 //create a counter for how many cards we have used
 var counter = 0;
 
+//set card colour based on questions file
+document.getElementsByClassName('card')[0].style.backgroundColor = `#${cardColour}`;
+
+//set card text colour based on questions file
+document.getElementsByClassName('back')[0].style.color = `#${invertHex(cardColour)}`;
+
+//set game logo based on questions file
+document.getElementsByClassName('front')[0].style.backgroundImage = cardLogo;
+document.getElementsByClassName('back')[0].style.backgroundImage = cardLogo;
+
 //shuffle the questions
 shuffle(theQuestions);
 
@@ -58,10 +68,10 @@ function resizeCard() {
   document.getElementsByClassName('container')[0].style.height = `${theCardHeight}px`;
   document.getElementsByClassName('container')[0].style.borderRadius = `${theCardHeight/10}px`;
 
+  document.getElementsByClassName('front')[0].style.backgroundSize = `${theCardWidth/2}px`;
+  document.getElementsByClassName('back')[0].style.backgroundSize = `${theCardWidth/8}px`;
   document.getElementsByClassName('back')[0].style.fontSize = `${theFontSize}px`;
-  document.getElementsByClassName('back')[0].style.font.color = `#${invertHex(cardColour)}`;
-  //document.getElementsByClassName('card')[0].style.backgroundColor = `#${cardColour}`;
-  document.getElementsByClassName('back')[0].style.color = '#FFFFFF !important';
+  
 };
 
 //Find the inverse of a colour

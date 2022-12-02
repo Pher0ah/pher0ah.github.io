@@ -1,5 +1,5 @@
-const cardColour = 'ffffff';
-const cardLogo = `url("https://www.makebigtalk.com/wp-content/themes/blankslate/img/big-talk-logo-pos.svg")`;
+const cardColour = '000000';
+const cardLogo = `url("https://www.egynomics.com/images/BadPeople.png")`;
 
 const theQuestions = [
   ["General","As a kid, what scared you about growing up?"],

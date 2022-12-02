@@ -28,7 +28,6 @@ body {
   -webkit-perspective: 800px;
   -ms-perspective: 800px;
   perspective: 800px;
-  border-radius: 20px;
 }
 
 .card {
@@ -36,7 +35,7 @@ body {
   height: 100%;
   position: absolute;
   background: #ffffff;
-  color: #47525d;
+  color: #000000;
   -webkit-transform-style: preserve-3d;
   transform-style: preserve-3d;
   -webkit-transition: -webkit-transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -77,10 +76,8 @@ body {
 
 .front {
   /* Add the card image in the center */
-  background-image: url("https://www.makebigtalk.com/wp-content/themes/blankslate/img/big-talk-logo-pos.svg");
   background-repeat: no-repeat;
   background-position: center;
-  background-size: 40%;
 }
 
 .back {
@@ -88,16 +85,13 @@ body {
   transform: rotateY(180deg);
 
   /* Add the card image at the top */
-  background-image: url("https://www.makebigtalk.com/wp-content/themes/blankslate/img/big-talk-logo-pos.svg");
   background-repeat: no-repeat;
   background-position: bottom right;
-  background-size: 20%;
 
   /* format the question text */
   padding: 15%;
   box-sizing: border-box;
   font: 18px/1.5 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif';
-  color: #000000 !important;
   text-align: center;
   vertical-align: middle;
 }
