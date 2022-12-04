@@ -1,3 +1,5 @@
+const gameTitle = "Make Big Talk";
+const tableColour = '265834';
 const cardColour = 'ffffff';
 const cardLogo = `url("https://www.makebigtalk.com/wp-content/themes/blankslate/img/big-talk-logo-pos.svg")`;
 
@@ -111,6 +113,7 @@ const theQuestions = [
   ["General","What is the most breathtaking view you have seen?"],
   ["General","What is the most important lesson you have learnt?"],
   ["Adult"  ,"What is the most important trait in your ideal partner?"],
+  ["General","What is the weirdest gift you have ever given or received?"],
   ["General","What is the strangest thing you have eaten?"],
   ["General","What is your biggest fear?"],
   ["General","What is your earliest childhood memory?"],
@@ -119,6 +122,7 @@ const theQuestions = [
   ["General","What is your greatest strength?"],
   ["General","What is your happiest memory?"],
   ["General","What is your least favourite chore?"],
+  ["General","What is your most annoying habit?"],
   ["General","What is your most favourite chore?"],
   ["General","What is your most favourite desert?"],
   ["General","What is your next great adventure?"],
@@ -140,6 +144,7 @@ const theQuestions = [
   ["General","What was the most impactful event in your life?"],
   ["Adult"  ,"What was your secret spot or hideaway as a child?"],
   ["General","What were you doing the last time you lost track of time?"],
+  ["General","What would you do if you won the lottery?"],
   ["Adult"  ,"What would you not tolerate in a relationship?"],
   ["General","What would you regert not having done by the end of your life?"],
   ["General","When do you feel the most like yourself?"],

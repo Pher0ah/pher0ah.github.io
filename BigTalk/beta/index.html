@@ -42,12 +42,8 @@
     const queryString = window.location.search;
     const urlParams = new URLSearchParams(queryString);
 
-    //Get background colour
-    const bgColour = urlParams.has('bg') ? urlParams.get('bg') : "265834";
-    document.body.style.backgroundColor = `#${bgColour}`;
-
-    //Get requested question type
-    const cardType = urlParams.has('type') ? urlParams.get('type') : 'BadPeople';//'BigTalk';
+    //Get requested question type (BigTalk, BadPeople, BadChoices)
+    const cardType = urlParams.has('cards') ? urlParams.get('cards') : 'BadChoices';
 
     //Load the Questions
     const questionsTag = document.createElement("script");
