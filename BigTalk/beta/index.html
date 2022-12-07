@@ -43,11 +43,14 @@
     const urlParams = new URLSearchParams(queryString);
 
     //Get Cookie Information
-    var cookieCard = 'BadChoices';
+    var cookieCard = 'BigTalk';
     const pageCookies = decodeURIComponent(document.cookie).split(';');
     if(pageCookies.indexOf("cards") != -1){
        cookieCard = pageCookies[pageCookies.indexOf("cards")];
     };
+
+    console.log("Setting CookieCard to: "+cookieCard);
+
     //Get requested question type (BigTalk, BadPeople, BadChoices)
     const cardType = urlParams.has('cards') ? urlParams.get('cards') : cookieCard;
 
