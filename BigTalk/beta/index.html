@@ -42,8 +42,20 @@
     const queryString = window.location.search;
     const urlParams = new URLSearchParams(queryString);
 
+    //Get Cookie Information
+    var cookieCard = 'BadChoices';
+    const pageCookies = decodeURIComponent(document.cookie).split(';');
+    if(pageCookies.indexOf("cards") != -1){
+       cookieCard = pageCookies[pageCookies.indexOf("cards")];
+    };
     //Get requested question type (BigTalk, BadPeople, BadChoices)
-    const cardType = urlParams.has('cards') ? urlParams.get('cards') : 'BadChoices';
+    const cardType = urlParams.has('cards') ? urlParams.get('cards') : cookieCard;
+
+    const d = new Date();
+    const exdays = 7;
+    d.setTime(d.getTime() + (exdays*24*60*60*1000));
+    document.cookie = "cards=" + cardType + "; expires=" + d.toUTCString() + ";path=/";
+    console.log("My cookie is set to:" + document.cookie);
 
     //Load the Questions
     const questionsTag = document.createElement("script");
