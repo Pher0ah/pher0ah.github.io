@@ -54,6 +54,8 @@
     //Get requested question type (BigTalk, BadPeople, BadChoices)
     const cardType = urlParams.has('cards') ? urlParams.get('cards') : cookieCard;
 
+    console.log("Cards to Load is: "+cardType);
+
     const d = new Date();
     const exdays = 7;
     d.setTime(d.getTime() + (exdays*24*60*60*1000));
