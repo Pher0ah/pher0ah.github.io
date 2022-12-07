@@ -1,11 +1,6 @@
 //create a counter for how many cards we have used
 var counter = 0;
 
-//Set Cookies
-document.cookie = "BTCards="+cardType+
-                  "; domain=www.egynomics.com; path=/BigTalk";
-console.log("My Current Cookies are: "+ document.cookie.get);
-
 //set title
 document.title = (typeof gameTitle !== 'undefined') ? gameTitle : "My Cards";
 
