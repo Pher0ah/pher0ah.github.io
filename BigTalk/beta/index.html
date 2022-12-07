@@ -44,9 +44,8 @@
 
     //Get Cookie Information
     var cookieCard;
-    const pageCookies = decodeURIComponent(document.cookie).split(';');
-    if(pageCookies.indexOf("cards") != -1){
-       cookieCard = pageCookies[pageCookies.indexOf("cards")];
+    if(getCookie("cards") != ""){
+       cookieCard = getCookie("cards");
     }else{
       cookieCard = 'BigTalk';
     };
@@ -64,6 +63,21 @@
     document.cookie = "cards=" + cardType + "; expires=" + d.toUTCString() + ";path=/";
     console.log("My cookie is set to:" + document.cookie);
 
+    function getCookie(cname) {
+  let name = cname + "=";
+  let decodedCookie = decodeURIComponent(document.cookie);
+  let ca = decodedCookie.split(';');
+  for(let i = 0; i <ca.length; i++) {
+    let c = ca[i];
+    while (c.charAt(0) == ' ') {
+      c = c.substring(1);
+    }
+    if (c.indexOf(name) == 0) {
+      return c.substring(name.length, c.length);
+    }
+  }
+  return "";
+}
     //Load the Questions
     const questionsTag = document.createElement("script");
     questionsTag.src = `${cardType}.js`;
