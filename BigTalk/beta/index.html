@@ -43,10 +43,12 @@
     const urlParams = new URLSearchParams(queryString);
 
     //Get Cookie Information
-    var cookieCard = 'BigTalk';
+    var cookieCard;
     const pageCookies = decodeURIComponent(document.cookie).split(';');
     if(pageCookies.indexOf("cards") != -1){
        cookieCard = pageCookies[pageCookies.indexOf("cards")];
+    }else{
+      cookieCard = 'BigTalk';
     };
 
     console.log("Setting CookieCard to: "+cookieCard);
