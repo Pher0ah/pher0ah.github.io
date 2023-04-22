@@ -2,22 +2,21 @@ const API_KEY = 'AIzaSyBqYyTlQoxWZpEYogPt9cHAJoIvlZySoko';
 const CLIENT_ID = '872435311738-6o0o4bmu4arcoo9m58oh0n7e0ovrr94s.apps.googleusercontent.com';
 const SCOPES = 'https://www.googleapis.com/auth/photoslibrary.readonly';
 
-function handleCredentialResponse(response) {
-  const authCode = response.credential;
-  getAccessToken(authCode).then(accessToken => {
-    // Initialize the Google API Client with the access token.
-    gapi.client.init({
-      apiKey: API_KEY,
-      clientId: CLIENT_ID,
-      discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/photoslibrary/v1/rest'],
-      scope: 'https://www.googleapis.com/auth/photoslibrary.readonly'
-    }).then(() => {
-      // Load photos
-      loadPhotos(accessToken);
-    });
-  }).catch(error => {
-    console.error('Error:', error.message);
-  });
+async function handleCredentialResponse(response) {
+  const credential = response.credential;
+  const authResponse = response.getAuthResponse();
+
+  // Verify the token on the server-side (skipped for demonstration)
+  // ...
+
+  // Update the sign-in button text and style
+  const signInButton = document.querySelector('.g_id_signin');
+  signInButton.textContent = 'Signed In';
+  signInButton.style.backgroundColor = 'green';
+  signInButton.style.cursor = 'default';
+
+  // Load photos after sign-in
+  loadPhotos();
 }
 
 async function getAccessToken(authCode) {
