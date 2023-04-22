@@ -10,6 +10,7 @@ async function init() {
     const response = await gapi.auth2.getAuthInstance().signIn();
     handleCredentialResponse(response);
   });
+  console.log("We got here");
 }
 
 async function handleCredentialResponse(response) {
@@ -18,6 +19,7 @@ async function handleCredentialResponse(response) {
 
   // Verify the token on the server-side (skipped for demonstration)
   // ...
+  console.log("We got here too");
 
   // Update the sign-in button text and style
   const signInButton = document.querySelector('.g_id_signin');
@@ -28,9 +30,6 @@ async function handleCredentialResponse(response) {
   // Load photos after sign-in
   loadPhotos();
 }
-
-window.handleCredentialResponse = handleCredentialResponse;
-window.title = "Google Photos Viewer (v.1.8)";
 
 async function getAccessToken(authCode) {
   const response = await fetch(`https://www.googleapis.com/oauth2/v4/token`, {
@@ -172,3 +171,7 @@ function displayError(message) {
   const errorMessageElement = document.getElementById('error-message');
   errorMessageElement.textContent = message;
 }
+
+// Main()
+//window.handleCredentialResponse = handleCredentialResponse;
+document.title = "Google Photos Viewer (v.1.8)";
