@@ -64,7 +64,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>Google Photos Viewer (v.1.1)</h1>
+    <h1>Google Photos Viewer (v.1.2)</h1>
     <button id="signin-button" onclick="handleAuthClick()" style="display:none;">Sign In</button>
     <div id="error-message"></div>
     <table id="photos-table">
@@ -79,7 +79,7 @@
     <button id="prev-page" onclick="previousPage()" disabled>Previous</button>
     <button id="next-page" onclick="nextPage()" disabled>Next</button>
   </div>
-  <script async defer src="https://apis.google.com/js/api.js"></script>
+  <script async defer src="https://apis.google.com/js/api.js"  onload="init"></script>
   <script>
     const API_KEY = 'AIzaSyBqYyTlQoxWZpEYogPt9cHAJoIvlZySoko';
     const CLIENT_ID = '872435311738-6o0o4bmu4arcoo9m58oh0n7e0ovrr94s.apps.googleusercontent.com';
