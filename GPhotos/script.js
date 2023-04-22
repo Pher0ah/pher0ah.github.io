@@ -145,4 +145,4 @@ function displayError(message) {
 // window.handleCredentialResponse = handleCredentialResponse;
 
 // Change Version
-document.title = "Google Photos Viewer (v.1.9)";
+document.title = "Google Photos Viewer (v.1.1)";
