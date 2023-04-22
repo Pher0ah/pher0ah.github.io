@@ -21,7 +21,6 @@ async function handleCredentialResponse(response) {
 
 window.handleCredentialResponse = handleCredentialResponse;
 
-
 async function getAccessToken(authCode) {
   const response = await fetch(`https://www.googleapis.com/oauth2/v4/token`, {
     method: 'POST',
