@@ -2,6 +2,16 @@ const API_KEY = 'AIzaSyBqYyTlQoxWZpEYogPt9cHAJoIvlZySoko';
 const CLIENT_ID = '872435311738-6o0o4bmu4arcoo9m58oh0n7e0ovrr94s.apps.googleusercontent.com';
 const SCOPES = 'https://www.googleapis.com/auth/photoslibrary.readonly';
 
+async function init() {
+  await gapi.load('g_id');
+
+  const signInButton = document.querySelector('.g_id_signin');
+  signInButton.addEventListener('click', async () => {
+    const response = await gapi.auth2.getAuthInstance().signIn();
+    handleCredentialResponse(response);
+  });
+}
+
 async function handleCredentialResponse(response) {
   const credential = response.credential;
   const authResponse = response.getAuthResponse();
@@ -20,6 +30,7 @@ async function handleCredentialResponse(response) {
 }
 
 window.handleCredentialResponse = handleCredentialResponse;
+window.title = "Google Photos Viewer (v.1.8)";
 
 async function getAccessToken(authCode) {
   const response = await fetch(`https://www.googleapis.com/oauth2/v4/token`, {
