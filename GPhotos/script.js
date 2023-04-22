@@ -4,7 +4,6 @@ const SCOPES = 'https://www.googleapis.com/auth/photoslibrary.readonly';
 
 async function handleCredentialResponse(response) {
   const credential = response.credential;
-  const authResponse = response.getAuthResponse();
 
   // Verify the token on the server-side (skipped for demonstration)
   // ...
@@ -127,4 +126,4 @@ function displayError(message) {
 // window.handleCredentialResponse = handleCredentialResponse;
 
 // Change Version
-document.title = "Google Photos Viewer (v.1.2)";
+document.title = "Google Photos Viewer (v.1.3)";
