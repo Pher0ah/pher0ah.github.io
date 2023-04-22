@@ -2,25 +2,6 @@ const API_KEY = 'AIzaSyBqYyTlQoxWZpEYogPt9cHAJoIvlZySoko';
 const CLIENT_ID = '872435311738-6o0o4bmu4arcoo9m58oh0n7e0ovrr94s.apps.googleusercontent.com';
 const SCOPES = 'https://www.googleapis.com/auth/photoslibrary.readonly';
 
-function init() {
-  // Load the g_id library
-  gapi.load('g_id', {
-    callback: function () {
-      // Listen for the credential_response event
-      gapi.auth.addEventListener('credential_response', handleCredentialResponse);
-    }
-  });
-}
-
-async function signIn() {
-  // Initiate the sign-in flow
-  await gapi.auth.signIn({
-    client_id: '872435311738-6o0o4bmu4arcoo9m58oh0n7e0ovrr94s.apps.googleusercontent.com',
-    ux_mode: 'popup',
-    context: 'use',
-  });
-}
-
 async function handleCredentialResponse(response) {
   const credential = response.credential;
   const authResponse = response.getAuthResponse();
@@ -145,4 +126,4 @@ function displayError(message) {
 // window.handleCredentialResponse = handleCredentialResponse;
 
 // Change Version
-document.title = "Google Photos Viewer (v.1.1)";
+document.title = "Google Photos Viewer (v.1.2)";
