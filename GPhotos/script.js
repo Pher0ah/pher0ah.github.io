@@ -9,6 +9,7 @@ async function handleCredentialResponse(response) {
   // Verify the token on the server-side (skipped for demonstration)
   // ...
   console.log("We got here");
+  console.log(response);
 
   // Update the sign-in button text and style
   const signInButton = document.querySelector('#signin-button');
