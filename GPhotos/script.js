@@ -7,14 +7,7 @@ async function handleCredentialResponse(response) {
 
   // Verify the token on the server-side (skipped for demonstration)
   // ...
-  console.log("We got here");
   console.log(response);
-
-  // Update the sign-in button text and style
-  const signInButton = document.querySelector('#signin-button');
-  signInButton.textContent = 'Signed In';
-  signInButton.style.backgroundColor = 'green';
-  signInButton.style.cursor = 'default';
 
   // Load photos after sign-in
   loadPhotos();
@@ -45,6 +38,10 @@ async function loadPhotos() {
 
 async function getAlbums() {
   const response = await gapi.client.photoslibrary.albums.list();
+
+  console.log("We got to getAlbums");
+  console.log(response);
+
   return response.result.albums || [];
 }
 
@@ -126,4 +123,4 @@ function displayError(message) {
 // window.handleCredentialResponse = handleCredentialResponse;
 
 // Change Version
-document.title = "Google Photos Viewer (v.1.3)";
+document.title = "Google Photos Viewer (v.1.4)";
