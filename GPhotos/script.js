@@ -2,18 +2,20 @@ const API_KEY = 'AIzaSyBqYyTlQoxWZpEYogPt9cHAJoIvlZySoko';
 const CLIENT_ID = '872435311738-6o0o4bmu4arcoo9m58oh0n7e0ovrr94s.apps.googleusercontent.com';
 const SCOPES = 'https://www.googleapis.com/auth/photoslibrary.readonly';
 
-// Load the g_id library
-gapi.load('g_id', init);
-
 function init() {
-  // Listen for the credential_response event
-  gapi.auth.addEventListener('credential_response', handleCredentialResponse);
+  // Load the g_id library
+  gapi.load('g_id', {
+    callback: function () {
+      // Listen for the credential_response event
+      gapi.auth.addEventListener('credential_response', handleCredentialResponse);
+    }
+  });
 }
 
 async function signIn() {
   // Initiate the sign-in flow
   await gapi.auth.signIn({
-    client_id: CLIENT_ID,
+    client_id: '872435311738-6o0o4bmu4arcoo9m58oh0n7e0ovrr94s.apps.googleusercontent.com',
     ux_mode: 'popup',
     context: 'use',
   });
@@ -25,6 +27,7 @@ async function handleCredentialResponse(response) {
 
   // Verify the token on the server-side (skipped for demonstration)
   // ...
+  console.log("We got here");
 
   // Update the sign-in button text and style
   const signInButton = document.querySelector('#signin-button');
@@ -34,65 +37,6 @@ async function handleCredentialResponse(response) {
 
   // Load photos after sign-in
   loadPhotos();
-}
-
-async function handleCredentialResponse(response) {
-  const credential = response.credential;
-  const authResponse = response.getAuthResponse();
-
-  // Verify the token on the server-side (skipped for demonstration)
-  // ...
-  console.log("We got here");
-
-  // Update the sign-in button text and style
-  const signInButton = document.querySelector('.g_id_signin');
-  signInButton.textContent = 'Signed In';
-  signInButton.style.backgroundColor = 'green';
-  signInButton.style.cursor = 'default';
-
-  // Load photos after sign-in
-  loadPhotos();
-}
-
-async function getAccessToken(authCode) {
-  const response = await fetch(`https://www.googleapis.com/oauth2/v4/token`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
-    },
-    body: new URLSearchParams({
-      client_id: CLIENT_ID,
-      grant_type: 'authorization_code',
-      code: authCode,
-      redirect_uri: 'postmessage'
-    })
-  });
-
-  if (response.ok) {
-    const data = await response.json();
-    return data.access_token;
-  } else {
-    throw new Error('Failed to exchange authorization code for access token');
-  }
-}
-
-function initClient() {
-  gapi.client.init({
-    apiKey: API_KEY,
-    clientId: CLIENT_ID,
-    scope: SCOPES
-  }).then(() => {
-    gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
-    updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
-  });
-}
-
-function updateSigninStatus(isSignedIn) {
-  if (isSignedIn) {
-    loadPhotos();
-  } else {
-    gapi.auth2.getAuthInstance().signIn();
-  }
 }
 
 const PAGE_SIZE = 10;
@@ -198,5 +142,7 @@ function displayError(message) {
 // Main()
 
 // Make the handleCredentialResponse function globally available
-window.handleCredentialResponse = handleCredentialResponse;
-document.title = "Google Photos Viewer (v.1.8)";
+// window.handleCredentialResponse = handleCredentialResponse;
+
+// Change Version
+document.title = "Google Photos Viewer (v.1.9)";
