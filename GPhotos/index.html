@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Google Photos Viewer</title>
-  <script async defer src="https://apis.google.com/js/api.js" onload="init()"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -80,8 +79,8 @@
     <button id="prev-page" onclick="previousPage()" disabled>Previous</button>
     <button id="next-page" onclick="nextPage()" disabled>Next</button>
   </div>
-
-  <script>
+  <script ></script>
+  <script async defer src="https://apis.google.com/js/api.js" onload="init()">
     const API_KEY = 'AIzaSyBqYyTlQoxWZpEYogPt9cHAJoIvlZySoko';
     const CLIENT_ID = '872435311738-6o0o4bmu4arcoo9m58oh0n7e0ovrr94s.apps.googleusercontent.com';
     const SCOPES = 'https://www.googleapis.com/auth/photoslibrary.readonly';
