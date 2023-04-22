@@ -2,6 +2,40 @@ const API_KEY = 'AIzaSyBqYyTlQoxWZpEYogPt9cHAJoIvlZySoko';
 const CLIENT_ID = '872435311738-6o0o4bmu4arcoo9m58oh0n7e0ovrr94s.apps.googleusercontent.com';
 const SCOPES = 'https://www.googleapis.com/auth/photoslibrary.readonly';
 
+// Load the g_id library
+gapi.load('g_id', init);
+
+function init() {
+  // Listen for the credential_response event
+  gapi.auth.addEventListener('credential_response', handleCredentialResponse);
+}
+
+async function signIn() {
+  // Initiate the sign-in flow
+  await gapi.auth.signIn({
+    client_id: CLIENT_ID,
+    ux_mode: 'popup',
+    context: 'use',
+  });
+}
+
+async function handleCredentialResponse(response) {
+  const credential = response.credential;
+  const authResponse = response.getAuthResponse();
+
+  // Verify the token on the server-side (skipped for demonstration)
+  // ...
+
+  // Update the sign-in button text and style
+  const signInButton = document.querySelector('#signin-button');
+  signInButton.textContent = 'Signed In';
+  signInButton.style.backgroundColor = 'green';
+  signInButton.style.cursor = 'default';
+
+  // Load photos after sign-in
+  loadPhotos();
+}
+
 async function handleCredentialResponse(response) {
   const credential = response.credential;
   const authResponse = response.getAuthResponse();
