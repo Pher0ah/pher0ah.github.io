@@ -2,24 +2,13 @@ const API_KEY = 'AIzaSyBqYyTlQoxWZpEYogPt9cHAJoIvlZySoko';
 const CLIENT_ID = '872435311738-6o0o4bmu4arcoo9m58oh0n7e0ovrr94s.apps.googleusercontent.com';
 const SCOPES = 'https://www.googleapis.com/auth/photoslibrary.readonly';
 
-async function init() {
-  await gapi.load('g_id');
-
-  const signInButton = document.querySelector('.g_id_signin');
-  signInButton.addEventListener('click', async () => {
-    const response = await gapi.auth2.getAuthInstance().signIn();
-    handleCredentialResponse(response);
-  });
-  console.log("We got here");
-}
-
 async function handleCredentialResponse(response) {
   const credential = response.credential;
   const authResponse = response.getAuthResponse();
 
   // Verify the token on the server-side (skipped for demonstration)
   // ...
-  console.log("We got here too");
+  console.log("We got here");
 
   // Update the sign-in button text and style
   const signInButton = document.querySelector('.g_id_signin');
@@ -173,5 +162,7 @@ function displayError(message) {
 }
 
 // Main()
-//window.handleCredentialResponse = handleCredentialResponse;
+
+// Make the handleCredentialResponse function globally available
+window.handleCredentialResponse = handleCredentialResponse;
 document.title = "Google Photos Viewer (v.1.8)";
