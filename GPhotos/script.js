@@ -10,17 +10,17 @@ async function handleCredentialResponse(response) {
   console.log(response);
 
   // Load photos after sign-in
-  loadPhotos();
+  loadPhotos(credential);
 }
 
 const PAGE_SIZE = 10;
 let currentPage = 0;
 let currentPhotos = [];
 
-async function loadPhotos() {
+async function loadPhotos(credential) {
   try {
-    const albums = await getAlbums();
-    const photos = await getAllPhotos();
+    const albums = await getAlbums(credential);
+    const photos = await getAllPhotos(credential);
 
     currentPhotos = photos.map(photo => {
       const album = albums.find(album => album.id === photo.albumId);
@@ -36,16 +36,36 @@ async function loadPhotos() {
   }
 }
 
-async function getAlbums() {
-  const response = await gapi.client.photoslibrary.albums.list();
+async function getAlbums(credential) {
+  //const response = await gapi.client.photoslibrary.albums.list();
 
   console.log("We got to getAlbums");
-  console.log(response);
 
-  return response.result.albums || [];
+  const requestOptions = {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${credential}`
+    }
+  };
+
+  try {
+    const response = await fetch('https://photoslibrary.googleapis.com/v1/albums', requestOptions);
+    const data = await response.json();
+
+    if (data.error) {
+      console.error(data.error.message);
+      return;
+    }
+
+    console.log(data.albums);
+    return data.albums || [];
+  } catch (error) {
+    console.error('Error fetching albums:', error);
+  }
 }
 
-async function getAllPhotos() {
+async function getAllPhotos(credential) {
   let photos = [];
   let nextPageToken;
 
