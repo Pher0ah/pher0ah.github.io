@@ -1,17 +1,58 @@
 const API_KEY = 'AIzaSyBqYyTlQoxWZpEYogPt9cHAJoIvlZySoko';
 const CLIENT_ID = '872435311738-6o0o4bmu4arcoo9m58oh0n7e0ovrr94s.apps.googleusercontent.com';
+const CLIENT_SECRET = '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';
 const SCOPES = 'https://www.googleapis.com/auth/photoslibrary.readonly';
 
 async function handleCredentialResponse(response) {
-  const credential = response.credential;
-
-  // Verify the token on the server-side (skipped for demonstration)
-  // ...
-  console.log(response);
+  const idToken = response.credential;
+  const credential = getAccessToken(idToken)
 
   // Load photos after sign-in
   loadPhotos(credential);
 }
+
+async function getAccessToken(idToken) {
+  const urlParams = new URLSearchParams(window.location.search);
+  const code = urlParams.get('code');
+  const state = urlParams.get('state');
+
+  const tokenEndpoint = 'https://oauth2.googleapis.com/token';
+  const clientId = CLIENT_ID;
+  const clientSecret = CLIENT_SECRET;
+  const redirectUri = 'http://127.0.0.1/';
+  const grantType = 'authorization_code';
+
+  const requestBody = new URLSearchParams();
+  requestBody.append('code', code);
+  requestBody.append('client_id', clientId);
+  requestBody.append('client_secret', clientSecret);
+  requestBody.append('redirect_uri', redirectUri);
+  requestBody.append('grant_type', grantType);
+
+  try {
+    const response = await fetch(tokenEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: requestBody
+    });
+    const data = await response.json();
+
+    if (data.error) {
+      console.error(data.error);
+      return;
+    }
+
+    return data.access_token;
+    // Store the access token and use it in fetchAlbums() function
+  } catch (error) {
+    console.error('Error fetching access token:', error);
+  }
+}
+
+getAccessToken();
+
 
 const PAGE_SIZE = 10;
 let currentPage = 0;
