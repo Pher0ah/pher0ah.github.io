@@ -5,7 +5,8 @@ const SCOPES = 'https://www.googleapis.com/auth/photoslibrary.readonly';
 
 async function handleCredentialResponse(response) {
   const idToken = response.credential;
-  const credential = getAccessToken(idToken)
+  console.log(idToken);
+  const credential = getAccessToken(idToken);
 
   // Load photos after sign-in
   loadPhotos(credential);
