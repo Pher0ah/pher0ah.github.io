@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Save Inputs in Cookie</title>
+</head>
+<body>
+    <h2>Enter Details</h2>
+
+    <form id="cookieForm">
+        <label for="tenantID">Tenant ID:</label><br>
+        <input type="text" id="tenantID" name="tenantID"><br>
+        <label for="username">Username:</label><br>
+        <input type="text" id="username" name="username"><br>
+        <button type="button" onclick="saveDetails()">Save</button>
+    </form> 
+
+    <h2>Select Tenant</h2>
+    <select id="tenantDropdown" onchange="displayUsername(this.value)"></select>
+
+    <h2>Corresponding Username</h2>
+    <p id="usernameDisplay"></p>
+
+    <script>
+        window.onload = function() {
+            loadCookies();
+        }
+
+        function saveDetails() {
+            var tenantID = document.getElementById('tenantID').value;
+            var username = document.getElementById('username').value;
+
+            document.cookie = "tenant_" + tenantID + "=" + username;
+            loadCookies();
+        }
+
+        function loadCookies() {
+            var cookies = document.cookie.split('; ');
+            var tenantDropdown = document.getElementById('tenantDropdown');
+            tenantDropdown.innerHTML = '';
+
+            for (var i = 0; i < cookies.length; i++) {
+                var cookiePair = cookies[i].split('=');
+                if (cookiePair[0].startsWith('tenant_')) {
+                    var tenantID = cookiePair[0].substring(7);
+                    var option = document.createElement('option');
+                    option.value = tenantID;
+                    option.textContent = tenantID;
+                    tenantDropdown.appendChild(option);
+                }
+            }
+        }
+
+        function displayUsername(tenantID) {
+            var username = getCookie("tenant_" + tenantID);
+            document.getElementById('usernameDisplay').textContent = username;
+        }
+
+        function getCookie(cname) {
+            var name = cname + "=";
+            var decodedCookie = decodeURIComponent(document.cookie);
+            var ca = decodedCookie.split(';');
+            for(var i = 0; i <ca.length; i++) {
+                var c = ca[i];
+                while (c.charAt(0) == ' ') {
+                  c = c.substring(1);
+                }
+                if (c.indexOf(name) == 0) {
+                  return c.substring(name.length, c.length);
+                }
+            }
+            return "";
+        }
+    </script>
+</body>
+</html>
