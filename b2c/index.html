@@ -2,23 +2,61 @@
 <html>
 <head>
     <title>Microsoft 365 URL Hack</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+     <style>
+      body {
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          background-color: #f3f2f1;
+          color: #201f1e;
+      }
+
+      .form-group {
+          width: 100%;
+          max-width: 400px;
+          margin: auto;
+      }
+
+      .form-control {
+          border-radius: 0;
+      }
+
+      .btn-primary {
+          background-color: #0078d4;
+          border: none;
+          border-radius: 0;
+      }
+
+      .btn-primary:hover {
+          background-color: #005a9e;
+      }
+  </style>
+
 </head>
+
 <body>
-    <h2>Enter Details</h2>
+  <div class="container mt-5">
+     <h2>Enter Details</h2>
 
-    <form id="cookieForm">
-        <label for="tenantID">Tenant ID:</label><br>
-        <input type="text" id="tenantID" name="tenantID"><br>
-        <label for="username">Username:</label><br>
-        <input type="text" id="username" name="username"><br>
-        <button type="button" onclick="saveDetails()">Save</button>
-    </form> 
+        <form id="cookieForm">
+            <div class="form-group">
+                <label for="tenantID">Tenant ID:</label>
+                <input type="text" class="form-control" id="tenantID" name="tenantID">
+            </div>
 
-    <h2>Select Tenant</h2>
-    <select id="tenantDropdown" onchange="displayUsername(this.value)"></select>
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" class="form-control" id="username" name="username">
+            </div>
+            
+            <button type="button" class="btn btn-primary" onclick="saveDetails()">Save</button>
+        </form> 
 
-    <h2>Corresponding Username</h2>
-    <p id="usernameDisplay"></p>
+        <h2 class="mt-5">Select Tenant</h2>
+        <select id="tenantDropdown" class="form-control" onchange="displayUsername(this.value)"></select>
+
+        <h2 class="mt-5">Corresponding Username</h2>
+        <p id="usernameDisplay"></p>
+    </div>
 
     //Add Dynamic Functionality
     <script  src="./functions.js"></script>
