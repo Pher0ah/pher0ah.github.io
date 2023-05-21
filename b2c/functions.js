@@ -5,8 +5,10 @@ window.onload = function() {
 function saveDetails() {
   var tenantID = document.getElementById('tenantID').value;
   var username = document.getElementById('username').value;
-
-  document.cookie = "tenant_" + tenantID + "=" + username;
+  var d = new Date();
+  d.setTime(d.getTime() + (24*60*60*1000));
+  var expires = "expires="+ d.toUTCString();
+  document.cookie = "tenant_" + tenantID + "=" + username + ";" + expires + ";path=/";
   loadCookies();
 }
 
@@ -50,6 +52,8 @@ function getCookie(cname) {
 
 function deleteDetails() {
   var tenantID = document.getElementById('tenantDropdown').value;
-  document.cookie = "tenant_" + tenantID + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-  loadCookies();
+  if (tenantID !== '') {
+      document.cookie = "tenant_" + tenantID + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
+      loadCookies();
+  }
 }
