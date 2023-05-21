@@ -4,24 +4,22 @@ body {
   color: #201f1e;
 }
 
-.form-group {
-  width: 100%;
-  max-width: 400px;
-  margin: auto;
-}
-
-.form-control {
+.form-control, .btn {
   border-radius: 0;
 }
 
 .btn {
   background-color: #0078d4;
   border: none;
-  border-radius: 0;
-  width: 100%;
   color: white;
 }
 
 .btn:hover {
   background-color: #005a9e;
+}
+
+@media (min-width: 576px) {
+  .form-control, .btn {
+      max-width: 400px;
+  }
 }
