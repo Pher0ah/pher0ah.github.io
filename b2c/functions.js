@@ -47,3 +47,9 @@ function getCookie(cname) {
   }
   return "";
 }
+
+function deleteDetails() {
+  var tenantID = document.getElementById('tenantDropdown').value;
+  document.cookie = "tenant_" + tenantID + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+  loadCookies();
+}

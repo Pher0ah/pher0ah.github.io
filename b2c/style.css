@@ -1,0 +1,25 @@
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f3f2f1;
+  color: #201f1e;
+}
+
+.form-group {
+  width: 100%;
+  max-width: 400px;
+  margin: auto;
+}
+
+.form-control {
+  border-radius: 0;
+}
+
+.btn-primary {
+  background-color: #0078d4;
+  border: none;
+  border-radius: 0;
+}
+
+.btn-primary:hover {
+  background-color: #005a9e;
+}
