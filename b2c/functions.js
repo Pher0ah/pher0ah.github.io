@@ -34,4 +34,3 @@ function deleteDetails() {
   localStorage.removeItem('tenant_' + tenantID);
   loadDetails();
 }
-}
