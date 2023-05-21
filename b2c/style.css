@@ -14,12 +14,14 @@ body {
   border-radius: 0;
 }
 
-.btn-primary {
+.btn {
   background-color: #0078d4;
   border: none;
   border-radius: 0;
+  width: 100%;
+  color: white;
 }
 
-.btn-primary:hover {
+.btn:hover {
   background-color: #005a9e;
 }

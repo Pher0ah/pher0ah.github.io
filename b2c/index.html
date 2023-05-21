@@ -12,11 +12,8 @@
 
 <body>
   <div class="container mt-5">
-      <h2 class="mt-5">Select Tenant</h2>
-      <select id="tenantDropdown" class="form-control" onchange="displayUsername(this.value)"></select>
-      <button type="button" class="btn btn-danger mt-2" onclick="deleteDetails()">Delete</button>
+      <h2>Enter Details</h2>
 
-      <h2>Enter New Details</h2>
       <form id="cookieForm">
           <div class="form-group">
               <label for="tenantID">Tenant ID:</label>
@@ -28,13 +25,17 @@
               <input type="text" class="form-control" id="username" name="username">
           </div>
           
-          <button type="button" class="btn btn-primary mt-5" onclick="saveDetails()">Save</button>
+          <button type="button" class="btn mt-2" onclick="saveDetails()">Save</button>
       </form> 
 
+      <h2 class="mt-5">Select Tenant</h2>
+      <select id="tenantDropdown" class="form-control" onchange="displayUsername(this.value)"></select>
+      <button type="button" class="btn mt-2" onclick="deleteDetails()">Delete</button>
 
-      <h2 class="mt-5">Username</h2><div id="usernameDisplay"></div>
+      <h2 class="mt-5">Corresponding Username</h2>
+      <p id="usernameDisplay"></p>
   </div>
-
+  
   <!-- URL Table -->
   <div class="url-table">
     <table>
