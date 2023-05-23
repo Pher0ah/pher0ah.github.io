@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <div class="container">
+    <h1>Google Photos Viewer</h1>
+    <!--    -->
+    <div id="g_id_onload"
+          data-client_id="872435311738-6o0o4bmu4arcoo9m58oh0n7e0ovrr94s.apps.googleusercontent.com"
+          data-context="use"
+          data-ux_mode="popup"
+          data-callback="handleCredentialResponse"
+          data-nonce=""
+          data-auto_select="true"
+          data-itp_support="true">
+    </div>
+
+    <div class="g_id_signin"
+          data-type="icon"
+          data-shape="square"
+          data-theme="outline"
+          data-text="signin_with"
+          data-size="large">
+    </div>
+    <!--    -->
+    <div id="error-message"></div>
+    <table id="photos-table">
+      <thead>
+        <tr>
+          <th>Photo</th>
+          <th>Album</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <button id="prev-page" onclick="previousPage()" disabled>Previous</button>
+    <button id="next-page" onclick="nextPage()" disabled>Next</button>
+  </div>
+
+  <script>
+    import { initializeApp } from '@firebase/app';
+    import { getAuth, onAuthStateChanged } from '@firebase/auth';
+    import { getFirestore } from '@firebase/firestore';
+    import { GoogleIdentityPlatformAuthProvider } from '@google-cloud/identity-toolkit';
+    
+    const firebaseConfig = { /*... */ };
+    initializeApp(firebaseConfig);
+    const auth = getAuth();
+    onAuthStateChanged(auth, async user => {
+      const provider = new GoogleIdentityPlatformAuthProvider();
+      await auth.signInWithPopup(provider);
+      
+      const firestore = getFirestore();
+      const querySnapshot = await firestore
+      .collectionGroup('albums')
+      .where('ownerId', '==', user?.uid || '')
+    .limit(5).get();
+      let albumTitles = '';
+      querySnapshot.docs.map((doc) => ({id: doc.id,...doc.data()}))
+    .sort(({createdAt: dateA}, {createdAt: dateB}) => -dateA + dateB)
+    .forEach(({title}) => (albumTitles += `<p>${title}</p>`));
+      document.querySelector('#album-titles').innerHTML = albumTitles;
+    });
+  </script>
+</body>
+</html>
