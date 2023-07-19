@@ -24,7 +24,7 @@ shuffle(theQuestions);
 function flipCard(card) {
   //Change the question when the card is flipped
   if (card.className !== "card flipped") {
-    card.children[1].textContent = theQuestions[counter++][1];
+    card.children[1].innerHTML = theQuestions[counter++][1];
     if (counter === theQuestions.length) {
       theQuestions = shuffle(theQuestions);
       counter = 0
