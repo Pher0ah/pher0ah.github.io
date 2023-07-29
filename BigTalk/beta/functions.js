@@ -17,6 +17,7 @@ document.getElementsByClassName('back')[0].style.color = `#${invertHex(cardColou
 document.getElementsByClassName('front')[0].style.backgroundImage = cardLogo;
 document.getElementsByClassName('back')[0].style.backgroundImage = cardLogo;
 document.getElementById("favicon").setAttribute("href", cardLogo);
+document.getElementById("applicon").setAttribute("href", cardLogo);
 
 //shuffle the questions
 shuffle(theQuestions);
