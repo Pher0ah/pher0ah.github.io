@@ -16,6 +16,7 @@ document.getElementsByClassName('back')[0].style.color = `#${invertHex(cardColou
 //set game logo based on questions file
 document.getElementsByClassName('front')[0].style.backgroundImage = cardLogo;
 document.getElementsByClassName('back')[0].style.backgroundImage = cardLogo;
+document.getElementById("favicon").setAttribute("href", cardLogo);
 
 //shuffle the questions
 shuffle(theQuestions);
