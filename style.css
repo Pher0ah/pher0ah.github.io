@@ -1,0 +1,110 @@
+@import url("https://fonts.googleapis.com/css?family=Luckiest+Guy&display=swap");
+
+body {
+  font-family: sans-serif;
+  background-color: deepskyblue;
+  color: white;
+}
+
+h1 {
+  // margin-top: 222px;
+  margin: 0;
+  padding: 0;
+
+  font-family: "Luckiest Guy";
+  font-size: 130px;
+
+  text-align: center;
+
+  text-shadow: 0 0.1em 20px black, 0.05em -0.03em 0 black,
+    0.05em 0.005em 0 black, 0em 0.08em 0 black, 0.05em 0.08em 0 black,
+    0px -0.03em 0 black, -0.03em -0.03em 0 black, -0.03em 0.08em 0 black,
+    -0.03em 0 0 black;
+  span {
+    display: inline-block;
+  }
+
+  .first {
+    color: #F21C97;
+    animation: bop 1s infinite alternate;
+    // name - bop
+    // duration - 1s
+    // infinite - how long to keep doing the thing
+  }
+
+  .last {
+    animation: boppity 1s infinite alternate;
+  }
+}
+
+@keyframes bop {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes boppity {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.1) rotateZ(-3deg);
+  }
+}
+
+@keyframes move-left {
+  from {
+    transform: translateX(300%);
+  }
+  to {
+    transform: translateX(-300%);
+  }
+}
+
+.bio {
+  margin: 0 auto 0 auto;
+  //   margin-top: 0;
+  //   margin-right: auto;
+  //   margin-bottom: 0;
+  //   margin-left: auto;
+
+  max-width: 70vw;
+}
+
+// CLOUD STYLES
+
+.sky {
+  margin-bottom: 100px;
+  // height: 222px;
+}
+
+.sky img {
+  animation: move-left 60s infinite alternate;
+  position: absolute;
+}
+
+.cloud-big {
+  top: 118px;
+  left: 280px;
+  transform: translateX(100%);
+}
+
+.cloud-medium {
+  top: 89px;
+  left: 50px;
+}
+
+.cloud-small {
+  top: 74px;
+  left: 195px;
+}
+
+.sun {
+  width: 50px;
+  height: 50px;
+  background: gold;
+  border-radius: 50%;
+}
