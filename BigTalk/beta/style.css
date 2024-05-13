@@ -22,12 +22,16 @@ body {
 }
 
 .burger-menu {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-    width: 2rem;
-    height: 2rem;
-    cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  -webkit-box-align: left;
+  -webkit-box-pack: left;
+  -o-box-align: left;
+  -obox-pack: left;
+  justify-content: left;
+  width: 2rem;
+  height: 2rem;
+  cursor: pointer;
 }
 
 .line {
@@ -111,11 +115,13 @@ body {
 }
 
 .copyright {
-    float: left;
+  float: left;
+  text-align: left;
 }
 
 .version { 
-    float: right;
+  float: right;
+  text-align: right;
 }
 
 @media print{
