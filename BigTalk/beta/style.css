@@ -110,14 +110,6 @@ body {
   vertical-align: middle;
 }
 
-.copyright {
-    float: left;
-}
-
-.version { 
-    float: right;
-}
-
 @media print{
   body{
     visibility: hidden;
