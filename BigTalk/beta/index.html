@@ -1,11 +1,25 @@
 <!DOCTYPE html>
-<html lang="en-AU" >
+<html lang="en-AU" prefix="og: http://ogp.me/ns#">
 <head>
   <meta charset='UTF-8'>
-  <meta name="viewport" content='width=device-width, initial-scale=1.0'>
-  <title>BigTalk</title>
 
-  <!-- Make this Apple iOS Compatible-->
+  <title>BigTalk</title>
+  
+  <!-- Application meta tags -->
+  <meta name="author" content="Hany Elkady">
+  <meta name="description" content="Generic Card Game">
+  <meta name"keywords" content="game, cards, flip">
+
+  <!-- Open Graph meta tags -->
+  <meta property="og:title" content="Deck of Cards" />
+  <meta property="og:type" content="Web App" />
+  <meta property="og:url" content="https://www.egynomics.com/BigTalk/beta" />  
+  <meta property="og:image" content="https://www.egynomics.com/Images/BTicon.png" />
+  
+  <!-- Setup Viewport -->
+  <meta name="viewport" content='width=device-width, initial-scale=1.0'>
+  
+  <!-- Make this Apple iOS Compatible -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="BigTalk">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -37,6 +51,14 @@
 
   </div>
 </div>
+  
+<!--Footer-->
+<div id="footer">
+    <h3 class="copyright">(c) 2024 - Hany Elkady</h3>
+    <h3 class="version">App Version: 1.01</h3>
+    <div style="clear: both"></div>
+</div>
+  
   <!-- Load the Chosen Questions -->
   <script>
     //Handle Resize
