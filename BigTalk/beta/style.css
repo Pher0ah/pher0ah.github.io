@@ -10,8 +10,6 @@ body {
   display: -ms-flexbox;
   display: flex;
   -webkit-box-orient: vertical;
-  -webkit-box-align: center;
-  -webkit-box-pack: center;
   -o-box-orient: vertical;
   -o-box-align: center;
   -o-box-pack: center;
