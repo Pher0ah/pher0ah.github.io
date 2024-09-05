@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Movie Fight</title>
+  <link rel="shortcut icon" href="/Images/movies.png" />
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.0/axios.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.5/css/bulma.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <section class="menu">
+    <nav class="navbar">
+      <div class="navbar-burger burger" data-target="Options">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </div>
+
+      <div class="navbar-menu" id="Options">
+        <div class="navbar-end">
+          <a class="navbar-item" href="#home">Home</a>
+          <a class="navbar-item" href="#about">About</a>
+        </div>
+      </div>
+    </nav>
+  </section>
+
+  <section class="hero is-primary is-bold">
+    <div class="hero-body">
+      <div class="container">
+        <h1 class="title">
+          Movie Fight
+          <span class="icon">
+            <i class="fas fa-film"></i>
+          </span>
+        </h1>
+      </div>
+    </div>
+
+    <!-- Movie Selector Section -->
+  </section>
+  <div class="container">
+    <div class="columns">
+      <div class="column">
+        <!-- Selector #1 -->
+        <div id="left-autocomplete"></div>
+        <div id="left-summary"></div>
+      </div>
+      <div class="column">
+        <!-- Selector #2 -->
+        <div id="right-autocomplete"></div>
+        <div id="right-summary"></div>
+      </div>
+    </div>
+
+    <div class="column is-half notification is-primary tutorial">
+      <h1 class="title">Search for a movie on both sides</h1>
+      <p class="subtitle">We will tell you which is the best!!!</p>
+    </div>
+  </div>
+
+  <script src="utils.js"></script>
+  <script src="autocomplete.js"></script>
+  <script src="index.js"></script>
+</body>
+
+</html>

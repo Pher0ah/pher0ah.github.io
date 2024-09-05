@@ -1,0 +1,63 @@
+<html>
+  <head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+      //Global Parameters
+      const calendarId = '16jp7ihhbljmp26qbo2633fapo@group.calendar.google.com'
+      const myKey = 'AIzaSyCs_go1IAAoE6YTWj6a6bs5kCBZuS5eKks'
+
+      //async function to handle data fetching
+      async function getData () {
+        //try catch block to handle promises and errors
+        try {
+          $.ajax({
+            type: 'GET',
+            url: encodeURI('https://www.googleapis.com/calendar/v3/calendars/' + calendarId+ '/events?key=' + myKey),
+            dataType: 'json',
+            maxAttendees: 10,
+            success: function (response) {
+              console.log("SUCCESS:");
+              console.log(response);
+              //do whatever you want with each
+            },
+            error: function (error) {
+              console.log("ERROR:");
+              console.log(error);
+              //tell that an error has occurred
+            }
+          });
+
+      //       //using await and fetch together as two standard ES6 client side features to extract the data
+      //       let apiCall = await fetch('https://www.googleapis.com/calendar/v3/calendars/' + calendarId+ '/events?key=' + myKey)
+      //       //response.json() is a method on the Response object that lets you extract a JSON object from the response
+      //       //response.json() returns a promise resolved to a JSON object
+      //       let apiResponse = await apiCall.json()
+      //       //console.log(apiResponse)
+      //       document.getElementById('title').innerText = apiResponse.description;
+      //       apiResponse.items.forEach((event) => {
+      //         console.log(event);
+      //         getEvent(event.id);
+      //       });
+        } catch (error) {
+            console.log(error);
+        }
+      }
+
+      // async function getEvent (anEventID) {
+      //   try {
+      //     const apiCall = await fetch('https://www.googleapis.com/calendar/v3/calendars/' + calendarId+ '/events/'+ anEventID +'?key=' + myKey);
+      //     const apiResponse = await apiCall.json();
+      //     console.log(apiCall); 
+      //   } catch (error){
+      //     console.log(error);
+      //   }
+      // }
+      getData()
+    </script>
+  </head>
+  <body>
+    <h1 id="title">a Title</h1>
+    Testing Google Calendar
+
+  </body>
+</html>

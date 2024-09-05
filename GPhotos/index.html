@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title></title>
+  <link rel="stylesheet" href='style.css'>
+  <link rel="shortcut icon" href='/Images/bigtalk.ico' />
+</head>
+<body>
+  <script src="https://apis.google.com/js/platform.js"></script>
+
+  <div class="container">
+    <h1>Google Photos Viewer</h1>
+    <!--    -->
+    <div id="g_id_onload"
+         data-client_id="872435311738-6o0o4bmu4arcoo9m58oh0n7e0ovrr94s.apps.googleusercontent.com"
+         data-context="use"
+         data-ux_mode="popup"
+         data-callback="handleCredentialResponse"
+         data-nonce=""
+         data-auto_select="true"
+         data-itp_support="true">
+    </div>
+
+    <div class="g_id_signin"
+         data-type="icon"
+         data-shape="square"
+         data-theme="outline"
+         data-text="signin_with"
+         data-size="large">
+    </div>
+    <!--    -->
+    <div id="error-message"></div>
+    <table id="photos-table">
+      <thead>
+        <tr>
+          <th>Photo</th>
+          <th>Album</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <button id="prev-page" onclick="previousPage()" disabled>Previous</button>
+    <button id="next-page" onclick="nextPage()" disabled>Next</button>
+  </div>
+  <script>
+    const API_KEY = 'AIzaSyBqYyTlQoxWZpEYogPt9cHAJoIvlZySoko';
+    const CLIENT_ID = '872435311738-6o0o4bmu4arcoo9m58oh0n7e0ovrr94s.apps.googleusercontent.com';
+    const CLIENT_SECRET = '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';
+    const SCOPES = 'https://www.googleapis.com/auth/photoslibrary.readonly';
+
+    function initClient() {
+      // Initialize the Google API client object.
+      gapi.client.init({
+        'clientId': CLIENT_ID,
+        'scope': 'email'
+      }).then(function () {
+        // Listen for sign-in state changes.
+        gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
+        // Handle initial sign-in state. (Determine if user is already signed in.)
+        updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
+      });
+    }
+    function handleSignInClick(event) {
+      gapi.auth2.getAuthInstance().signIn();
+    }
+    
+    function handleSignOutClick(event) {
+      gapi.auth2.getAuthInstance().signOut();
+    }
+    
+    function updateSigninStatus(isSignedIn) {
+      var element = document.getElementById('signin-or-out-button');
+      if (isSignedIn) {
+        element.innerHTML = 'Sign out';
+        setSigninStatus('You are currently signed in.');
+        fetchAlbums();
+      } else {
+        element.innerHTML = 'Sign In';
+        setSigninStatus('You are not currently signed in.');
+      }
+    }
+    
+    function setSigninStatus(message) {
+      var status = document.getElementById('status');
+      status.textContent = message;
+      status.style.color = 'black';
+    }
+    
+    function fetchAlbums(){
+    	// Make sure the user has authenticated correctly.
+    	   if (!gapi.auth2.getAuthInstance().isSignedIn.get()) {
+    		     console.log("User is not logged in.");
+    		    return;
+  		      }
+    	  // Get the access token.
+  	        var accessToken = gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token;
+  		  // Set up the data request parameters.
+          var params = {'maxResults': 10};
+          // Send the request to the photoslibrary.readonly.albums endpoint.
+          gapi.client.request({'path': '/photoslibrary/v1/albums',
+                               'params': params,
+			               headers : {Authorization : `Bearer ${accessToken}`}
+                              })
+             .then(function(response) {
+                appendListItems(response.result.albums);
+              }, function(reason) {
+                 console.error('Error:', reason.result.error.message);
+               });
+         }
+         
+         /**
+           * Append each retrieved album as a list item to the #album-list container.
+           */
+          function appendListItems(albums) {
+            var container = document.getElementById('photos-table');
+            albums.forEach(function(album) {
+              var li = document.createElement('li');
+              li.appendChild(document.createTextNode(album.title));
+              container.appendChild(li);
+            });
+          }
+  </script>
+</body>
+</html>
