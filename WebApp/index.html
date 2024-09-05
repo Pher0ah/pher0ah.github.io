@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skeleton Web App</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="hamburger">&#9776;</div>
+            <nav>
+                <div class="logo">WebDev.</div>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="#" class="nav-link">Services</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link">Blog</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link">About</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link">Contact</a>
+                    </li>
+               </ul>
+            </nav>
+        </header>
+    </div>
+    <script>
+        const hamburger = document.querySelector(".hamburger");
+        const menu = document.querySelector(".nav-menu");
+        const closeIcon = document.querySelector(".closeIcon");
+        const menuItems = document.querySelectorAll(".nav-item");
+
+        hamburger.addEventListener("click", toggleMenu);
+        closeIcon.addEventListener("click", toggleMenu);
+
+        function toggleMenu() {
+            if (menu.classList.contains("open")) {
+                hideMenu();
+            } else {
+                showMenu();
+            }
+        }
+
+        function showMenu() {
+            menu.classList.add("open");
+            hamburger.style.display = "none";
+            closeIcon.style.display = "block";
+        }
+
+        function hideMenu() {
+            menu.classList.remove("open");
+            hamburger.style.display = "block";
+            closeIcon.style.display = "none";
+        }
+
+        menuItems.forEach(
+            function(menuItem) {
+                menuItem.addEventListener("click", toggleMenu);
+            }
+        )
+    </script>
+</body>
+</html>

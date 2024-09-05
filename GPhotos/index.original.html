@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title></title>
+  <link rel="stylesheet" href='style.css'>
+  <link rel="shortcut icon" href='/Images/bigtalk.ico' />
+</head>
+<body>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <div class="container">
+    <h1>Google Photos Viewer</h1>
+    <!--    -->
+    <div id="g_id_onload"
+         data-client_id="872435311738-6o0o4bmu4arcoo9m58oh0n7e0ovrr94s.apps.googleusercontent.com"
+         data-context="use"
+         data-ux_mode="popup"
+         data-callback="handleCredentialResponse"
+         data-nonce=""
+         data-auto_select="true"
+         data-itp_support="true">
+    </div>
+
+    <div class="g_id_signin"
+         data-type="icon"
+         data-shape="square"
+         data-theme="outline"
+         data-text="signin_with"
+         data-size="large">
+    </div>
+    <!--    -->
+    <div id="error-message"></div>
+    <table id="photos-table">
+      <thead>
+        <tr>
+          <th>Photo</th>
+          <th>Album</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <button id="prev-page" onclick="previousPage()" disabled>Previous</button>
+    <button id="next-page" onclick="nextPage()" disabled>Next</button>
+  </div>
+  <script src="./script.js"></script>
+</body>
+</html>

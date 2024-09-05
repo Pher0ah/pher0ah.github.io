@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+  <head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <!-- "Hamburger menu" / "Bar icon" to toggle the navigation links -->
+  <a href="javascript:void(0);" class="icon" onclick="toggleMenu()">
+    <i class="fa fa-bars"></i>
+  </a>
+  <div class="menu">
+      <a href="javascript:refresh();">Refresh</a>
+      <a href="javascript:shuffle();">Shuffle Deck</a>
+  </div>
+<h1>Why Are You Here !?</h1>
+<p>I'm hosted with GitHub Pages.</p>
+<script>
+  /* Toggle between showing and hiding the navigation menu links when the user clicks on the hamburger menu / bar icon */
+function toggleMenu() {
+  const hamburger = document.querySelector(".menu");
+  hamburger.style.display = (hamburger.style.display === "block") ? "none" : "block";
+}
+</script>
+</body>
+</html>
