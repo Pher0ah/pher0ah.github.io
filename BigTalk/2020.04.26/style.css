@@ -1,0 +1,93 @@
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: #2d7a43;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -o-box-orient: vertical;
+  flex-direction: column;
+  -webkit-box-pack: center;
+  -o-box-pack: center;
+  justify-content: center;
+  -webkit-box-align: center;
+  -o-box-align: center;
+  align-items: center;
+}
+
+.container {
+  width: 300px;
+  height: 200px;
+  position: relative;
+  -webkit-perspective: 800px;
+  -ms-perspective: 800px;
+  perspective: 800px;
+  border-radius: 4px;
+}
+
+.card {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  background: #ffffff;
+  color: #47525d;
+  -webkit-transform-style: preserve-3d;
+  transform-style: preserve-3d;
+  -webkit-transition: -webkit-transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: -webkit-transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275), -webkit-transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border-radius: 6px;
+  box-shadow: 0px 15px 25px 5px rgba(0,0,50,0.5);
+  cursor: pointer;
+}
+
+.card div {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  border-radius: 6px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: box;
+  display: flex;
+  -webkit-box-pack: center;
+  -o-box-pack: center;
+  justify-content: center;
+  -webkit-box-align: center;
+  -o-box-align: center;
+  align-items: center;
+  -webkit-font-smoothing: antialiased;
+}
+
+.front {
+  /* Setup Background for Card */
+  background-image: url("https://www.makebigtalk.com/wp-content/themes/blankslate/img/big-talk-logo-pos.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 120px 70px;
+}
+
+.card .back {
+  -webkit-transform: rotateY(180deg);
+  transform: rotateY(180deg);
+}
+
+.card .back p {
+  padding: 15%;
+  box-sizing: border-box;
+  font: 18px/1.5 "Helvetica Neue", Helvetica, Arial, sans-serif;
+  text-align: center;
+}
+
+.card.flipped {
+  -webkit-transform: rotateY(180deg);
+  transform: rotateY(180deg);
+}
