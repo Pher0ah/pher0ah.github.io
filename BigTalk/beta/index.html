@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en-AU" prefix="og: http://ogp.me/ns#">
+<head>
+  <meta charset='UTF-8'>
+
+  <title>BigTalk</title>
+  
+  <!-- Application meta tags -->
+  <meta name="author" content="Hany Elkady">
+  <meta name="description" content="Generic Card Game">
+  <meta name"keywords" content="game, cards, flip">
+
+  <!-- Open Graph meta tags -->
+  <meta property="og:title" content="Deck of Cards" />
+  <meta property="og:type" content="Web App" />
+  <meta property="og:url" content="https://www.egynomics.com/BigTalk/beta" />  
+  <meta property="og:image" content="https://www.egynomics.com/Images/BTicon.png" />
+  
+  <!-- Setup Viewport -->
+  <meta name="viewport" content='width=device-width, initial-scale=1.0'>
+  
+  <!-- Make this Apple iOS Compatible -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="BigTalk">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link id="appleicon" rel="apple-touch-icon" href="/Images/BTicon.png">
+
+  <!-- Load Website Style Sheet -->
+  <link rel='manifest' href='manifest.webmanifest'>
+  <link rel="stylesheet" href='style.css'>
+  <link id="favicon" rel="shortcut icon" href='/Images/bigtalk.ico' />
+
+</head>
+<body>
+<div class="burger-menu">
+  <div class="line"></div>
+  <div class="line"></div>
+  <div class="line"></div>
+</div>
+<div class="container">
+  <div class="card" onclick="flipCard(this)">
+    
+    <!-- Front of Card -->
+    <div class="front">
+    </div>
+
+    <!-- Back of Card -->
+    <div class="back" id="question">
+        BigTalk Question?
+      </div>
+
+  </div>
+</div>
+  
+<!--Footer-->
+<div id="footer">
+    <h3 class="copyright">(c) 2024 - Hany Elkady</h3>
+    <h3 class="version">App Version: 1.02</h3>
+</div>
+  
+  <!-- Load the Chosen Questions -->
+  <script>
+    //Handle Resize
+    onresize = (event) => {resizeCard()};
+    onload = (event) => {resizeCard()};
+
+    //Read URL parameters
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+
+    //Get Cookie Information
+    var cookieCard;
+    if(getCookie("cards") != ""){
+       cookieCard = getCookie("cards");
+    }else{
+      cookieCard = 'BigTalk';
+    };
+
+    console.log("Setting CookieCard to: "+cookieCard);
+
+    //Get requested question type (BigTalk, BadPeople, BadChoices)
+    const cardType = urlParams.has('cards') ? urlParams.get('cards') : cookieCard;
+
+    console.log("Cards to Load is: "+cardType);
+
+    const d = new Date();
+    const exdays = 7;
+    d.setTime(d.getTime() + (exdays*24*60*60*1000));
+    document.cookie = "cards=" + cardType + "; expires=" + d.toUTCString() + ";path=/";
+    console.log("My cookie is set to:" + document.cookie);
+
+    function getCookie(cname) {
+  let name = cname + "=";
+  let decodedCookie = decodeURIComponent(document.cookie);
+  let ca = decodedCookie.split(';');
+  for(let i = 0; i <ca.length; i++) {
+    let c = ca[i];
+    while (c.charAt(0) == ' ') {
+      c = c.substring(1);
+    }
+    if (c.indexOf(name) == 0) {
+      return c.substring(name.length, c.length);
+    }
+  }
+  return "";
+}
+    //Load the Questions
+    const questionsTag = document.createElement("script");
+    questionsTag.src = `${cardType}.js`;
+    document.body.appendChild(questionsTag);
+
+    //Load the Logic
+    const scriptTag = document.createElement("script");
+    scriptTag.src = `functions.js`;
+    document.body.appendChild(scriptTag);
+
+  </script>
+</body>
+</html>
