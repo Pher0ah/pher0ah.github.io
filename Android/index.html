@@ -1,0 +1,44 @@
+<!doctype html>
+<meta charset='utf-8'>
+<title>Your title here</title>
+<meta name='viewport' content='width=device-width,initial-scale=1'>
+<meta name='theme-color' content='orange'>
+
+<!-- External Files loaded from the other tabs -->
+<link rel='manifest' href='manifest.json'>
+<link rel='stylesheet' href='styles.css'>
+<script src='script.js'></script>
+<script src='aframe.js'></script>
+
+<h1>Travel Log</h1>
+
+<h2>360 VR Panorama</h2>
+<a-scene embedded style="width: 100%; height: 300px">
+    <a-sky src="pano.jpg"></a-sky>
+</a-scene>
+
+<h2>Video</h2>
+<video src="video.mp4" width="300" height="200" controls></video>
+
+<h2>List of visited countries</h2>
+<ul>
+    <li>Argentina</li>
+    <li>Brazil</li>
+    <li>Colombia</li>
+    <li>Denmark</li>
+    <li>France</li>
+    <li>Thailand</li>
+    <li>USA</li>
+</ul>
+
+<h2>Image Gallery</h2>
+<img src="photo.jpg" width="100%">
+<img src="animation.gif" width="100%" onclick="speak()">
+
+<h2>Contact and Social Networks</h2>
+<a href="http://twitter.com/firt">@firt</a>
+<a href="tel:+14152789999">Call me</a>
+<a href="whatsapp://send?text=Look at my travel log">Send via Whatsapp</a>
+
+
+
