@@ -1,0 +1,214 @@
+{
+  "meta": {
+    "title"           : "Digital Trust & Privacy",
+    "description"     : "Identity & Access Management Offerings Mindmap",
+    "author"          : "Hany",
+    "version"         : "1.0",
+    "layout"          : "radial",
+    "defaultNodeStyle": {
+      "shape"      : "roundedRect",
+      "bgColor"    : "#26890D",
+      "textColor"  : "#FFFFFF",
+      "borderColor": "#3a3a5c",
+      "borderWidth": 2,
+      "fontSize"   : 13
+    },
+    "defaultEdgeStyle": {"color": "#4a4a6a", "width": 2, "style": "curved"}
+  },
+  "root": {
+    "id"       : "root",
+    "content"  : "<b>Digital Trust</b>",
+    "style"    : {
+      "shape"      : "shield",
+      "height"     : 150,
+      "width"      : 130,
+      "textColor"  : "#ffffff",
+      "borderColor": "#0f3460",
+      "borderWidth": 3,
+      "fontSize"   : 24
+    },
+    "collapsed": false,
+    "children" : [
+      {
+        "id": "Ent_Id", "content"  : "Enterprise Identity",
+        "style": {
+          "bgColor" : "#0000ffff",
+          "shape"   : "roundedRect",
+          "height"     : 75,
+          "width"      : 150,
+          "fontSize": 14
+        },
+        "collapsed": true,
+        "children" : [
+          {"id": "Id_Strategy", "content" : "Identity Strategy",
+            "children": [
+              {"id": "CSA",      "content": "Current State<br>Assessment"},
+              {"id": "OpsModel", "content": "Operating Model"            }
+            ]
+          },
+          {"id": "IF", "content": "Identity Framework",
+           "children": [
+              {"id":"if_IA", "content": "Identity Administration",
+               "style": {
+                 "bgColor" : "#007cb0ff"
+               },
+               "children": [
+                {"id":"if_IA_RBP", "content": "Role Based Provisioning"},
+                {"id":"if_IA_SS",  "content": "Self Service"},
+                {"id":"if_IA_APD", "content": "Automatic Provisioning / Deprovisioning"},
+                {"id":"if_IA_RBP", "content": "Access Request & Approval"},
+                {"id":"if_IA_DS",  "content": "Data Synchronization"},
+                {"id":"if_IA_SSC", "content": "System to System Communication"} 
+               ]
+              },
+              {"id":"if_GO", "content": "Governance & Operations",
+               "style": {
+                 "bgColor" : "#064248ff"
+               },              
+               "children": [
+                {"id":"if_GO_FS",   "content": "Governance Framework & Strategy"},
+                {"id":"if_GO_RCM",  "content": "Risk & Compliance Management"},
+                {"id":"if_GO_SDLM", "content": "System Development Lifecycle & Change Management"},
+                {"id":"if_GO_EA",   "content": "Enterprise Architecture"},
+                {"id":"if_GO_OM",   "content": "Operations Management"}
+               ]
+              },
+              {"id":"if_AM", "content": "Access Management",
+               "style": {
+                 "bgColor" : "#43b02aff"
+               },              
+               "children": [
+                {"id":"if_AM_SSO", "content": "Single Sign-on"},
+                {"id":"if_AM_SO",  "content": "Strong Authentication"},
+                {"id":"if_AM_BA",  "content": "Behavioural Analytics"},
+                {"id":"if_AM_Ent", "content": "Corse/Fine Grained Entitlements"}
+               ]
+              },
+              {"id":"if_AC", "content": "Access Certification",
+               "style": {
+                 "bgColor" : "#046a38ff"
+               },              
+               "children": [
+                {"id":"if_AC_AR", "content": "Access Review"},
+                {"id":"if_AC_RB", "content": "Role-Based Reporting"},
+                {"id":"if_AM_UG", "content": "User Governance Logging & Monitoring"},
+                {"id":"if_AM_EM", "content": "Exception Management"}
+               ]
+              },
+              {"id":"if_RBAC", "content": "Role Based Access Management",
+               "style": {
+                 "bgColor" : "#86bc25ff"
+               },              
+               "children": [
+                {"id":"if_RBAC_RLM", "content": "Role Lifecycle Management"},
+                {"id":"if_RBAC_SOD", "content": "SOD Definition/Enforcement"}
+               ]
+              },
+              {"id":"if_PAM", "content": "Privileged Access Management",
+               "style": {
+                 "bgColor" : "#0d8390ff"
+               },              
+               "children": [
+                {"id":"if_PAM_PSM", "content": "Privileged Session Management"},
+                {"id":"if_PAM_UCM", "content": "Privileged User Credential Management"},
+                {"id":"if_PAM_PAR", "content": "Privileged Activity Review"},
+                {"id":"if_PAM_AA",  "content": "Analytics & Alerting"}
+               ]
+              }
+            ]          
+          },
+          {"id":"wam", "content" : "Workforce Access Management",
+            "children": [
+              {"id":"wam_SSO",  "content": "Single Sign-On"},
+              {"id":"wam_MFA",  "content": "Multi-Factor Authentication"},
+              {"id":"wam_SSPR", "content": "Self-Service Password Reset"}
+             ]
+          },
+          {"id":"iga", "content" : "Identity Governance & Administration",
+            "children": [
+              {"id":"iga-provision", "content": "<b>Access Provisioning</b><br><small style='font-size:9px'>Joiner / Mover / Leaver</small>"},
+              {"id":"iga-request",   "content": "<b>Access Request</b><br><small style='font-size:9px'>Fine Grain Access</small>"},
+              {"id":"iga-certify",   "content": "<b>Access Review</b><br><small style='font-size:9px'>Access Certification</small>"}
+            ]
+          },
+          {"id":"pam", "content" : "Privileged Access Management",
+           "children": [
+             {"id":"pam-vault", "content": "Credential Vaulting"},
+             {"id":"pam-cpm",   "content": "Password Rotation<br><small style='font-size:9px'>CPM</small>"},
+             {"id":"pam-psr",   "content": "Session Recording<br><small style='font-size:9px'>PSM & HTML5 GW</small>"},
+             {"id":"pam-pra",   "content": "Privileged Remote Access<br><small style='font-size:9px'>PRA<small>"},
+             {"id":"pam-epm",   "content": "EndPoint Privileged Management<br><small style='font-size:9px'>EPM<small>"},
+             {"id":"pam-jit",   "content": "JIT Access<br><small style='font-size:9px'>Zero Standing Privilege<small>"}
+            ]
+          }
+        ]
+      },
+      {
+        "id"      : "ciam", "content" : "Customer Identity",
+        "style": {
+          "bgColor" : "#eebb00ff",
+          "shape"   : "roundedRect",
+          "height"     : 75,
+          "width"      : 150,
+          "fontSize": 14
+        },
+        "collapsed": true,
+        "children": [
+          {"id": "ciam_Citizen",     "content": "Citizen Identity"  },
+          {"id": "ciam_Consumer",     "content": "Consumer Identity"  },
+          {"id": "ciam_Integration",     "content": "National ID<br>Integrations",
+           "children": [
+            {"id": "ciam_Nafath", "content": "Nafath (KSA)"},
+            {"id": "ciam_UaeId",  "content": "UAE Id (UAE)"      }
+           ]           
+          }
+        ]
+      },
+      {
+        "id"       : "Vendors",
+        "content"  : "Technology Partners",
+        "style": {
+          "bgColor" : "#6600eeff",
+          "shape"   : "roundedRect",
+          "height"     : 75,
+          "width"      : 150,
+          "fontSize": 14
+        },
+        "collapsed": true,
+        "children" : [
+          {"id": "v_SP",   "content": "SailPoint"       },
+          {"id": "v_Sav",  "content": "Saviynt"         },
+          {"id": "v_CA",   "content": "CyberArk"        },
+          {"id": "v_BT",   "content": "BeyondTrust"     },
+          {"id": "v_PI",   "content": "Ping<br>Identity"},
+          {"id": "v_Okta", "content": "Okta"            },
+          {"id": "v_MS",   "content": "Microsoft"       }
+        ]
+      },
+      {
+        "id"       : "Delivery",
+        "content"  : "Engagement Delivery",
+        "style": {
+          "bgColor" : "#007cb0ff",
+          "shape"   : "roundedRect",
+          "height"     : 75,
+          "width"      : 150,
+          "fontSize": 14
+        },
+        "collapsed": true,
+        "children" : [
+          {"id": "D_DME", "content": "DME Resources"},
+          {"id": "D_DIH", "content": "Deloitte Innovation Hub"},
+          {"id": "D_USI", "content": "US-India"},
+          {"id": "D_DI",  "content": "Deloitte India"},
+          {"id": "D_LSI", "content" : "Local System Integrators",
+            "children": [
+              {"id": "si_git",  "content": "Gulf IT"},
+              {"id": "si_Insp", "content": "Inspira"}
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
