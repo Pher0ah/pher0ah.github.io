@@ -8,7 +8,6 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-
 :root{
   --bg:#0b0e17;--bg2:#111827;--surface:#1a1f35;--text:#e2e8f0;
   --text-dim:#94a3b8;--accent:#38bdf8;--accent2:#818cf8;
@@ -21,132 +20,105 @@
   --border:#cbd5e1;--shadow:0 8px 32px rgba(0,0,0,.1);
   --toolbar-bg:rgba(255,255,255,.85);
 }
-
 html,body{width:100%;height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text)}
 
-/* ── Toolbar ── */
 #toolbar{
   position:fixed;top:0;left:0;right:0;z-index:100;
   display:flex;align-items:center;justify-content:space-between;
-  padding:10px 24px;
+  padding:8px 20px;
   background:var(--toolbar-bg);backdrop-filter:blur(16px);
-  border-bottom:1px solid var(--border);
+  border-bottom:1px solid var(--border);gap:8px;flex-wrap:wrap;
 }
-#toolbar h1{font-size:15px;font-weight:700;letter-spacing:-.3px;color:var(--text)}
-#toolbar .subtitle{font-size:11px;color:var(--text-dim);margin-left:12px;font-weight:400}
-.toolbar-group{display:flex;align-items:center;gap:8px}
+#toolbar h1{font-size:15px;font-weight:700;letter-spacing:-.3px;color:var(--text);white-space:nowrap}
+#toolbar .subtitle{font-size:11px;color:var(--text-dim);margin-left:8px;font-weight:400}
+.toolbar-group{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 
 .tb-btn{
   display:inline-flex;align-items:center;gap:5px;
-  padding:6px 14px;border-radius:8px;border:1px solid var(--border);
+  padding:5px 12px;border-radius:7px;border:1px solid var(--border);
   background:var(--surface);color:var(--text);font-size:12px;font-family:inherit;
-  cursor:pointer;transition:all .15s;font-weight:500;
+  cursor:pointer;transition:all .15s;font-weight:500;white-space:nowrap;
 }
 .tb-btn:hover{border-color:var(--accent);color:var(--accent)}
-.tb-btn svg{width:14px;height:14px}
+.tb-btn svg{width:14px;height:14px;flex-shrink:0}
 .tb-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 
-/* ── Theme Toggle ── */
 .theme-toggle{
-  width:44px;height:24px;border-radius:12px;border:1px solid var(--border);
-  background:var(--surface);cursor:pointer;position:relative;transition:all .2s;
+  width:42px;height:22px;border-radius:11px;border:1px solid var(--border);
+  background:var(--surface);cursor:pointer;position:relative;transition:all .2s;flex-shrink:0;
 }
 .theme-toggle::after{
-  content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;
+  content:'';position:absolute;top:2px;left:3px;width:15px;height:15px;
   border-radius:50%;background:var(--accent);transition:transform .25s;
 }
-[data-theme="light"] .theme-toggle::after{transform:translateX(20px)}
+[data-theme="light"] .theme-toggle::after{transform:translateX(19px)}
 
-/* ── Canvas area ── */
 #canvas-wrap{
   position:absolute;inset:0;top:48px;right:0;overflow:hidden;
   background:var(--bg);
   background-image:radial-gradient(circle at 50% 50%,var(--bg2) 0%,var(--bg) 70%);
   transition:right .3s cubic-bezier(.4,0,.2,1);
 }
-
-#mindmap-svg{
-  position:absolute;top:0;left:0;
-  transform-origin:0 0;
-  cursor:grab;
-}
+#mindmap-svg{position:absolute;top:0;left:0;transform-origin:0 0;cursor:grab}
 #mindmap-svg.grabbing{cursor:grabbing}
 
-/* ── Node styles ── */
 .mm-node{cursor:pointer;transition:filter .15s}
-.mm-node:hover{filter:brightness(1.15) drop-shadow(0 0 12px rgba(56,189,248,.25))}
-.mm-node.collapsed-indicator .collapse-badge{display:block}
-.collapse-badge{display:none}
+.mm-node:hover .node-shape{filter:brightness(1.2) drop-shadow(0 0 10px rgba(56,189,248,.3))}
+.mm-edge{fill:none}
 
-.mm-edge{fill:none;transition:opacity .3s;stroke-linejoin:round;stroke-linecap:round}
-
-/* ── Tooltip / info ── */
 #info-panel{
-  position:fixed;bottom:16px;left:50%;transform:translateX(-50%);
+  position:fixed;bottom:14px;left:50%;transform:translateX(-50%);
   background:var(--toolbar-bg);backdrop-filter:blur(16px);
-  border:1px solid var(--border);border-radius:10px;padding:8px 18px;
-  font-size:11px;color:var(--text-dim);pointer-events:none;
-  opacity:.7;transition:opacity .3s;
+  border:1px solid var(--border);border-radius:9px;padding:6px 16px;
+  font-size:11px;color:var(--text-dim);pointer-events:none;opacity:.7;
 }
 
-/* ── Loading ── */
-#loader{
-  position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
-  background:var(--bg);z-index:999;
-}
-.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+#loader{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg);z-index:999}
+.spinner{width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ── Minimap ── */
 #minimap{
-  position:fixed;bottom:48px;right:16px;
-  width:180px;height:120px;
-  background:var(--surface);border:1px solid var(--border);border-radius:10px;
-  overflow:hidden;opacity:.7;transition:opacity .2s;
+  position:fixed;bottom:46px;right:14px;width:170px;height:110px;
+  background:var(--surface);border:1px solid var(--border);border-radius:9px;
+  overflow:hidden;opacity:.65;transition:opacity .2s;
 }
 #minimap:hover{opacity:1}
 #minimap-viewport{position:absolute;border:1.5px solid var(--accent);border-radius:2px;pointer-events:none}
 
-/* ── Editor Panel ── */
 #editor-panel{
-  position:fixed;top:48px;right:0;bottom:0;width:520px;max-width:90vw;
+  position:fixed;top:48px;right:0;bottom:0;width:520px;max-width:92vw;
   background:var(--surface);border-left:1px solid var(--border);
   transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
   z-index:90;display:flex;flex-direction:column;
 }
 #editor-panel.open{transform:translateX(0)}
-#editor-panel.open~#canvas-wrap{right:520px}
-
 .editor-header{
   display:flex;align-items:center;justify-content:space-between;
-  padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0;
+  padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0;
 }
-.editor-header h2{font-size:13px;font-weight:600;color:var(--text)}
-.editor-actions{display:flex;gap:6px}
+.editor-header h2{font-size:13px;font-weight:600}
+.editor-actions{display:flex;gap:5px}
 .ed-btn{
-  padding:5px 12px;border-radius:6px;border:1px solid var(--border);
+  padding:4px 10px;border-radius:6px;border:1px solid var(--border);
   background:var(--bg2);color:var(--text);font-size:11px;font-family:inherit;
   cursor:pointer;font-weight:500;transition:all .15s;
 }
 .ed-btn:hover{border-color:var(--accent);color:var(--accent)}
 .ed-btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
 .ed-btn.primary:hover{opacity:.85}
-
 #editor-textarea{
-  flex:1;resize:none;border:none;outline:none;padding:14px 16px;
+  flex:1;resize:none;border:none;outline:none;padding:12px 14px;
   font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.55;
   background:var(--bg);color:var(--text);tab-size:2;
 }
 #editor-status{
-  padding:8px 16px;font-size:11px;font-family:'JetBrains Mono',monospace;
-  border-top:1px solid var(--border);flex-shrink:0;min-height:32px;
-  color:var(--text-dim);
+  padding:7px 14px;font-size:11px;font-family:'JetBrains Mono',monospace;
+  border-top:1px solid var(--border);flex-shrink:0;min-height:30px;color:var(--text-dim);
 }
 #editor-status.error{color:#f87171}
 #editor-status.success{color:#34d399}
 
-/* scrollbar */
-::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar{width:5px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 </style>
@@ -161,43 +133,39 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'DM Sans',sans-seri
     <span class="subtitle" id="map-subtitle"></span>
   </div>
   <div class="toolbar-group">
-    <button class="tb-btn" id="btn-expand" title="Expand All">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
-      Expand
+    <button class="tb-btn" id="btn-expand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>Expand
     </button>
-    <button class="tb-btn" id="btn-collapse" title="Collapse All">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 14h6v6M14 10h6V4M10 14l-7 7M21 3l-7 7"/></svg>
-      Collapse
+    <button class="tb-btn" id="btn-collapse">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 14h6v6M14 10h6V4M10 14l-7 7M21 3l-7 7"/></svg>Collapse
     </button>
-    <button class="tb-btn" id="btn-fit" title="Fit to Screen">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h18"/></svg>
-      Fit
+    <button class="tb-btn" id="btn-fit">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h18"/></svg>Fit
     </button>
-    <button class="tb-btn" id="btn-export" title="Export SVG">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-      SVG
+    <button class="tb-btn" id="btn-export-svg">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>SVG
     </button>
-    <button class="tb-btn" id="btn-export-png" title="Export PNG">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-      PNG
+    <button class="tb-btn" id="btn-export-png">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>PNG
     </button>
-    <button class="tb-btn" id="btn-editor" title="JSON Editor">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/><path d="M10 13l-2 2 2 2M14 17l2-2-2-2"/></svg>
-      Editor
+    <button class="tb-btn" id="btn-export-pptx">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>PPTX
+    </button>
+    <button class="tb-btn" id="btn-editor">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/><path d="M10 13l-2 2 2 2M14 17l2-2-2-2"/></svg>Editor
     </button>
     <div class="theme-toggle" id="theme-toggle" title="Toggle theme"></div>
   </div>
 </div>
 
-<!-- Editor Panel -->
 <div id="editor-panel">
   <div class="editor-header">
     <h2>JSON Data Editor</h2>
     <div class="editor-actions">
-      <button class="ed-btn" id="ed-format" title="Format JSON">Format</button>
-      <button class="ed-btn" id="ed-download" title="Download as data.json">Download</button>
-      <button class="ed-btn" id="ed-load-file" title="Load from file">Load File</button>
-      <button class="ed-btn primary" id="ed-apply" title="Apply changes (Ctrl+Enter)">Apply</button>
+      <button class="ed-btn" id="ed-format">Format</button>
+      <button class="ed-btn" id="ed-download">Download</button>
+      <button class="ed-btn" id="ed-load-file">Load File</button>
+      <button class="ed-btn primary" id="ed-apply">Apply</button>
     </div>
   </div>
   <textarea id="editor-textarea" spellcheck="false" placeholder="Paste or edit your mindmap JSON here..."></textarea>
@@ -210,286 +178,303 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'DM Sans',sans-seri
 </div>
 
 <div id="minimap"><div id="minimap-viewport"></div></div>
-<div id="info-panel">Scroll to zoom · Click nodes to collapse · Drag to pan</div>
+<div id="info-panel">Scroll to zoom · Click nodes to collapse · Drag to pan · 0 = fit</div>
 
 <script>
-// ═══════════════════════════════════════════════════════
-//  EMBEDDED FALLBACK DATA — edit or replace with your own
-// ═══════════════════════════════════════════════════════
-const FALLBACK_DATA = {"meta":{"title":"IAM Strategy Overview","description":"Identity & Access Management Strategic Mindmap","author":"Hany","version":"1.0","layout":"radial","defaultNodeStyle":{"shape":"roundedRect","bgColor":"#1a1a2e","textColor":"#e0e0e0","borderColor":"#3a3a5c","borderWidth":2,"fontSize":13},"defaultEdgeStyle":{"color":"#4a4a6a","width":2,"style":"curved"}},"root":{"id":"root","content":"<b>IAM Strategy</b><br><small>2025–2030</small>","style":{"shape":"circle","bgColor":"#0f3460","textColor":"#ffffff","borderColor":"#e94560","borderWidth":3,"fontSize":16},"collapsed":false,"children":[{"id":"iga","content":"<img src='https://cdn.jsdelivr.net/npm/lucide-static@0.263.1/icons/shield-check.svg' width='18' height='18' style='filter:invert(1);vertical-align:middle;margin-right:6px;'><b>Identity Governance</b><br><small>IGA & Lifecycle</small>","style":{"shape":"roundedRect","bgColor":"#1b4332","textColor":"#d8f3dc","borderColor":"#52b788","borderWidth":2},"children":[{"id":"iga-saviynt","content":"<b>Saviynt</b><br>Cloud IGA Platform","style":{"shape":"roundedRect","bgColor":"#2d6a4f","textColor":"#ffffff","borderColor":"#74c69d"},"children":[{"id":"iga-saviynt-sod","content":"SoD Controls<br><small>Segregation of Duties</small>","style":{"shape":"pill","bgColor":"#40916c","textColor":"#fff","borderColor":"#95d5b2"}},{"id":"iga-saviynt-lc","content":"Lifecycle Mgmt<br><small>Joiner/Mover/Leaver</small>","style":{"shape":"pill","bgColor":"#40916c","textColor":"#fff","borderColor":"#95d5b2"}}]},{"id":"iga-certifications","content":"<b>Access Reviews</b><br>Periodic Certifications","style":{"shape":"roundedRect","bgColor":"#2d6a4f","textColor":"#ffffff","borderColor":"#74c69d"}}]},{"id":"pam","content":"<img src='https://cdn.jsdelivr.net/npm/lucide-static@0.263.1/icons/lock.svg' width='18' height='18' style='filter:invert(1);vertical-align:middle;margin-right:6px;'><b>Privileged Access</b><br><small>PAM & Vaulting</small>","style":{"shape":"roundedRect","bgColor":"#3c1642","textColor":"#f2e9f3","borderColor":"#c77dff","borderWidth":2},"children":[{"id":"pam-cyberark","content":"<b>CyberArk</b><br>Self-Hosted v14","style":{"shape":"roundedRect","bgColor":"#5a189a","textColor":"#ffffff","borderColor":"#9d4edd"},"children":[{"id":"pam-cyberark-vault","content":"Credential Vaulting","style":{"shape":"pill","bgColor":"#7b2cbf","textColor":"#fff","borderColor":"#c77dff"}},{"id":"pam-cyberark-psr","content":"Session Recording<br><small>PSM & HTML5 GW</small>","style":{"shape":"pill","bgColor":"#7b2cbf","textColor":"#fff","borderColor":"#c77dff"}}]},{"id":"pam-jit","content":"<b>JIT Access</b><br>Zero Standing Privilege","style":{"shape":"diamond","bgColor":"#5a189a","textColor":"#ffffff","borderColor":"#e0aaff"}}]},{"id":"ciam","content":"<img src='https://cdn.jsdelivr.net/npm/lucide-static@0.263.1/icons/users.svg' width='18' height='18' style='filter:invert(1);vertical-align:middle;margin-right:6px;'><b>Customer IAM</b><br><small>CIAM & Digital ID</small>","style":{"shape":"roundedRect","bgColor":"#003049","textColor":"#eae2b7","borderColor":"#fcbf49","borderWidth":2},"children":[{"id":"ciam-nafath","content":"<b>Nafath</b><br>National SSO (KSA)","style":{"shape":"roundedRect","bgColor":"#005f73","textColor":"#ffffff","borderColor":"#94d2bd"}},{"id":"ciam-maturity","content":"<b>CIAM Maturity</b><br><small>6 Domains · 31 Capabilities</small>","style":{"shape":"hexagon","bgColor":"#005f73","textColor":"#ffffff","borderColor":"#e9d8a6"}}]},{"id":"compliance","content":"<img src='https://cdn.jsdelivr.net/npm/lucide-static@0.263.1/icons/file-text.svg' width='18' height='18' style='filter:invert(1);vertical-align:middle;margin-right:6px;'><b>Regulatory</b><br><small>Compliance & Privacy</small>","style":{"shape":"roundedRect","bgColor":"#6b2737","textColor":"#fcd5ce","borderColor":"#e76f51","borderWidth":2},"children":[{"id":"comp-pdpl","content":"<b>PDPL</b><br>Saudi Data Protection","style":{"shape":"roundedRect","bgColor":"#9b2226","textColor":"#ffffff","borderColor":"#ee9b00"}},{"id":"comp-sama","content":"<b>SAMA CSF</b><br>Financial Sector","style":{"shape":"roundedRect","bgColor":"#9b2226","textColor":"#ffffff","borderColor":"#ee9b00"}},{"id":"comp-nist","content":"<b>NIST</b> · <b>GDPR</b><br><small>International Frameworks</small>","style":{"shape":"pill","bgColor":"#ae2012","textColor":"#ffffff","borderColor":"#ca6702"}}]},{"id":"cloud","content":"<img src='https://cdn.jsdelivr.net/npm/lucide-static@0.263.1/icons/cloud.svg' width='18' height='18' style='filter:invert(1);vertical-align:middle;margin-right:6px;'><b>Cloud Identity</b><br><small>Entra ID & Azure</small>","style":{"shape":"roundedRect","bgColor":"#0a1628","textColor":"#caf0f8","borderColor":"#00b4d8","borderWidth":2},"children":[{"id":"cloud-entra","content":"<b>Microsoft Entra ID</b><br>Hybrid Identity","style":{"shape":"roundedRect","bgColor":"#023e8a","textColor":"#ffffff","borderColor":"#48cae4"}},{"id":"cloud-cond","content":"<b>Conditional Access</b><br>Zero Trust Policies","style":{"shape":"diamond","bgColor":"#0077b6","textColor":"#ffffff","borderColor":"#90e0ef"}}]}]}};
+// ═══════════════════════════════════════════════════════════════════
+//  EMBEDDED FALLBACK DATA
+// ═══════════════════════════════════════════════════════════════════
+const FALLBACK_DATA = {"meta":{"title":"IAM Strategy Overview","description":"Identity & Access Management Strategic Mindmap","author":"Hany","version":"1.0","layout":"radial","defaultNodeStyle":{"shape":"roundedRect","bgColor":"#1a1a2e","textColor":"#e0e0e0","borderColor":"#3a3a5c","borderWidth":2,"fontSize":13},"defaultEdgeStyle":{"color":"#4a4a6a","width":2,"style":"curved"}},"root":{"id":"root","content":"<b>IAM Strategy</b><br><small>2025–2030</small>","style":{"shape":"circle","bgColor":"#0f3460","textColor":"#ffffff","borderColor":"#e94560","borderWidth":3,"fontSize":16},"collapsed":false,"children":[{"id":"iga","content":"<img src='https://cdn.jsdelivr.net/npm/lucide-static@0.263.1/icons/shield-check.svg' width='18' height='18' style='filter:invert(1);vertical-align:middle;margin-right:6px;'><b>Identity Governance</b><br><small>IGA &amp; Lifecycle</small>","style":{"shape":"roundedRect","bgColor":"#1b4332","textColor":"#d8f3dc","borderColor":"#52b788","borderWidth":2},"children":[{"id":"iga-saviynt","content":"<b>Saviynt</b><br>Cloud IGA Platform","style":{"shape":"roundedRect","bgColor":"#2d6a4f","textColor":"#ffffff","borderColor":"#74c69d"},"children":[{"id":"iga-saviynt-sod","content":"SoD Controls<br><small>Segregation of Duties</small>","style":{"shape":"pill","bgColor":"#40916c","textColor":"#fff","borderColor":"#95d5b2"},"children":[]},{"id":"iga-saviynt-lc","content":"Lifecycle Mgmt<br><small>Joiner/Mover/Leaver</small>","style":{"shape":"pill","bgColor":"#40916c","textColor":"#fff","borderColor":"#95d5b2"},"children":[]}]},{"id":"iga-certifications","content":"<b>Access Reviews</b><br>Periodic Certifications","style":{"shape":"roundedRect","bgColor":"#2d6a4f","textColor":"#ffffff","borderColor":"#74c69d"},"children":[]}]},{"id":"pam","content":"<img src='https://cdn.jsdelivr.net/npm/lucide-static@0.263.1/icons/lock.svg' width='18' height='18' style='filter:invert(1);vertical-align:middle;margin-right:6px;'><b>Privileged Access</b><br><small>PAM &amp; Vaulting</small>","style":{"shape":"roundedRect","bgColor":"#3c1642","textColor":"#f2e9f3","borderColor":"#c77dff","borderWidth":2},"children":[{"id":"pam-cyberark","content":"<b>CyberArk</b><br>Self-Hosted v14","style":{"shape":"roundedRect","bgColor":"#5a189a","textColor":"#ffffff","borderColor":"#9d4edd"},"children":[{"id":"pam-cyberark-vault","content":"Credential Vaulting","style":{"shape":"pill","bgColor":"#7b2cbf","textColor":"#fff","borderColor":"#c77dff"},"children":[]},{"id":"pam-cyberark-psr","content":"Session Recording<br><small>PSM &amp; HTML5 GW</small>","style":{"shape":"pill","bgColor":"#7b2cbf","textColor":"#fff","borderColor":"#c77dff"},"children":[]}]},{"id":"pam-jit","content":"<b>JIT Access</b><br>Zero Standing Privilege","style":{"shape":"diamond","bgColor":"#5a189a","textColor":"#ffffff","borderColor":"#e0aaff"},"children":[]}]},{"id":"ciam","content":"<img src='https://cdn.jsdelivr.net/npm/lucide-static@0.263.1/icons/users.svg' width='18' height='18' style='filter:invert(1);vertical-align:middle;margin-right:6px;'><b>Customer IAM</b><br><small>CIAM &amp; Digital ID</small>","style":{"shape":"roundedRect","bgColor":"#003049","textColor":"#eae2b7","borderColor":"#fcbf49","borderWidth":2},"children":[{"id":"ciam-nafath","content":"<b>Nafath</b><br>National SSO (KSA)","style":{"shape":"roundedRect","bgColor":"#005f73","textColor":"#ffffff","borderColor":"#94d2bd"},"children":[]},{"id":"ciam-maturity","content":"<b>CIAM Maturity</b><br><small>6 Domains · 31 Capabilities</small>","style":{"shape":"hexagon","bgColor":"#005f73","textColor":"#ffffff","borderColor":"#e9d8a6"},"children":[]}]},{"id":"compliance","content":"<img src='https://cdn.jsdelivr.net/npm/lucide-static@0.263.1/icons/file-text.svg' width='18' height='18' style='filter:invert(1);vertical-align:middle;margin-right:6px;'><b>Regulatory</b><br><small>Compliance &amp; Privacy</small>","style":{"shape":"roundedRect","bgColor":"#6b2737","textColor":"#fcd5ce","borderColor":"#e76f51","borderWidth":2},"children":[{"id":"comp-pdpl","content":"<b>PDPL</b><br>Saudi Data Protection","style":{"shape":"roundedRect","bgColor":"#9b2226","textColor":"#ffffff","borderColor":"#ee9b00"},"children":[]},{"id":"comp-sama","content":"<b>SAMA CSF</b><br>Financial Sector","style":{"shape":"roundedRect","bgColor":"#9b2226","textColor":"#ffffff","borderColor":"#ee9b00"},"children":[]},{"id":"comp-nist","content":"<b>NIST</b> · <b>GDPR</b><br><small>International Frameworks</small>","style":{"shape":"pill","bgColor":"#ae2012","textColor":"#ffffff","borderColor":"#ca6702"},"children":[]}]},{"id":"cloud","content":"<img src='https://cdn.jsdelivr.net/npm/lucide-static@0.263.1/icons/cloud.svg' width='18' height='18' style='filter:invert(1);vertical-align:middle;margin-right:6px;'><b>Cloud Identity</b><br><small>Entra ID &amp; Azure</small>","style":{"shape":"roundedRect","bgColor":"#0a1628","textColor":"#caf0f8","borderColor":"#00b4d8","borderWidth":2},"children":[{"id":"cloud-entra","content":"<b>Microsoft Entra ID</b><br>Hybrid Identity","style":{"shape":"roundedRect","bgColor":"#023e8a","textColor":"#ffffff","borderColor":"#48cae4"},"children":[]},{"id":"cloud-cond","content":"<b>Conditional Access</b><br>Zero Trust Policies","style":{"shape":"diamond","bgColor":"#0077b6","textColor":"#ffffff","borderColor":"#90e0ef"},"children":[]}]}]}};
 
-// ═══════════════════════════════════════════════════════
-//  GLOBALS
-// ═══════════════════════════════════════════════════════
-let mapData=null, nodes=[], edges=[], nodeMap={};
-let pan={x:0,y:0}, zoom=1, dragging=false, dragStart={x:0,y:0};
-const SVG=document.getElementById('mindmap-svg');
-const WRAP=document.getElementById('canvas-wrap');
-const NS='http://www.w3.org/2000/svg';
+// ═══════════════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════════════
+let mapData = null, nodes = [], edges = [], nodeMap = {};
+let pan = {x:0,y:0}, zoom = 1, dragging = false, dragStart = {x:0,y:0};
+const SVG  = document.getElementById('mindmap-svg');
+const WRAP = document.getElementById('canvas-wrap');
+const NS   = 'http://www.w3.org/2000/svg';
 
-// ── Theme ──
-function detectTheme(){
-  const saved=localStorage.getItem('mm-theme');
-  if(saved) return saved;
-  return matchMedia('(prefers-color-scheme:light)').matches?'light':'dark';
-}
+// ── Theme ──────────────────────────────────────────────────────────
+function detectTheme(){const s=localStorage.getItem('mm-theme');return s||( matchMedia('(prefers-color-scheme:light)').matches?'light':'dark')}
 function applyTheme(t){document.documentElement.setAttribute('data-theme',t);localStorage.setItem('mm-theme',t)}
 applyTheme(detectTheme());
 document.getElementById('theme-toggle').addEventListener('click',()=>{
-  const cur=document.documentElement.getAttribute('data-theme');
-  applyTheme(cur==='dark'?'light':'dark');
+  applyTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');
 });
 
-// ── Load data ──
-let usingFallback=false;
+// ── Load data ──────────────────────────────────────────────────────
 async function loadData(){
-  if(location.protocol!=='file:'){
-    try{
-      const r=await fetch('data.json');
-      if(!r.ok) throw new Error(r.status);
-      mapData=await r.json();
-    }catch(e){
-      console.warn('data.json not found, using embedded fallback');
-      mapData=FALLBACK_DATA;
-      usingFallback=true;
-    }
-  }else{
-    console.info('Running from file:// — using embedded data');
-    mapData=FALLBACK_DATA;
-    usingFallback=true;
+  let data = null;
+  if(location.protocol !== 'file:'){
+    try{ const r = await fetch('data.json'); if(r.ok) data = await r.json(); }
+    catch(e){}
   }
+  mapData = data || FALLBACK_DATA;
   applyMapData();
-  document.getElementById('loader').style.display='none';
-  // populate editor & auto-open if fallback
-  document.getElementById('editor-textarea').value=JSON.stringify(mapData,null,2);
-  if(usingFallback) toggleEditor(true);
+  document.getElementById('loader').style.display = 'none';
+  document.getElementById('editor-textarea').value = JSON.stringify(mapData,null,2);
+  if(!data) toggleEditor(true);
 }
 
 function applyMapData(){
-  document.getElementById('map-title').textContent=mapData.meta?.title||'MindMap';
-  document.getElementById('map-subtitle').textContent=mapData.meta?.description||'';
-  document.title=mapData.meta?.title||'MindMap';
+  document.getElementById('map-title').textContent   = mapData.meta?.title       || 'MindMap';
+  document.getElementById('map-subtitle').textContent = mapData.meta?.description || '';
+  document.title = mapData.meta?.title || 'MindMap';
   buildGraph();
   layout();
   render();
   fitToScreen();
 }
 
-// ── Build flat node/edge lists ──
+// ═══════════════════════════════════════════════════════════════════
+//  GRAPH BUILD
+// ═══════════════════════════════════════════════════════════════════
 function buildGraph(){
-  nodes=[];edges=[];nodeMap={};
-  const dStyle=mapData.meta?.defaultNodeStyle||{};
-  const eStyle=mapData.meta?.defaultEdgeStyle||{};
-  function walk(n,parent,depth){
-    // Style cascade: default → parent's resolved style → this node's explicit style
-    const inheritedStyle=parent?{...parent.style}:dStyle;
-    const node={
-      id:n.id||('n'+nodes.length),
-      content:n.content||'',
-      style:{...dStyle,...inheritedStyle,...(n.style||{})},
-      collapsed:!!n.collapsed,
-      children:[],
-      parent:parent?parent.id:null,
-      depth:depth,
-      x:0,y:0,w:0,h:0
+  nodes = []; edges = []; nodeMap = {};
+  const dStyle = mapData.meta?.defaultNodeStyle || {};
+  const eStyle = mapData.meta?.defaultEdgeStyle || {};
+  function walk(n, parent, depth){
+    // Deduplicate IDs: if already seen, append a suffix
+    let rawId = n.id || ('n' + nodes.length);
+    let id = rawId;
+    let suffix = 2;
+    while(nodeMap[id]) id = rawId + '_' + (suffix++);
+
+    // Style cascade: defaultNodeStyle → parent's resolved style → this node's explicit style
+    // This means children inherit every property from their parent unless they override it.
+    const parentStyle = parent ? parent.style : dStyle;
+    const node = {
+      id,
+      content : n.content || '',
+      style   : {...dStyle, ...parentStyle, ...(n.style||{})},
+      collapsed: !!n.collapsed,
+      children : [],
+      parent  : parent ? parent.id : null,
+      depth,
+      x:0, y:0, w:0, h:0,
+      _outAngle: 0
     };
     nodes.push(node);
-    nodeMap[node.id]=node;
+    nodeMap[node.id] = node;
     if(parent){
       parent.children.push(node.id);
-      edges.push({from:parent.id,to:node.id,style:eStyle});
+      edges.push({from: parent.id, to: node.id, style: eStyle});
     }
-    if(n.children){
-      n.children.forEach(c=>walk(c,node,depth+1));
-    }
+    (n.children||[]).forEach(c => walk(c, node, depth+1));
   }
-  walk(mapData.root,null,0);
+  walk(mapData.root, null, 0);
 }
 
-// ── Measure node size via off-screen div ──
+// ═══════════════════════════════════════════════════════════════════
+//  MEASURE NODES
+// ═══════════════════════════════════════════════════════════════════
 function measureNodes(){
-  let measurer=document.getElementById('mm-measurer');
-  if(!measurer){
-    measurer=document.createElement('div');
-    measurer.id='mm-measurer';
-    measurer.style.cssText='position:absolute;visibility:hidden;pointer-events:none;top:-9999px;left:-9999px;font-family:"DM Sans",sans-serif;';
-    document.body.appendChild(measurer);
+  let el = document.getElementById('mm-measurer');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'mm-measurer';
+    el.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;top:-9999px;left:-9999px;font-family:"DM Sans",sans-serif;';
+    document.body.appendChild(el);
   }
   nodes.forEach(n=>{
-    const fs=n.style.fontSize||13;
-    measurer.style.fontSize=fs+'px';
-    measurer.style.maxWidth='220px';
-    measurer.style.padding='12px 18px';
-    measurer.style.lineHeight='1.45';
-    measurer.innerHTML=n.content;
-    const r=measurer.getBoundingClientRect();
-    n.w=Math.max(r.width+8,60);
-    n.h=Math.max(r.height+4,36);
-    if(n.style.shape==='circle'||n.style.shape==='star'){
-      const d=Math.max(n.w,n.h);
-      n.w=d;n.h=d;
-    }else if(n.style.shape==='diamond'){
-      n.w*=1.45;n.h*=1.45;
-    }else if(n.style.shape==='hexagon'||n.style.shape==='parallelogram'||n.style.shape==='trapezoid'){
-      n.w*=1.25;
-    }else if(n.style.shape==='shield'||n.style.shape==='cloud'){
-      n.w*=1.2;n.h*=1.3;
+    const fs = n.style.fontSize || 13;
+    el.style.fontSize   = fs + 'px';
+    el.style.maxWidth   = '220px';
+    el.style.padding    = '10px 16px';
+    el.style.lineHeight = '1.45';
+    el.innerHTML = n.content;
+    const r = el.getBoundingClientRect();
+    n.w = Math.max(r.width + 8, 60);
+    n.h = Math.max(r.height + 4, 36);
+    const s = n.style.shape || 'roundedRect';
+    if(s === 'circle'){
+      const d = Math.max(n.w, n.h); n.w = d; n.h = d;
+    } else if(s === 'diamond'){
+      n.w *= 1.45; n.h *= 1.45;
+    } else if(s === 'hexagon' || s === 'parallelogram' || s === 'trapezoid'){
+      n.w *= 1.25;
+    } else if(s === 'shield' || s === 'cloud'){
+      n.w *= 1.2; n.h *= 1.3;
+    } else if(s === 'star'){
+      const d = Math.max(n.w, n.h) * 1.1; n.w = d; n.h = d;
     }
-    // Explicit size overrides — take priority over auto-sizing
-    if(n.style.width) n.w=n.style.width;
-    if(n.style.height) n.h=n.style.height;
+    if(n.style.width)  n.w = n.style.width;
+    if(n.style.height) n.h = n.style.height;
   });
 }
 
-// ── Visibility check (collapsed ancestors) ──
+// ═══════════════════════════════════════════════════════════════════
+//  VISIBILITY
+// ═══════════════════════════════════════════════════════════════════
 function isVisible(node){
   if(!node.parent) return true;
-  const p=nodeMap[node.parent];
-  if(p.collapsed) return false;
-  return isVisible(p);
+  const p = nodeMap[node.parent];
+  return !p.collapsed && isVisible(p);
 }
 
-// ── Radial tree layout — proper outward branching ──
+function visKids(n){
+  if(n.collapsed) return [];
+  return n.children.map(id => nodeMap[id]).filter(Boolean);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  RADIAL LAYOUT — bottom-up minimum-arc guarantees no overlap
+//
+//  Key invariant: every node's assigned angular sector produces an
+//  arc-length (sector_angle × ring_radius) ≥ the node's tangential
+//  size AND ≥ the combined arc needed by all its descendants at their
+//  respective rings.  This is achieved by:
+//
+//  1. Depth-uniform ring radii (all nodes at depth d share ringR[d]).
+//  2. minArc(n) computed bottom-up:
+//       leaf  → max(w,h) + NODE_GAP
+//       inner → max(selfSize, Σchildren_minArc × r_self/r_child)
+//     The scaling r_self/r_child < 1 shrinks the required arc at the
+//     parent level because children sit on a larger ring with more
+//     circumferential room per radian.
+//  3. Rings scaled up if the root's children don't fit in 2π.
+//  4. Top-down sector assignment proportional to minArc.
+// ═══════════════════════════════════════════════════════════════════
 function layout(){
   measureNodes();
-  const root=nodes[0];
-  root.x=0;root.y=0;
-  root._outAngle=0;
-  const GAP=25;
+  if(!nodes.length) return;
 
-  function getVisibleChildren(id){
-    const n=nodeMap[id];
-    if(n.collapsed) return [];
-    return n.children.filter(()=>true);
-  }
+  const root = nodes[0];
+  root.x = 0; root.y = 0; root._outAngle = 0;
 
-  // How much perpendicular space a subtree needs
-  function subtreeSpan(id){
-    const n=nodeMap[id];
-    const ch=getVisibleChildren(id);
-    const selfH=n.h+GAP;
-    if(ch.length===0) return selfH;
-    let total=0;
-    ch.forEach(cid=>{total+=subtreeSpan(cid)});
-    total+=GAP*(Math.max(0,ch.length-1));
-    return Math.max(selfH, total);
-  }
+  const NODE_GAP = 22;   // minimum tangential gap between sibling bounding boxes (px)
+  const RING_GAP = 60;   // minimum radial gap between parent edge and child edge (px)
 
-  // Place level-1 children radially around root
-  const rootChildren=getVisibleChildren(root.id);
-  if(rootChildren.length===0) return;
+  const rootKids = visKids(root);
+  if(!rootKids.length) return;
 
-  const spans=rootChildren.map(cid=>subtreeSpan(cid));
-  const totalSpan=spans.reduce((s,a)=>s+a,0)+GAP*rootChildren.length;
+  // ── 1. Depth-indexed ring radii ─────────────────────────────────
+  const maxDepth = nodes.reduce((m, n) => Math.max(m, n.depth), 0);
 
-  let angle=-Math.PI;
-  const fullSweep=2*Math.PI;
-  rootChildren.forEach((cid,i)=>{
-    const cn=nodeMap[cid];
-    const frac=spans[i]/(totalSpan||1);
-    const sweep=fullSweep*frac;
-    const mid=angle+sweep/2;
-    const dist=Math.max(root.w,root.h)/2+cn.w/2+GAP+15;
-    cn.x=Math.cos(mid)*dist;
-    cn.y=Math.sin(mid)*dist;
-    cn._outAngle=mid;
-    placeSubtree(cid);
-    angle+=sweep;
+  // halfSz[d] = half of the largest node dimension at depth d
+  // (conservative: we use max(w,h)/2 since we don't know radial orientation yet)
+  const halfSz = new Float64Array(maxDepth + 1);
+  nodes.forEach(n => {
+    halfSz[n.depth] = Math.max(halfSz[n.depth], Math.max(n.w, n.h) / 2);
   });
 
-  resolveOverlaps();
-}
-
-// Place children of `parentId` in a line perpendicular to parent's outward direction
-function placeSubtree(parentId){
-  const GAP=25;
-  function getVisibleChildren(id){
-    const n=nodeMap[id];
-    if(n.collapsed) return [];
-    return n.children.filter(()=>true);
-  }
-  function subtreeSpan(id){
-    const n=nodeMap[id];
-    const ch=getVisibleChildren(id);
-    const selfH=n.h+GAP;
-    if(ch.length===0) return selfH;
-    let total=0;
-    ch.forEach(cid=>{total+=subtreeSpan(cid)});
-    total+=GAP*(Math.max(0,ch.length-1));
-    return Math.max(selfH, total);
+  const ringR = new Float64Array(maxDepth + 1); // ringR[0] = 0 (root at center)
+  for(let d = 1; d <= maxDepth; d++){
+    ringR[d] = ringR[d-1] + halfSz[d-1] + RING_GAP + halfSz[d];
   }
 
-  const children=getVisibleChildren(parentId);
-  if(children.length===0) return;
-  const parent=nodeMap[parentId];
-  const outAngle=parent._outAngle||0;
+  // ── 2. Minimum arc (bottom-up) ───────────────────────────────────
+  // minArc(n) = minimum arc-length in the tangential direction that
+  // node n's subtree needs when n sits on ring ringR[n.depth].
+  const _arc = Object.create(null);
 
-  // Outward direction (unit vector)
-  const outX=Math.cos(outAngle), outY=Math.sin(outAngle);
-  // Perpendicular direction
-  const perpX=-outY, perpY=outX;
+  function minArc(n){
+    if(_arc[n.id] !== undefined) return _arc[n.id];
 
-  // Distance outward from parent to children
-  const maxChildW=Math.max(...children.map(cid=>nodeMap[cid].w));
-  const outDist=parent.w/2+maxChildW/2+GAP+10;
+    const selfSize = Math.max(n.w, n.h) + NODE_GAP;
+    const ch = visKids(n);
+    if(!ch.length) return (_arc[n.id] = selfSize);
 
-  // Junction point: where the stem ends and children branch off
-  const jx=parent.x+outX*outDist;
-  const jy=parent.y+outY*outDist;
+    const r  = ringR[n.depth];
+    const rc = ringR[n.depth + 1] || (r + halfSz[n.depth] + RING_GAP + 60);
 
-  // Compute spans for perpendicular arrangement
-  const spans=children.map(cid=>subtreeSpan(cid));
-  const totalSpan=spans.reduce((s,a)=>s+a,0)+GAP*(children.length-1);
+    // Total arc needed at the child ring level
+    const childTotal = ch.reduce((s, c) => s + minArc(c), 0)
+                     + (ch.length - 1) * NODE_GAP;
 
-  // Place children along the perpendicular line centered on junction
-  let offset=-totalSpan/2;
-  children.forEach((cid,i)=>{
-    const cn=nodeMap[cid];
-    const center=offset+spans[i]/2;
-    cn.x=jx+perpX*center;
-    cn.y=jy+perpY*center;
-    cn._outAngle=outAngle; // same outward direction as parent
-    offset+=spans[i]+GAP;
-    placeSubtree(cid);
-  });
-}
+    // Same sector angle θ → arc at parent = θ·r, arc at child = θ·rc.
+    // We need θ·rc ≥ childTotal, so the equivalent arc at parent = childTotal·(r/rc).
+    const childArcAtSelf = rc > 0 ? childTotal * (r / rc) : childTotal;
 
-function resolveOverlaps(){
-  const visible=nodes.filter((n,i)=>i===0||isVisible(n));
-  const PAD=25;
+    return (_arc[n.id] = Math.max(selfSize, childArcAtSelf));
+  }
 
-  for(let iter=0;iter<30;iter++){
-    let moved=false;
+  // ── 3. Scale rings up if root's children don't fit in 2π ────────
+  const rootChildArcs = rootKids.reduce((s, c) => s + minArc(c), 0)
+                      + (rootKids.length - 1) * NODE_GAP;
+  const minR1 = rootChildArcs / (2 * Math.PI);  // radius needed so 2π·r1 ≥ total
 
-    for(let i=0;i<visible.length;i++){
-      for(let j=i+1;j<visible.length;j++){
-        const a=visible[i],b=visible[j];
-        const dx=b.x-a.x, dy=b.y-a.y;
-        const minDx=(a.w+b.w)/2+PAD;
-        const minDy=(a.h+b.h)/2+PAD;
-        const ox=minDx-Math.abs(dx), oy=minDy-Math.abs(dy);
-        if(ox>0&&oy>0){
-          moved=true;
-          const dist=Math.sqrt(dx*dx+dy*dy)||1;
-          const push=Math.max(ox,oy)*0.52;
-          const px=(dx/dist)*push, py=(dy/dist)*push;
-          if(a.depth>0){a.x-=px;a.y-=py;}
-          if(b.depth>0){b.x+=px;b.y+=py;}
-        }
-      }
+  if(ringR[1] < minR1){
+    const scale = minR1 / ringR[1];
+    for(let d = 1; d <= maxDepth; d++) ringR[d] *= scale;
+    // Proportional scaling keeps r/rc ratios identical → minArc values unchanged
+  }
+
+  // ── 4. Top-down sector placement ────────────────────────────────
+  function place(n, a0, a1){
+    const mid = (a0 + a1) / 2;
+    const r   = ringR[n.depth];
+    n.x = Math.cos(mid) * r;
+    n.y = Math.sin(mid) * r;
+    n._outAngle = mid;
+
+    const ch = visKids(n);
+    if(!ch.length) return;
+
+    const rc       = ringR[n.depth + 1] || (r + halfSz[n.depth] + RING_GAP + 60);
+    const avail    = a1 - a0;
+    const angGap   = NODE_GAP / rc;
+
+    // Each child's minimum angle at the child ring
+    const childAngs   = ch.map(c => minArc(c) / rc);
+    const sumChildAngs = childAngs.reduce((s, x) => s + x, 0);
+    const gapTotal    = angGap * (ch.length - 1);
+    const totalNeeded = sumChildAngs + gapTotal;
+
+    let childScale, start;
+    if(totalNeeded <= avail){
+      // More space than needed: scale children proportionally, keep gaps fixed
+      childScale = (avail - gapTotal) / Math.max(sumChildAngs, 1e-9);
+      // Center the group within the parent sector
+      const usedAngle = sumChildAngs * childScale + gapTotal;
+      start = a0 + (avail - usedAngle) / 2;
+    } else {
+      // Tight: scale everything proportionally to fit
+      childScale = avail / Math.max(totalNeeded, 1e-9);
+      start = a0;
     }
-    if(!moved) break;
+
+    let cur = start;
+    const gapUsed = totalNeeded <= avail ? angGap : angGap * childScale;
+    ch.forEach((c, i) => {
+      const ang = childAngs[i] * childScale;
+      place(c, cur, cur + ang);
+      cur += ang + gapUsed;
+    });
+  }
+
+  // Place root's children across the full circle
+  {
+    const rc        = ringR[1];
+    const angGap    = NODE_GAP / rc;
+    const childAngs = rootKids.map(c => minArc(c) / rc);
+    const sumAngs   = childAngs.reduce((s, x) => s + x, 0);
+    const gapTotal  = angGap * (rootKids.length - 1);
+    const totalAng  = sumAngs + gapTotal;
+
+    // Scale so children fill (but do not exceed) the full circle
+    const scale   = Math.min((2 * Math.PI - gapTotal) / Math.max(sumAngs, 1e-9),
+                             2 * Math.PI / Math.max(totalAng, 1e-9));
+    const usedAng = sumAngs * scale + gapTotal;
+    let cur = -usedAng / 2;   // center the ring symmetrically
+
+    const gapUsed = totalAng <= 2 * Math.PI ? angGap : angGap * scale;
+    rootKids.forEach((c, i) => {
+      const ang = childAngs[i] * scale;
+      place(c, cur, cur + ang);
+      cur += ang + gapUsed;
+    });
   }
 }
 
-// ── Shape path generators ──
-function shapePath(node){
-  const x=-node.w/2, y=-node.h/2, w=node.w, h=node.h, r=10;
-  const s=node.style.shape||'roundedRect';
-
-  // Custom raw SVG path — use as-is, centered on 0,0
-  if(s==='custom' && node.style.customPath) return node.style.customPath;
-
+// ═══════════════════════════════════════════════════════════════════
+//  SHAPE PATHS (centered at 0,0)
+// ═══════════════════════════════════════════════════════════════════
+function shapePath(n){
+  const x=-n.w/2, y=-n.h/2, w=n.w, h=n.h, r=10;
+  const s = n.style.shape || 'roundedRect';
+  if(s==='custom' && n.style.customPath) return n.style.customPath;
   if(s==='circle'){
     const rad=Math.max(w,h)/2;
     return `M${rad},0A${rad},${rad},0,1,1,${-rad},0A${rad},${rad},0,1,1,${rad},0Z`;
@@ -499,11 +484,11 @@ function shapePath(node){
     return `M${x+rad},${y}L${x+w-rad},${y}A${rad},${rad},0,0,1,${x+w-rad},${y+h}L${x+rad},${y+h}A${rad},${rad},0,0,1,${x+rad},${y}Z`;
   }
   if(s==='diamond'){
-    return `M0,${y} L${x+w},0 L0,${y+h} L${x},0Z`;
+    return `M0,${y}L${x+w},0L0,${y+h}L${x},0Z`;
   }
   if(s==='hexagon'){
-    const hw=w/2,hh=h/2,inset=w*0.22;
-    return `M${-hw+inset},${-hh}L${hw-inset},${-hh}L${hw},0L${hw-inset},${hh}L${-hw+inset},${hh}L${-hw},0Z`;
+    const hw=w/2,hh=h/2,ins=w*0.22;
+    return `M${-hw+ins},${-hh}L${hw-ins},${-hh}L${hw},0L${hw-ins},${hh}L${-hw+ins},${hh}L${-hw},0Z`;
   }
   if(s==='octagon'){
     const hw=w/2,hh=h/2,c=Math.min(w,h)*0.28;
@@ -514,16 +499,16 @@ function shapePath(node){
     return `M${x+sk},${y}L${x+w},${y}L${x+w-sk},${y+h}L${x},${y+h}Z`;
   }
   if(s==='trapezoid'){
-    const inset=w*0.15;
-    return `M${x+inset},${y}L${x+w-inset},${y}L${x+w},${y+h}L${x},${y+h}Z`;
+    const ins=w*0.15;
+    return `M${x+ins},${y}L${x+w-ins},${y}L${x+w},${y+h}L${x},${y+h}Z`;
   }
   if(s==='star'){
-    const cx=0,cy=0,or=Math.max(w,h)/2,ir=or*0.45,pts=5;
+    const or=Math.max(w,h)/2, ir=or*0.42, pts=5;
     let d='';
     for(let i=0;i<pts*2;i++){
-      const a=Math.PI/2*-1+i*Math.PI/pts;
+      const a=-Math.PI/2+i*Math.PI/pts;
       const rad=i%2===0?or:ir;
-      d+=(i===0?'M':'L')+(cx+Math.cos(a)*rad)+','+(cy+Math.sin(a)*rad);
+      d+=(i===0?'M':'L')+(Math.cos(a)*rad)+','+(Math.sin(a)*rad);
     }
     return d+'Z';
   }
@@ -533,617 +518,851 @@ function shapePath(node){
   }
   if(s==='cloud'){
     const hw=w/2,hh=h/2;
-    return `M${-hw*0.5},${hh*0.4}`
-      +`Q${-hw},${hh*0.4},${-hw},0`
-      +`Q${-hw},${-hh*0.6},${-hw*0.55},${-hh*0.7}`
-      +`Q${-hw*0.35},${-hh},0,${-hh}`
-      +`Q${hw*0.4},${-hh},${hw*0.55},${-hh*0.65}`
-      +`Q${hw},${-hh*0.5},${hw},0`
-      +`Q${hw},${hh*0.4},${hw*0.5},${hh*0.4}Z`;
+    return `M${-hw*0.5},${hh*0.4}Q${-hw},${hh*0.4},${-hw},0Q${-hw},${-hh*0.6},${-hw*0.55},${-hh*0.7}Q${-hw*0.35},${-hh},0,${-hh}Q${hw*0.4},${-hh},${hw*0.55},${-hh*0.65}Q${hw},${-hh*0.5},${hw},0Q${hw},${hh*0.4},${hw*0.5},${hh*0.4}Z`;
   }
-  // roundedRect default
+  // roundedRect (default)
   return `M${x+r},${y}L${x+w-r},${y}Q${x+w},${y},${x+w},${y+r}L${x+w},${y+h-r}Q${x+w},${y+h},${x+w-r},${y+h}L${x+r},${y+h}Q${x},${y+h},${x},${y+h-r}L${x},${y+r}Q${x},${y},${x+r},${y}Z`;
 }
 
-// ── Smooth cubic bezier edge routing ──
-let _blockerList=[];
-let _renderedEdges=[]; // stored as arrays of sampled {x,y} points
-const EDGE_SAMPLES=24;
+// ═══════════════════════════════════════════════════════════════════
+//  EDGE ROUTING — center-to-center bezier, outward control points
+//
+//  Edges always originate and terminate at the node's geometric
+//  center so the line is never "floating" for non-convex shapes
+//  (shields, clouds, stars, etc.).  Control points push outward
+//  along the radial direction to create a natural arcing curve.
+// ═══════════════════════════════════════════════════════════════════
+function edgePath(n1, n2){
+  // Outward direction from root for the parent node
+  const outAngle = n1.depth === 0
+    ? Math.atan2(n2.y - n1.y, n2.x - n1.x)
+    : n1._outAngle;
 
-function buildBlockerList(){
-  _blockerList=[];
-  for(let i=0;i<nodes.length;i++){
-    const n=nodes[i];
-    if(n.depth>0&&!isVisible(n)) continue;
-    _blockerList.push(n);
-  }
-  _renderedEdges=[];
-}
+  const dx   = n2.x - n1.x, dy = n2.y - n1.y;
+  const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+  const cp   = dist * 0.42;
 
-// Sample cubic bezier at t
-function cubicPt(p0x,p0y,c1x,c1y,c2x,c2y,p3x,p3y,t){
-  const m=1-t;
-  return {
-    x:m*m*m*p0x+3*m*m*t*c1x+3*m*t*t*c2x+t*t*t*p3x,
-    y:m*m*m*p0y+3*m*m*t*c1y+3*m*t*t*c2y+t*t*t*p3y
-  };
-}
+  const ox = Math.cos(outAngle), oy = Math.sin(outAngle);
 
-// Sample a full cubic bezier into an array of points
-function sampleCubic(p0x,p0y,c1x,c1y,c2x,c2y,p3x,p3y){
-  const pts=[];
-  for(let i=0;i<=EDGE_SAMPLES;i++){
-    pts.push(cubicPt(p0x,p0y,c1x,c1y,c2x,c2y,p3x,p3y,i/EDGE_SAMPLES));
-  }
-  return pts;
-}
+  // c1: depart parent center heading radially outward
+  const c1x = n1.x + ox * cp;
+  const c1y = n1.y + oy * cp;
 
-// Test if two line segments (a1-a2) and (b1-b2) intersect
-function segsIntersect(a1x,a1y,a2x,a2y,b1x,b1y,b2x,b2y){
-  const d1x=a2x-a1x, d1y=a2y-a1y;
-  const d2x=b2x-b1x, d2y=b2y-b1y;
-  const cross=d1x*d2y-d1y*d2x;
-  if(Math.abs(cross)<1e-8) return false;
-  const dx=b1x-a1x, dy=b1y-a1y;
-  const t=(dx*d2y-dy*d2x)/cross;
-  const u=(dx*d1y-dy*d1x)/cross;
-  return t>0.02&&t<0.98&&u>0.02&&u<0.98;
-}
+  // c2: arrive at child center from its inward (root-facing) side
+  const inAngle = n2._outAngle + Math.PI;
+  const c2x = n2.x + Math.cos(inAngle) * cp * 0.65;
+  const c2y = n2.y + Math.sin(inAngle) * cp * 0.65;
 
-// Test cubic bezier against all blocker nodes
-function cubicBlockedByNodes(p0x,p0y,c1x,c1y,c2x,c2y,p3x,p3y,skip1,skip2,pad){
-  for(const nd of _blockerList){
-    if(nd.id===skip1||nd.id===skip2) continue;
-    const l=nd.x-nd.w/2-pad, r=nd.x+nd.w/2+pad;
-    const top=nd.y-nd.h/2-pad, bot=nd.y+nd.h/2+pad;
-    for(let s=1;s<EDGE_SAMPLES;s++){
-      const pt=cubicPt(p0x,p0y,c1x,c1y,c2x,c2y,p3x,p3y,s/EDGE_SAMPLES);
-      if(pt.x>l&&pt.x<r&&pt.y>top&&pt.y<bot) return true;
-    }
-  }
-  return false;
-}
-
-// Test sampled curve against all previously rendered edges
-function cubicCrossesEdges(pts){
-  for(const prev of _renderedEdges){
-    for(let i=0;i<pts.length-1;i++){
-      for(let j=0;j<prev.length-1;j++){
-        if(segsIntersect(
-          pts[i].x,pts[i].y,pts[i+1].x,pts[i+1].y,
-          prev[j].x,prev[j].y,prev[j+1].x,prev[j+1].y
-        )) return true;
-      }
-    }
-  }
-  return false;
-}
-
-// Combined check: nodes + edges
-function curveIsBlocked(p0x,p0y,c1x,c1y,c2x,c2y,p3x,p3y,skip1,skip2,pad){
-  if(cubicBlockedByNodes(p0x,p0y,c1x,c1y,c2x,c2y,p3x,p3y,skip1,skip2,pad)) return true;
-  const pts=sampleCubic(p0x,p0y,c1x,c1y,c2x,c2y,p3x,p3y);
-  if(cubicCrossesEdges(pts)) return true;
-  return false;
-}
-
-function edgePath(n1,n2){
-  const PAD=8;
-  const dx=n2.x-n1.x, dy=n2.y-n1.y;
-  const dist=Math.sqrt(dx*dx+dy*dy)||1;
-  const ux=dx/dist, uy=dy/dist;
-
-  let dirX,dirY;
-  if(n1.depth===0){
-    dirX=ux; dirY=uy;
-  }else{
-    const outAngle=n1._outAngle||Math.atan2(n1.y,n1.x)||0;
-    dirX=Math.cos(outAngle); dirY=Math.sin(outAngle);
-  }
-
-  const cpDist=dist*0.45;
-  const perpX=-uy, perpY=ux;
-
-  // Build candidate curves: base + shifted variants
-  const candidates=[];
-
-  // Base curve
-  candidates.push({
-    c1x:n1.x+dirX*cpDist, c1y:n1.y+dirY*cpDist,
-    c2x:n2.x-dirX*cpDist, c2y:n2.y-dirY*cpDist
-  });
-
-  // Shifted variants — increasing offset, both sides
-  for(let a=1;a<=8;a++){
-    const offset=20*a;
-    for(const sign of [1,-1]){
-      const sx=perpX*offset*sign+dirX*offset*0.3;
-      const sy=perpY*offset*sign+dirY*offset*0.3;
-      candidates.push({
-        c1x:n1.x+dirX*cpDist+sx, c1y:n1.y+dirY*cpDist+sy,
-        c2x:n2.x-dirX*cpDist+sx, c2y:n2.y-dirY*cpDist+sy
-      });
-    }
-  }
-
-  // Try each candidate, pick first that's clear of nodes AND edges
-  for(const c of candidates){
-    if(!curveIsBlocked(n1.x,n1.y,c.c1x,c.c1y,c.c2x,c.c2y,n2.x,n2.y,n1.id,n2.id,PAD)){
-      const pts=sampleCubic(n1.x,n1.y,c.c1x,c.c1y,c.c2x,c.c2y,n2.x,n2.y);
-      _renderedEdges.push(pts);
-      return `M${n1.x},${n1.y}C${c.c1x},${c.c1y},${c.c2x},${c.c2y},${n2.x},${n2.y}`;
-    }
-  }
-
-  // Fallback: wide outward curve, register it regardless
-  const c1x=n1.x+dirX*dist*0.7;
-  const c1y=n1.y+dirY*dist*0.7;
-  const c2x=n2.x+dirX*dist*0.1;
-  const c2y=n2.y+dirY*dist*0.1;
-  const pts=sampleCubic(n1.x,n1.y,c1x,c1y,c2x,c2y,n2.x,n2.y);
-  _renderedEdges.push(pts);
   return `M${n1.x},${n1.y}C${c1x},${c1y},${c2x},${c2y},${n2.x},${n2.y}`;
 }
 
-// ── Render SVG ──
-let vbX=0,vbY=0; // track current viewBox origin
+// ═══════════════════════════════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════════════════════════════
+let vbX=0, vbY=0;
+
 function render(){
-  SVG.innerHTML='';
-  // Compute bounds
+  SVG.innerHTML = '';
+
+  // Compute bounding box of all visible nodes
   let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
   nodes.forEach(n=>{
-    if(!isVisible(n)&&n.depth>0) return;
-    minX=Math.min(minX,n.x-n.w/2);
-    minY=Math.min(minY,n.y-n.h/2);
-    maxX=Math.max(maxX,n.x+n.w/2);
-    maxY=Math.max(maxY,n.y+n.h/2);
+    if(n.depth>0 && !isVisible(n)) return;
+    minX=Math.min(minX, n.x-n.w/2);
+    minY=Math.min(minY, n.y-n.h/2);
+    maxX=Math.max(maxX, n.x+n.w/2);
+    maxY=Math.max(maxY, n.y+n.h/2);
   });
-  const pad=80;
-  minX-=pad;minY-=pad;maxX+=pad;maxY+=pad;
-  vbX=minX;vbY=minY;
+  const pad=90;
+  minX-=pad; minY-=pad; maxX+=pad; maxY+=pad;
+  vbX=minX; vbY=minY;
   const svgW=maxX-minX, svgH=maxY-minY;
-  SVG.setAttribute('width',svgW);
-  SVG.setAttribute('height',svgH);
+  SVG.setAttribute('width',  svgW);
+  SVG.setAttribute('height', svgH);
   SVG.setAttribute('viewBox',`${minX} ${minY} ${svgW} ${svgH}`);
 
   // Defs
-  const defs=document.createElementNS(NS,'defs');
-  // glow filter
-  defs.innerHTML=`<filter id="glow"><feGaussianBlur stdDeviation="3" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+  const defs = document.createElementNS(NS,'defs');
+  defs.innerHTML = `<filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur stdDeviation="4" result="g"/>
+    <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>`;
   SVG.appendChild(defs);
 
-  // Edges
-  buildBlockerList();
-  const edgeG=document.createElementNS(NS,'g');
+  // ── Edges (drawn first, under nodes) ──
+  const edgeG = document.createElementNS(NS,'g');
   edgeG.setAttribute('class','edges');
   edges.forEach(e=>{
-    const n1=nodeMap[e.from], n2=nodeMap[e.to];
+    const n1 = nodeMap[e.from], n2 = nodeMap[e.to];
     if(!isVisible(n2)) return;
-    const path=document.createElementNS(NS,'path');
-    path.setAttribute('d',edgePath(n1,n2));
+    const path = document.createElementNS(NS,'path');
     path.setAttribute('class','mm-edge');
-    path.setAttribute('fill','none');
-    path.setAttribute('stroke',e.style.color||'#4a4a6a');
-    path.setAttribute('stroke-width',e.style.width||2);
-    path.setAttribute('stroke-linejoin','round');
+    path.setAttribute('d', edgePath(n1,n2));
+    path.setAttribute('stroke', e.style.color || '#4a4a6a');
+    path.setAttribute('stroke-width', e.style.width || 2);
     path.setAttribute('stroke-linecap','round');
-    path.setAttribute('opacity','0.65');
+    path.setAttribute('stroke-linejoin','round');
+    path.setAttribute('opacity','0.7');
     edgeG.appendChild(path);
   });
   SVG.appendChild(edgeG);
 
-  // Nodes
-  const nodeG=document.createElementNS(NS,'g');
+  // ── Nodes ──
+  const nodeG = document.createElementNS(NS,'g');
   nodeG.setAttribute('class','nodes');
+
   nodes.forEach(n=>{
-    if(!isVisible(n)&&n.depth>0) return;
-    const g=document.createElementNS(NS,'g');
-    g.setAttribute('class','mm-node'+(n.collapsed&&n.children.length?' collapsed-indicator':''));
+    if(n.depth>0 && !isVisible(n)) return;
+
+    const g = document.createElementNS(NS,'g');
+    g.setAttribute('class','mm-node');
     g.setAttribute('transform',`translate(${n.x},${n.y})`);
-    g.setAttribute('data-id',n.id);
+    g.setAttribute('data-id', n.id);
 
-    // Shape — either svgShape URL or path
-    if(n.style.svgShape){
-      const img=document.createElementNS(NS,'image');
-      img.setAttribute('href',n.style.svgShape);
-      img.setAttribute('x',-n.w/2);
-      img.setAttribute('y',-n.h/2);
-      img.setAttribute('width',n.w);
-      img.setAttribute('height',n.h);
-      img.setAttribute('preserveAspectRatio','xMidYMid meet');
-      g.appendChild(img);
-      // optional border overlay
-      if(n.style.borderColor){
-        const border=document.createElementNS(NS,'rect');
-        border.setAttribute('x',-n.w/2);border.setAttribute('y',-n.h/2);
-        border.setAttribute('width',n.w);border.setAttribute('height',n.h);
-        border.setAttribute('rx',8);border.setAttribute('fill','none');
-        border.setAttribute('stroke',n.style.borderColor);
-        border.setAttribute('stroke-width',n.style.borderWidth||2);
-        g.appendChild(border);
-      }
-    }else{
-      const shape=document.createElementNS(NS,'path');
-      shape.setAttribute('d',shapePath(n));
-      shape.setAttribute('fill',n.style.bgColor||'#1a1a2e');
-      shape.setAttribute('stroke',n.style.borderColor||'#3a3a5c');
-      shape.setAttribute('stroke-width',n.style.borderWidth||2);
-      g.appendChild(shape);
-    }
+    // Shape
+    const shapeEl = document.createElementNS(NS,'path');
+    shapeEl.setAttribute('class','node-shape');
+    shapeEl.setAttribute('d', shapePath(n));
+    shapeEl.setAttribute('fill',   n.style.bgColor     || '#1a1a2e');
+    shapeEl.setAttribute('stroke', n.style.borderColor || '#3a3a5c');
+    shapeEl.setAttribute('stroke-width', n.style.borderWidth || 2);
+    g.appendChild(shapeEl);
 
-    // HTML content via foreignObject
-    const fo=document.createElementNS(NS,'foreignObject');
-    const sh=n.style.shape||'roundedRect';
-    const tight=['diamond','star','shield','cloud'].includes(sh);
-    const foW=tight?n.w*0.6:n.w-8;
-    const foH=tight?n.h*0.55:n.h-4;
-    fo.setAttribute('x',-foW/2);
-    fo.setAttribute('y',-foH/2);
-    fo.setAttribute('width',foW);
-    fo.setAttribute('height',foH);
-    const div=document.createElement('div');
+    // Content via foreignObject
+    const sh = n.style.shape || 'roundedRect';
+    const tight = ['diamond','star','shield','cloud'].includes(sh);
+    const foW = tight ? n.w*0.6 : n.w-8;
+    const foH = tight ? n.h*0.55 : n.h-4;
+    const fo = document.createElementNS(NS,'foreignObject');
+    fo.setAttribute('x', -foW/2); fo.setAttribute('y', -foH/2);
+    fo.setAttribute('width', foW); fo.setAttribute('height', foH);
+    const div = document.createElement('div');
     div.setAttribute('xmlns','http://www.w3.org/1999/xhtml');
-    div.style.cssText=`width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;font-family:'DM Sans',sans-serif;font-size:${n.style.fontSize||13}px;color:${n.style.textColor||'#e0e0e0'};line-height:1.45;overflow:hidden;word-break:break-word;`;
-    div.innerHTML=`<div style="display:block">${n.content}</div>`;
+    div.style.cssText = `width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;font-family:'DM Sans',sans-serif;font-size:${n.style.fontSize||13}px;color:${n.style.textColor||'#e0e0e0'};line-height:1.45;overflow:hidden;word-break:break-word;`;
+    div.innerHTML = `<div style="display:block">${n.content}</div>`;
     fo.appendChild(div);
     g.appendChild(fo);
 
-    // Collapse badge
-    if(n.children.length>0){
-      const badge=document.createElementNS(NS,'g');
+    // Collapse badge — shown only when node has children and is collapsed
+    if(n.children.length > 0){
+      const badge = document.createElementNS(NS,'g');
       badge.setAttribute('class','collapse-badge');
-      const bc=document.createElementNS(NS,'circle');
-      bc.setAttribute('cx',n.w/2-4);
-      bc.setAttribute('cy',-n.h/2+4);
-      bc.setAttribute('r',9);
-      bc.setAttribute('fill',n.style.borderColor||'#3a3a5c');
+      // Position badge at top-right of node
+      const bx = n.w/2 - 2, by = -n.h/2 + 2;
+      const bc = document.createElementNS(NS,'circle');
+      bc.setAttribute('cx', bx); bc.setAttribute('cy', by);
+      bc.setAttribute('r', 9);
+      bc.setAttribute('fill', n.collapsed ? '#e94560' : (n.style.borderColor||'#3a3a5c'));
+      bc.setAttribute('stroke','var(--bg)');
+      bc.setAttribute('stroke-width','1.5');
       badge.appendChild(bc);
-      const bt=document.createElementNS(NS,'text');
-      bt.setAttribute('x',n.w/2-4);
-      bt.setAttribute('y',-n.h/2+8);
+      const bt = document.createElementNS(NS,'text');
+      bt.setAttribute('x', bx); bt.setAttribute('y', by + 4);
       bt.setAttribute('text-anchor','middle');
       bt.setAttribute('fill','#fff');
-      bt.setAttribute('font-size','11');
-      bt.setAttribute('font-family','DM Sans');
-      bt.textContent='+'+countHidden(n.id);
+      bt.setAttribute('font-size','9');
+      bt.setAttribute('font-family','DM Sans,sans-serif');
+      bt.setAttribute('font-weight','600');
+      bt.textContent = n.collapsed ? ('+'+countDescendants(n.id)) : '−';
       badge.appendChild(bt);
       g.appendChild(badge);
     }
 
-    // Click handler — preserves view position, expands one level only
-    g.addEventListener('click',(ev)=>{
+    // Click: toggle collapse
+    g.addEventListener('click', ev=>{
       ev.stopPropagation();
-      if(n.children.length>0){
-        if(n.collapsed){
-          // Expanding: show direct children but keep their children collapsed
-          n.collapsed=false;
-          n.children.forEach(cid=>{
-            const child=nodeMap[cid];
-            if(child.children.length>0) child.collapsed=true;
-          });
-        }else{
-          n.collapsed=true;
-        }
-        relayoutPreserving(n);
+      if(!n.children.length) return;
+      if(n.collapsed){
+        n.collapsed = false;
+        // Expand one level; keep grandchildren collapsed if they were
+        n.children.forEach(cid=>{
+          const c = nodeMap[cid];
+          if(c.children.length && c.collapsed === undefined) c.collapsed = true;
+        });
+      } else {
+        n.collapsed = true;
       }
+      relayoutFrom(n);
     });
 
     nodeG.appendChild(g);
   });
   SVG.appendChild(nodeG);
+
   renderMinimap();
 }
 
-function countHidden(id){
-  const n=nodeMap[id];
-  let c=0;
-  function walk(nid){
-    const nd=nodeMap[nid];
-    nd.children.forEach(cid=>{c++;walk(cid)});
-  }
-  walk(id);
+function countDescendants(id){
+  let c = 0;
+  function w(nid){ nodeMap[nid].children.forEach(cid=>{ c++; w(cid); }); }
+  w(id);
   return c;
 }
 
-// ── Pan/Zoom ──
+// ═══════════════════════════════════════════════════════════════════
+//  PAN / ZOOM
+// ═══════════════════════════════════════════════════════════════════
 function updateTransform(){
-  SVG.style.transform=`translate(${pan.x}px,${pan.y}px) scale(${zoom})`;
+  SVG.style.transform = `translate(${pan.x}px,${pan.y}px) scale(${zoom})`;
 }
 
-WRAP.addEventListener('pointerdown',e=>{
+WRAP.addEventListener('pointerdown', e=>{
   if(e.target.closest('.mm-node')) return;
-  dragging=true;dragStart={x:e.clientX-pan.x,y:e.clientY-pan.y};
+  dragging=true;
+  dragStart = {x: e.clientX-pan.x, y: e.clientY-pan.y};
   SVG.classList.add('grabbing');
+  WRAP.setPointerCapture(e.pointerId);
 });
-window.addEventListener('pointermove',e=>{
+WRAP.addEventListener('pointermove', e=>{
   if(!dragging) return;
-  pan.x=e.clientX-dragStart.x;
-  pan.y=e.clientY-dragStart.y;
-  updateTransform();renderMinimap();
+  pan.x = e.clientX - dragStart.x;
+  pan.y = e.clientY - dragStart.y;
+  updateTransform(); renderMinimap();
 });
-window.addEventListener('pointerup',()=>{dragging=false;SVG.classList.remove('grabbing')});
+WRAP.addEventListener('pointerup', ()=>{ dragging=false; SVG.classList.remove('grabbing'); });
 
-WRAP.addEventListener('wheel',e=>{
+WRAP.addEventListener('wheel', e=>{
   e.preventDefault();
-  const rect=WRAP.getBoundingClientRect();
-  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
-  const oldZ=zoom;
-  const delta=e.deltaY>0?0.9:1.1;
-  zoom=Math.min(Math.max(zoom*delta,0.1),5);
-  // zoom toward cursor
-  pan.x=mx-(mx-pan.x)*(zoom/oldZ);
-  pan.y=my-(my-pan.y)*(zoom/oldZ);
-  updateTransform();renderMinimap();
+  const rect = WRAP.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  const oldZ = zoom;
+  zoom = Math.min(Math.max(zoom * (e.deltaY>0?0.9:1.1), 0.08), 6);
+  pan.x = mx - (mx-pan.x)*(zoom/oldZ);
+  pan.y = my - (my-pan.y)*(zoom/oldZ);
+  updateTransform(); renderMinimap();
 },{passive:false});
 
-// Touch pinch zoom
-let lastPinchDist=null;
-WRAP.addEventListener('touchstart',e=>{if(e.touches.length===2){lastPinchDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY)}},{passive:true});
-WRAP.addEventListener('touchmove',e=>{
-  if(e.touches.length===2){
-    const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
-    if(lastPinchDist){const s=d/lastPinchDist;zoom=Math.min(Math.max(zoom*s,0.1),5);updateTransform();renderMinimap()}
-    lastPinchDist=d;
+// Pinch zoom
+let _pinch = null;
+WRAP.addEventListener('touchstart', e=>{
+  if(e.touches.length===2) _pinch = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+},{passive:true});
+WRAP.addEventListener('touchmove', e=>{
+  if(e.touches.length===2 && _pinch){
+    const d = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+    zoom = Math.min(Math.max(zoom*(d/_pinch), 0.08), 6);
+    _pinch = d; updateTransform(); renderMinimap();
   }
 },{passive:true});
-WRAP.addEventListener('touchend',()=>{lastPinchDist=null});
+WRAP.addEventListener('touchend', ()=>{ _pinch=null; });
 
 function fitToScreen(){
-  const ww=WRAP.clientWidth, wh=WRAP.clientHeight;
-  const sw=parseFloat(SVG.getAttribute('width')),sh=parseFloat(SVG.getAttribute('height'));
-  zoom=Math.min(ww/sw,wh/sh,1.5)*0.9;
-  pan.x=(ww-sw*zoom)/2;
-  pan.y=(wh-sh*zoom)/2;
-  updateTransform();renderMinimap();
+  const ww = WRAP.clientWidth, wh = WRAP.clientHeight;
+  const sw = parseFloat(SVG.getAttribute('width'))  || 1;
+  const sh = parseFloat(SVG.getAttribute('height')) || 1;
+  zoom  = Math.min(ww/sw, wh/sh, 1.5) * 0.92;
+  pan.x = (ww - sw*zoom)/2;
+  pan.y = (wh - sh*zoom)/2;
+  updateTransform(); renderMinimap();
 }
 
-// ── Minimap ──
+// ═══════════════════════════════════════════════════════════════════
+//  MINIMAP
+// ═══════════════════════════════════════════════════════════════════
 function renderMinimap(){
-  const mm=document.getElementById('minimap');
-  const vp=document.getElementById('minimap-viewport');
-  const sw=parseFloat(SVG.getAttribute('width'))||1;
-  const sh=parseFloat(SVG.getAttribute('height'))||1;
-  const mmW=mm.clientWidth, mmH=mm.clientHeight;
-  const scale=Math.min(mmW/sw,mmH/sh)*0.9;
-
-  // viewport rect
-  const ww=WRAP.clientWidth, wh=WRAP.clientHeight;
-  const vpW=(ww/zoom)*scale, vpH=(wh/zoom)*scale;
-  const vpX=(-pan.x/zoom)*scale + (mmW-sw*scale)/2;
-  const vpY=(-pan.y/zoom)*scale + (mmH-sh*scale)/2;
-  vp.style.width=vpW+'px';vp.style.height=vpH+'px';
-  vp.style.left=vpX+'px';vp.style.top=vpY+'px';
+  const mm  = document.getElementById('minimap');
+  const vp  = document.getElementById('minimap-viewport');
+  const sw  = parseFloat(SVG.getAttribute('width'))  || 1;
+  const sh  = parseFloat(SVG.getAttribute('height')) || 1;
+  const mmW = mm.clientWidth, mmH = mm.clientHeight;
+  const sc  = Math.min(mmW/sw, mmH/sh) * 0.92;
+  const ww  = WRAP.clientWidth, wh = WRAP.clientHeight;
+  vp.style.width  = (ww/zoom)*sc + 'px';
+  vp.style.height = (wh/zoom)*sc + 'px';
+  vp.style.left   = (-pan.x/zoom)*sc + (mmW-sw*sc)/2 + 'px';
+  vp.style.top    = (-pan.y/zoom)*sc + (mmH-sh*sc)/2 + 'px';
 }
 
-// ── Toolbar actions ──
-function relayoutPreserving(anchor){
-  layout();render();
+// ── Relayout preserving view anchor ──
+function relayoutFrom(anchor){
+  layout(); render();
   if(anchor){
-    // Center the viewport on the clicked node
-    const ww=WRAP.clientWidth, wh=WRAP.clientHeight;
-    pan.x=ww/2-(anchor.x-vbX)*zoom;
-    pan.y=wh/2-(anchor.y-vbY)*zoom;
+    const ww = WRAP.clientWidth, wh = WRAP.clientHeight;
+    pan.x = ww/2 - (anchor.x-vbX)*zoom;
+    pan.y = wh/2 - (anchor.y-vbY)*zoom;
   }
-  updateTransform();renderMinimap();
+  updateTransform(); renderMinimap();
 }
+
+// ── Toolbar ──
 document.getElementById('btn-expand').addEventListener('click',()=>{
-  nodes.forEach(n=>n.collapsed=false);relayoutPreserving(nodes[0]);
+  nodes.forEach(n=>n.collapsed=false); relayoutFrom(nodes[0]);
 });
 document.getElementById('btn-collapse').addEventListener('click',()=>{
-  nodes.forEach(n=>{if(n.depth>0&&n.children.length)n.collapsed=true});relayoutPreserving(nodes[0]);
+  nodes.forEach(n=>{ if(n.depth>0 && n.children.length) n.collapsed=true; }); relayoutFrom(nodes[0]);
 });
-document.getElementById('btn-fit').addEventListener('click',()=>fitToScreen());
-// ── Helper: extract inline style property from style string ──
-function extractStyle(styleStr, prop){
-  if(!styleStr) return null;
-  const re=new RegExp(prop+'\\s*:\\s*([^;]+)','i');
-  const m=styleStr.match(re);
-  return m?m[1].trim():null;
+document.getElementById('btn-fit').addEventListener('click', fitToScreen);
+
+document.addEventListener('keydown', e=>{
+  if(e.target.tagName==='TEXTAREA') return;
+  if(e.key==='='||e.key==='+'){zoom=Math.min(zoom*1.15,6);updateTransform();renderMinimap();}
+  if(e.key==='-'){zoom=Math.max(zoom/1.15,0.08);updateTransform();renderMinimap();}
+  if(e.key==='0') fitToScreen();
+});
+
+window.addEventListener('resize', renderMinimap);
+
+// ═══════════════════════════════════════════════════════════════════
+//  SVG TEXT CONVERSION (for raster/vector export)
+// ═══════════════════════════════════════════════════════════════════
+function extractStyleProp(str, prop){
+  if(!str) return null;
+  const m = str.match(new RegExp(prop+'\\s*:\\s*([^;]+)','i'));
+  return m ? m[1].trim() : null;
 }
 
-// ── Convert foreignObject HTML to native SVG text elements ──
-function convertForeignObjectsToText(svgClone){
-  const fos=svgClone.querySelectorAll('foreignObject');
-  fos.forEach(fo=>{
-    const g=fo.parentNode;
-    const nodeId=g.getAttribute('data-id');
-    const nd=nodeId?nodeMap[nodeId]:null;
-    const baseFontSize=nd?(nd.style.fontSize||13):13;
-    const baseTextColor=nd?(nd.style.textColor||'#e0e0e0'):'#e0e0e0';
-
-    const html=fo.innerHTML;
-    const lineChunks=html.replace(/<div[^>]*>/gi,'').replace(/<\/div>/gi,'')
-      .split(/<br\s*\/?>/gi);
-
-    const textEl=document.createElementNS(NS,'text');
+function foToText(svgClone){
+  svgClone.querySelectorAll('foreignObject').forEach(fo=>{
+    const g  = fo.parentNode;
+    const nd = nodeMap[g.getAttribute('data-id')];
+    const fs = nd ? (nd.style.fontSize||13) : 13;
+    const fc = nd ? (nd.style.textColor||'#e0e0e0') : '#e0e0e0';
+    const html  = fo.innerHTML;
+    const lines = html.replace(/<div[^>]*>/gi,'').replace(/<\/div>/gi,'').split(/<br\s*\/?>/gi);
+    const textEl = document.createElementNS(NS,'text');
     textEl.setAttribute('text-anchor','middle');
     textEl.setAttribute('dominant-baseline','central');
-    textEl.setAttribute('fill',baseTextColor);
-    textEl.setAttribute('font-family','DM Sans, sans-serif');
-    textEl.setAttribute('font-size',baseFontSize);
-
-    const totalLines=lineChunks.length;
-    const lineHeight=baseFontSize*1.45;
-    const startY=-(totalLines-1)*lineHeight/2;
-
-    lineChunks.forEach((line,li)=>{
-      const cleaned=line.replace(/<img[^>]*>/gi,'').trim();
-      if(!cleaned) return;
-
-      // Parse segments: <b>, <strong>, <small>, <span> with style, plain text
-      const parts=[];
-      const segRe=/<(b|strong)([^>]*)>(.*?)<\/\1>|<small([^>]*)>(.*?)<\/small>|<span([^>]*)>(.*?)<\/span>|([^<]+)/gi;
+    textEl.setAttribute('fill', fc);
+    textEl.setAttribute('font-family','DM Sans,sans-serif');
+    textEl.setAttribute('font-size', fs);
+    const lh = fs * 1.45;
+    const startY = -(lines.length-1)*lh/2;
+    lines.forEach((line,li)=>{
+      const clean = line.replace(/<img[^>]*>/gi,'').trim();
+      if(!clean) return;
+      const segRe = /<(b|strong)([^>]*)>(.*?)<\/\1>|<small([^>]*)>(.*?)<\/small>|<span([^>]*)>(.*?)<\/span>|([^<]+)/gi;
+      const parts = [];
       let sm;
-      while((sm=segRe.exec(cleaned))!==null){
-        if(sm[1]){// <b> or <strong>
-          const innerStyle=sm[2]||'';
-          const fs=extractStyle(innerStyle,'font-size');
-          const col=extractStyle(innerStyle,'color');
-          parts.push({text:sm[3].replace(/<[^>]+>/g,''),bold:true,
-            fontSize:fs?parseInt(fs):null, color:col||null});
-        }else if(sm[5]!==undefined){// <small>
-          const innerStyle=sm[4]||'';
-          const fs=extractStyle(innerStyle,'font-size');
-          const col=extractStyle(innerStyle,'color');
-          parts.push({text:sm[5].replace(/<[^>]+>/g,''),bold:false,
-            fontSize:fs?parseInt(fs):Math.round(baseFontSize*0.72),
-            color:col||null});
-        }else if(sm[7]!==undefined){// <span>
-          const innerStyle=sm[6]||'';
-          const fs=extractStyle(innerStyle,'font-size');
-          const col=extractStyle(innerStyle,'color');
-          const fw=extractStyle(innerStyle,'font-weight');
-          parts.push({text:sm[7].replace(/<[^>]+>/g,''),
-            bold:fw==='bold'||fw==='700',
-            fontSize:fs?parseInt(fs):null, color:col||null});
-        }else if(sm[8]){// plain text
-          parts.push({text:sm[8],bold:false,fontSize:null,color:null});
+      while((sm=segRe.exec(clean))!==null){
+        if(sm[1])       parts.push({t:sm[3].replace(/<[^>]+>/g,''), bold:true, size:null, color:null});
+        else if(sm[5]!==undefined) parts.push({t:sm[5].replace(/<[^>]+>/g,''), bold:false, size:Math.round(fs*0.78), color:null});
+        else if(sm[7]!==undefined){
+          const fw=extractStyleProp(sm[6],'font-weight');
+          parts.push({t:sm[7].replace(/<[^>]+>/g,''), bold:fw==='bold'||fw==='700', size:null, color:null});
         }
+        else if(sm[8]) parts.push({t:sm[8], bold:false, size:null, color:null});
       }
-
-      if(parts.length===0){
-        const tspan=document.createElementNS(NS,'tspan');
-        tspan.setAttribute('x','0');
-        tspan.setAttribute('dy',li===0?startY:lineHeight);
-        tspan.textContent=cleaned.replace(/<[^>]+>/g,'');
-        textEl.appendChild(tspan);
-      }else{
-        let firstInLine=true;
-        parts.forEach(p=>{
-          if(!p.text.trim()) return;
-          const sub=document.createElementNS(NS,'tspan');
-          sub.textContent=p.text;
-          if(p.bold) sub.setAttribute('font-weight','700');
-          if(p.fontSize) sub.setAttribute('font-size',p.fontSize);
-          if(p.color) sub.setAttribute('fill',p.color);
-          if(firstInLine){
-            sub.setAttribute('x','0');
-            sub.setAttribute('dy',li===0?startY:lineHeight);
-            firstInLine=false;
-          }
-          textEl.appendChild(sub);
-        });
-      }
+      const useParts = parts.filter(p=>p.t.trim());
+      if(!useParts.length) return;
+      let first = true;
+      useParts.forEach(p=>{
+        const ts = document.createElementNS(NS,'tspan');
+        ts.textContent = p.t;
+        if(p.bold)  ts.setAttribute('font-weight','700');
+        if(p.size)  ts.setAttribute('font-size', p.size);
+        if(p.color) ts.setAttribute('fill', p.color);
+        if(first){
+          ts.setAttribute('x','0');
+          ts.setAttribute('dy', li===0 ? startY : lh);
+          first = false;
+        }
+        textEl.appendChild(ts);
+      });
     });
-
-    fo.parentNode.replaceChild(textEl,fo);
+    fo.parentNode.replaceChild(textEl, fo);
   });
 }
 
-// ── SVG Export ──
-document.getElementById('btn-export').addEventListener('click',()=>{
-  const clone=SVG.cloneNode(true);
+// ═══════════════════════════════════════════════════════════════════
+//  SVG EXPORT
+// ═══════════════════════════════════════════════════════════════════
+document.getElementById('btn-export-svg').addEventListener('click',()=>{
+  const clone = SVG.cloneNode(true);
   clone.removeAttribute('style');
   clone.setAttribute('xmlns','http://www.w3.org/2000/svg');
   clone.setAttribute('xmlns:xlink','http://www.w3.org/1999/xlink');
-  convertForeignObjectsToText(clone);
-  const blob=new Blob([new XMLSerializer().serializeToString(clone)],{type:'image/svg+xml'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=(mapData.meta?.title||'mindmap').replace(/\s+/g,'_')+'.svg';
-  a.click();
-  URL.revokeObjectURL(a.href);
+  const bg = document.documentElement.getAttribute('data-theme')==='light'?'#f0f2f7':'#0b0e17';
+  const rect = document.createElementNS(NS,'rect');
+  rect.setAttribute('width','100%'); rect.setAttribute('height','100%'); rect.setAttribute('fill',bg);
+  clone.insertBefore(rect, clone.firstChild);
+  foToText(clone);
+  dlBlob(new Blob([new XMLSerializer().serializeToString(clone)],{type:'image/svg+xml'}),
+    (mapData.meta?.title||'mindmap').replace(/\s+/g,'_')+'.svg');
 });
 
-// ── PNG Export ──
+// ═══════════════════════════════════════════════════════════════════
+//  PNG EXPORT
+// ═══════════════════════════════════════════════════════════════════
 document.getElementById('btn-export-png').addEventListener('click',()=>{
-  // Use the live SVG with foreignObject (renders correctly via browser)
-  const clone=SVG.cloneNode(true);
+  const clone = SVG.cloneNode(true);
   clone.removeAttribute('style');
   clone.setAttribute('xmlns','http://www.w3.org/2000/svg');
   clone.setAttribute('xmlns:xhtml','http://www.w3.org/1999/xhtml');
+  const styleEl = document.createElementNS(NS,'style');
+  styleEl.textContent = `@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;500;700&display=swap');`;
+  clone.insertBefore(styleEl, clone.firstChild);
+  clone.querySelectorAll('foreignObject div').forEach(d=>d.setAttribute('xmlns','http://www.w3.org/1999/xhtml'));
 
-  // Inline the font for foreignObject rendering
-  const styleEl=document.createElementNS(NS,'style');
-  styleEl.textContent=`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&display=swap');`;
-  clone.insertBefore(styleEl,clone.firstChild);
+  const svgStr = new XMLSerializer().serializeToString(clone);
+  const sw = parseFloat(clone.getAttribute('width')), sh = parseFloat(clone.getAttribute('height'));
+  const sc = 2;
+  const canvas = document.createElement('canvas');
+  canvas.width = sw*sc; canvas.height = sh*sc;
+  const ctx = canvas.getContext('2d');
+  const bg = document.documentElement.getAttribute('data-theme')==='light'?'#f0f2f7':'#0b0e17';
+  ctx.fillStyle = bg; ctx.fillRect(0,0,canvas.width,canvas.height);
 
-  // Ensure all foreignObject divs have xmlns
-  clone.querySelectorAll('foreignObject div').forEach(d=>{
-    d.setAttribute('xmlns','http://www.w3.org/1999/xhtml');
+  const img = new Image();
+  const tryFallback = ()=>{
+    const c2 = SVG.cloneNode(true);
+    c2.removeAttribute('style');
+    c2.setAttribute('xmlns','http://www.w3.org/2000/svg');
+    foToText(c2);
+    const img2 = new Image();
+    img2.onload = ()=>{
+      ctx.drawImage(img2,0,0,canvas.width,canvas.height);
+      canvas.toBlob(b=>dlBlob(b,(mapData.meta?.title||'mindmap').replace(/\s+/g,'_')+'.png'),'image/png');
+    };
+    img2.src = 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(new XMLSerializer().serializeToString(c2));
+  };
+  img.onload = ()=>{
+    ctx.drawImage(img,0,0,canvas.width,canvas.height);
+    canvas.toBlob(b=>dlBlob(b,(mapData.meta?.title||'mindmap').replace(/\s+/g,'_')+'.png'),'image/png');
+  };
+  img.onerror = tryFallback;
+  img.src = 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svgStr);
+});
+
+// ═══════════════════════════════════════════════════════════════════
+//  PPTX EXPORT
+// ═══════════════════════════════════════════════════════════════════
+document.getElementById('btn-export-pptx').addEventListener('click', exportPPTX);
+
+function exportPPTX(){
+  // Standard PowerPoint Widescreen: 13.33" × 7.5" = 12192000 × 6858000 EMU
+  const SLIDE_W = 12192000, SLIDE_H = 6858000;
+  const PAD_EMU = 500000;
+
+  const vis = nodes.filter(n => n.depth === 0 || isVisible(n));
+  if(!vis.length) return;
+
+  // Bounds of all visible nodes in SVG space
+  let mnX=Infinity,mnY=Infinity,mxX=-Infinity,mxY=-Infinity;
+  vis.forEach(n=>{
+    mnX=Math.min(mnX,n.x-n.w/2); mnY=Math.min(mnY,n.y-n.h/2);
+    mxX=Math.max(mxX,n.x+n.w/2); mxY=Math.max(mxY,n.y+n.h/2);
+  });
+  const svgW=mxX-mnX||1, svgH=mxY-mnY||1;
+  const usableW=SLIDE_W-PAD_EMU*2, usableH=SLIDE_H-PAD_EMU*2;
+  const sc=Math.min(usableW/svgW, usableH/svgH);
+  const offX=PAD_EMU+(usableW-svgW*sc)/2-mnX*sc;
+  const offY=PAD_EMU+(usableH-svgH*sc)/2-mnY*sc;
+
+  // Node bounding box in EMU (top-left origin)
+  function nodeBox(n){
+    return {
+      x: Math.round(n.x*sc+offX-n.w*sc/2),
+      y: Math.round(n.y*sc+offY-n.h*sc/2),
+      w: Math.max(Math.round(n.w*sc), 1),
+      h: Math.max(Math.round(n.h*sc), 1)
+    };
+  }
+  // Node center in EMU
+  function ctr(n){
+    return { x: Math.round(n.x*sc+offX), y: Math.round(n.y*sc+offY) };
+  }
+
+  // Normalise any hex colour (3, 6 or 8 chars, with or without #, with or without alpha)
+  // to a 6-char uppercase RGB string safe for OOXML.
+  function hexRGB(h){
+    let c = String(h||'').replace(/[^0-9a-fA-F]/g,'');
+    if(c.length===3) c = c[0]+c[0]+c[1]+c[1]+c[2]+c[2];
+    if(c.length===8) c = c.slice(0,6);         // strip alpha
+    return (c+'000000').slice(0,6).toUpperCase();
+  }
+
+  function xe(s){ // XML-escape for element content and attribute values
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // Strip HTML tags AND common HTML entities, leaving plain text
+  function plain(s){
+    return s.replace(/<br\s*\/?>/gi,' ')
+            .replace(/<[^>]+>/g,'')
+            .replace(/&amp;/gi,'&').replace(/&lt;/gi,'<').replace(/&gt;/gi,'>')
+            .replace(/&nbsp;/gi,' ').replace(/&[a-z]+;/gi,' ')
+            .replace(/\s+/g,' ').trim();
+  }
+
+  function prstGeom(shape){
+    const m={roundedRect:'roundRect',rect:'rect',circle:'ellipse',pill:'roundRect',
+             diamond:'diamond',hexagon:'hexagon',octagon:'octagon',
+             parallelogram:'parallelogram',trapezoid:'trapezoid',
+             star:'star5',shield:'pentagon',cloud:'cloud',custom:'rect'};
+    return m[shape]||'roundRect';
+  }
+
+  let spId = 10;
+  let linesXml  = '';   // drawn first so shapes appear on top
+  let shapesXml = '';
+
+  // Pre-assign shape IDs so connectors (p:cxnSp) can reference them
+  // via stCxn/endCxn — this is what makes lines follow shapes when moved.
+  vis.forEach(n => { n._spId = ++spId; });
+
+  // ── Connectors: p:cxnSp with straightConnector1 ────────────────────
+  // stCxn/endCxn bind each connector endpoint to a shape by ID.
+  // PowerPoint updates the connector position whenever either shape moves.
+  // flipH/flipV map the connector's TL→BR default direction to the actual
+  // p1→p2 direction so the bounding box is always correct.
+  edges.forEach(e=>{
+    const n1=nodeMap[e.from], n2=nodeMap[e.to];
+    if(!isVisible(n2)) return;
+
+    const p1=ctr(n1), p2=ctr(n2);
+    const strk=hexRGB(e.style.color||'#4a4a6a');
+    const bw=Math.max(Math.round((e.style.width||2)*9525), 9525);
+
+    const lx=Math.min(p1.x,p2.x), ly=Math.min(p1.y,p2.y);
+    const cw=Math.max(Math.abs(p2.x-p1.x),1);
+    const ch=Math.max(Math.abs(p2.y-p1.y),1);
+    const fH = p1.x > p2.x ? 'flipH="1" ' : '';
+    const fV = p1.y > p2.y ? 'flipV="1" ' : '';
+
+    // Choose the connection-point index on each shape that faces the other.
+    // Standard preset shapes: 0=left, 1=top, 2=right, 3=bottom.
+    const ang = Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI;
+    function bestIdx(a){
+      const d = ((a % 360) + 360) % 360;
+      if(d < 45 || d >= 315) return 2;  // E → right
+      if(d < 135)            return 3;  // S → bottom
+      if(d < 225)            return 0;  // W → left
+      return 1;                         // N → top
+    }
+    const idx1 = bestIdx(ang);        // on n1, pointing toward n2
+    const idx2 = bestIdx(ang + 180);  // on n2, pointing back toward n1
+
+    linesXml+=`
+  <p:cxnSp>
+    <p:nvCxnSpPr>
+      <p:cNvPr id="${++spId}" name="conn${spId}"/>
+      <p:cNvCxnSpPr>
+        <a:stCxn id="${n1._spId}" idx="${idx1}"/>
+        <a:endCxn id="${n2._spId}" idx="${idx2}"/>
+      </p:cNvCxnSpPr>
+      <p:nvPr/>
+    </p:nvCxnSpPr>
+    <p:spPr>
+      <a:xfrm ${fH}${fV}><a:off x="${lx}" y="${ly}"/><a:ext cx="${cw}" cy="${ch}"/></a:xfrm>
+      <a:prstGeom prst="straightConnector1"><a:avLst/></a:prstGeom>
+      <a:noFill/>
+      <a:ln w="${bw}" cap="rnd">
+        <a:solidFill><a:srgbClr val="${strk}"/></a:solidFill>
+        <a:round/>
+      </a:ln>
+    </p:spPr>
+  </p:cxnSp>`;
   });
 
-  const svgStr=new XMLSerializer().serializeToString(clone);
-  const svgW=parseFloat(clone.getAttribute('width'));
-  const svgH=parseFloat(clone.getAttribute('height'));
-  const scale=2; // 2x for retina
+  // ── Shapes ─────────────────────────────────────────────────────────
+  vis.forEach(n=>{
+    // n._spId pre-assigned above
+    const b   = nodeBox(n);
+    const fill= hexRGB(n.style.bgColor    ||'#1a1a2e');
+    const strk= hexRGB(n.style.borderColor||'#3a3a5c');
+    const txtC= hexRGB(n.style.textColor  ||'#e0e0e0');
+    const bw  = Math.max(Math.round((n.style.borderWidth||2)*9525), 9525);
+    const fs  = Math.round((n.style.fontSize||13)*100);
+    const prst= prstGeom(n.style.shape||'roundedRect');
+    const lbl = xe(plain(n.content));
 
-  const canvas=document.createElement('canvas');
-  canvas.width=svgW*scale;
-  canvas.height=svgH*scale;
-  const ctx=canvas.getContext('2d');
+    shapesXml+=`
+  <p:sp>
+    <p:nvSpPr>
+      <p:cNvPr id="${n._spId}" name="${xe(n.id)}"/>
+      <p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr>
+      <p:nvPr/>
+    </p:nvSpPr>
+    <p:spPr>
+      <a:xfrm><a:off x="${b.x}" y="${b.y}"/><a:ext cx="${b.w}" cy="${b.h}"/></a:xfrm>
+      <a:prstGeom prst="${prst}"><a:avLst/></a:prstGeom>
+      <a:solidFill><a:srgbClr val="${fill}"/></a:solidFill>
+      <a:ln w="${bw}"><a:solidFill><a:srgbClr val="${strk}"/></a:solidFill></a:ln>
+    </p:spPr>
+    <p:txBody>
+      <a:bodyPr anchor="ctr" wrap="square" rtlCol="0"/>
+      <a:lstStyle/>
+      <a:p>
+        <a:pPr algn="ctr"/>
+        <a:r>
+          <a:rPr lang="en-US" sz="${fs}" dirty="0">
+            <a:solidFill><a:srgbClr val="${txtC}"/></a:solidFill>
+          </a:rPr>
+          <a:t>${lbl}</a:t>
+        </a:r>
+      </a:p>
+    </p:txBody>
+  </p:sp>`;
+  });
 
-  // Draw background
-  const theme=document.documentElement.getAttribute('data-theme');
-  ctx.fillStyle=theme==='light'?'#f0f2f7':'#0b0e17';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
+  const bg   = document.documentElement.getAttribute('data-theme')==='light'?'F0F2F7':'0B0E17';
+  const title = xe(mapData.meta?.title||'MindMap');
 
-  const img=new Image();
-  img.onload=()=>{
-    ctx.drawImage(img,0,0,canvas.width,canvas.height);
-    canvas.toBlob(blob=>{
-      const a=document.createElement('a');
-      a.href=URL.createObjectURL(blob);
-      a.download=(mapData.meta?.title||'mindmap').replace(/\s+/g,'_')+'.png';
-      a.click();
-      URL.revokeObjectURL(a.href);
-    },'image/png');
+  const slideXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+       xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+       xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+  <p:cSld name="${title}">
+    <p:bg><p:bgPr>
+      <a:solidFill><a:srgbClr val="${bg}"/></a:solidFill>
+      <a:effectLst/>
+    </p:bgPr></p:bg>
+    <p:spTree>
+      <p:nvGrpSpPr>
+        <p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/>
+      </p:nvGrpSpPr>
+      <p:grpSpPr>
+        <a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/>
+        <a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm>
+      </p:grpSpPr>
+      ${linesXml}
+      ${shapesXml}
+    </p:spTree>
+  </p:cSld>
+  <p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>
+</p:sld>`;
+
+  // p:txStyles is REQUIRED by OOXML CT_SlideMaster schema — its absence
+  // causes PowerPoint to flag the file as corrupt and refuse to open it.
+  const masterXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+             xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+             xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+  <p:cSld>
+    <p:spTree>
+      <p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
+      <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/>
+      <a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>
+    </p:spTree>
+  </p:cSld>
+  <p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2"
+            accent1="accent1" accent2="accent2" accent3="accent3"
+            accent4="accent4" accent5="accent5" accent6="accent6"
+            hlink="hlink" folHlink="folHlink"/>
+  <p:sldLayoutIdLst>
+    <p:sldLayoutId id="2147483649" r:id="rId1"/>
+  </p:sldLayoutIdLst>
+  <p:txStyles>
+    <p:titleStyle>
+      <a:lvl1pPr algn="ctr"><a:defRPr lang="en-US" b="1"/></a:lvl1pPr>
+    </p:titleStyle>
+    <p:bodyStyle>
+      <a:lvl1pPr><a:defRPr lang="en-US"/></a:lvl1pPr>
+    </p:bodyStyle>
+    <p:otherStyle>
+      <a:defPPr><a:defRPr lang="en-US"/></a:defPPr>
+    </p:otherStyle>
+  </p:txStyles>
+</p:sldMaster>`;
+
+  // Every valid PPTX requires a DrawingML theme wired to the slide master.
+  // Without it PowerPoint's schema validator triggers "repair needed".
+  const themeXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Office Theme">
+  <a:themeElements>
+    <a:clrScheme name="Office">
+      <a:dk1><a:sysClr lastClr="000000" val="windowText"/></a:dk1>
+      <a:lt1><a:sysClr lastClr="FFFFFF" val="window"/></a:lt1>
+      <a:dk2><a:srgbClr val="1F497D"/></a:dk2>
+      <a:lt2><a:srgbClr val="EEECE1"/></a:lt2>
+      <a:accent1><a:srgbClr val="4F81BD"/></a:accent1>
+      <a:accent2><a:srgbClr val="C0504D"/></a:accent2>
+      <a:accent3><a:srgbClr val="9BBB59"/></a:accent3>
+      <a:accent4><a:srgbClr val="8064A2"/></a:accent4>
+      <a:accent5><a:srgbClr val="4BACC6"/></a:accent5>
+      <a:accent6><a:srgbClr val="F79646"/></a:accent6>
+      <a:hlink><a:srgbClr val="0000FF"/></a:hlink>
+      <a:folHlink><a:srgbClr val="800080"/></a:folHlink>
+    </a:clrScheme>
+    <a:fontScheme name="Office">
+      <a:majorFont><a:latin typeface="Calibri Light"/><a:ea typeface=""/><a:cs typeface=""/></a:majorFont>
+      <a:minorFont><a:latin typeface="Calibri"/><a:ea typeface=""/><a:cs typeface=""/></a:minorFont>
+    </a:fontScheme>
+    <a:fmtScheme name="Office">
+      <a:fillStyleLst>
+        <a:solidFill><a:schemeClr val="phClr"/></a:solidFill>
+        <a:gradFill rotWithShape="1"><a:gsLst>
+          <a:gs pos="0"><a:schemeClr val="phClr"><a:tint val="50000"/><a:satMod val="300000"/></a:schemeClr></a:gs>
+          <a:gs pos="35000"><a:schemeClr val="phClr"><a:tint val="37000"/><a:satMod val="300000"/></a:schemeClr></a:gs>
+          <a:gs pos="100000"><a:schemeClr val="phClr"><a:tint val="15000"/><a:satMod val="350000"/></a:schemeClr></a:gs>
+        </a:gsLst><a:lin ang="16200000" scaled="1"/></a:gradFill>
+        <a:gradFill rotWithShape="1"><a:gsLst>
+          <a:gs pos="0"><a:schemeClr val="phClr"><a:shade val="51000"/><a:satMod val="130000"/></a:schemeClr></a:gs>
+          <a:gs pos="80000"><a:schemeClr val="phClr"><a:shade val="93000"/><a:satMod val="130000"/></a:schemeClr></a:gs>
+          <a:gs pos="100000"><a:schemeClr val="phClr"><a:shade val="94000"/><a:satMod val="135000"/></a:schemeClr></a:gs>
+        </a:gsLst><a:lin ang="16200000" scaled="0"/></a:gradFill>
+      </a:fillStyleLst>
+      <a:lnStyleLst>
+        <a:ln w="9525" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"><a:shade val="95000"/><a:satMod val="105000"/></a:schemeClr></a:solidFill><a:prstDash val="solid"/></a:ln>
+        <a:ln w="25400" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/></a:ln>
+        <a:ln w="38100" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/></a:ln>
+      </a:lnStyleLst>
+      <a:effectStyleLst>
+        <a:effectStyle><a:effectLst><a:outerShdw blurRad="40000" dist="20000" dir="5400000" rotWithShape="0"><a:srgbClr val="000000"><a:alpha val="38000"/></a:srgbClr></a:outerShdw></a:effectLst></a:effectStyle>
+        <a:effectStyle><a:effectLst><a:outerShdw blurRad="40000" dist="23000" dir="5400000" rotWithShape="0"><a:srgbClr val="000000"><a:alpha val="35000"/></a:srgbClr></a:outerShdw></a:effectLst></a:effectStyle>
+        <a:effectStyle><a:effectLst><a:outerShdw blurRad="40000" dist="23000" dir="5400000" rotWithShape="0"><a:srgbClr val="000000"><a:alpha val="35000"/></a:srgbClr></a:outerShdw></a:effectLst><a:scene3d><a:camera prst="orthographicFront"><a:rot lat="0" lon="0" rev="0"/></a:camera><a:lightRig rig="threePt" dir="t"><a:rot lat="0" lon="0" rev="1200000"/></a:lightRig></a:scene3d><a:sp3d><a:bevelT w="63500" h="25400"/></a:sp3d></a:effectStyle>
+      </a:effectStyleLst>
+      <a:bgFillStyleLst>
+        <a:solidFill><a:schemeClr val="phClr"/></a:solidFill>
+        <a:gradFill rotWithShape="1"><a:gsLst>
+          <a:gs pos="0"><a:schemeClr val="phClr"><a:tint val="40000"/><a:satMod val="350000"/></a:schemeClr></a:gs>
+          <a:gs pos="40000"><a:schemeClr val="phClr"><a:tint val="45000"/><a:shade val="99000"/><a:satMod val="350000"/></a:schemeClr></a:gs>
+          <a:gs pos="100000"><a:schemeClr val="phClr"><a:shade val="20000"/><a:satMod val="255000"/></a:schemeClr></a:gs>
+        </a:gsLst><a:path path="circle"><a:fillToRect l="50000" t="-80000" r="50000" b="180000"/></a:path></a:gradFill>
+        <a:gradFill rotWithShape="1"><a:gsLst>
+          <a:gs pos="0"><a:schemeClr val="phClr"><a:tint val="80000"/><a:satMod val="300000"/></a:schemeClr></a:gs>
+          <a:gs pos="100000"><a:schemeClr val="phClr"><a:shade val="30000"/><a:satMod val="200000"/></a:schemeClr></a:gs>
+        </a:gsLst><a:path path="circle"><a:fillToRect l="50000" t="50000" r="50000" b="50000"/></a:path></a:gradFill>
+      </a:bgFillStyleLst>
+    </a:fmtScheme>
+  </a:themeElements>
+</a:theme>`;
+
+  const files={
+    '[Content_Types].xml':`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>
+  <Override PartName="/ppt/slides/slide1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>
+  <Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/>
+  <Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/>
+  <Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>
+</Types>`,
+    '_rels/.rels':`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/>
+</Relationships>`,
+    'ppt/presentation.xml':`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+                xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+                xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+                saveSubsetFonts="1">
+  <p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst>
+  <p:sldIdLst><p:sldId id="256" r:id="rId2"/></p:sldIdLst>
+  <p:sldSz cx="${SLIDE_W}" cy="${SLIDE_H}" type="custom"/>
+  <p:notesSz cx="6858000" cy="9144000"/>
+</p:presentation>`,
+    'ppt/_rels/presentation.xml.rels':`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide1.xml"/>
+</Relationships>`,
+    'ppt/slides/slide1.xml': slideXml,
+    'ppt/slides/_rels/slide1.xml.rels':`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>
+</Relationships>`,
+    'ppt/slideMasters/slideMaster1.xml': masterXml,
+    'ppt/slideMasters/_rels/slideMaster1.xml.rels':`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="../theme/theme1.xml"/>
+</Relationships>`,
+    'ppt/theme/theme1.xml': themeXml,
+    'ppt/slideLayouts/slideLayout1.xml':`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sldLayout xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+             xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+             xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" type="blank">
+  <p:cSld name="Blank">
+    <p:spTree>
+      <p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
+      <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/>
+      <a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>
+    </p:spTree>
+  </p:cSld>
+  <p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>
+</p:sldLayout>`,
+    'ppt/slideLayouts/_rels/slideLayout1.xml.rels':`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/>
+</Relationships>`
   };
-  img.onerror=()=>{
-    // Fallback: convert foreignObject to text for PNG too
-    const clone2=SVG.cloneNode(true);
-    clone2.removeAttribute('style');
-    clone2.setAttribute('xmlns','http://www.w3.org/2000/svg');
-    convertForeignObjectsToText(clone2);
-    const svgStr2=new XMLSerializer().serializeToString(clone2);
-    const img2=new Image();
-    img2.onload=()=>{
-      ctx.drawImage(img2,0,0,canvas.width,canvas.height);
-      canvas.toBlob(blob=>{
-        const a=document.createElement('a');
-        a.href=URL.createObjectURL(blob);
-        a.download=(mapData.meta?.title||'mindmap').replace(/\s+/g,'_')+'.png';
-        a.click();
-        URL.revokeObjectURL(a.href);
-      },'image/png');
-    };
-    img2.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svgStr2);
-  };
-  img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svgStr);
-});
 
-// Keyboard
-document.addEventListener('keydown',e=>{
-  if(e.key==='='||e.key==='+'){zoom=Math.min(zoom*1.15,5);updateTransform();renderMinimap()}
-  if(e.key==='-'){zoom=Math.max(zoom/1.15,0.1);updateTransform();renderMinimap()}
-  if(e.key==='0'){fitToScreen()}
-});
-
-// ── Editor ──
-const edPanel=document.getElementById('editor-panel');
-const edTA=document.getElementById('editor-textarea');
-const edStatus=document.getElementById('editor-status');
-
-function toggleEditor(forceOpen){
-  const open=forceOpen!==undefined?forceOpen:!edPanel.classList.contains('open');
-  edPanel.classList.toggle('open',open);
-  document.getElementById('btn-editor').classList.toggle('active',open);
-  // adjust canvas
-  document.getElementById('canvas-wrap').style.right=open?'520px':'0';
-  setTimeout(()=>renderMinimap(),320);
+  buildZip(files, (mapData.meta?.title||'mindmap').replace(/\s+/g,'_')+'.pptx',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation');
 }
 
-document.getElementById('btn-editor').addEventListener('click',()=>toggleEditor());
+// ═══════════════════════════════════════════════════════════════════
+//  ZIP BUILDER (no external deps)
+// ═══════════════════════════════════════════════════════════════════
+function buildZip(fileMap, filename, mimeType){
+  const enc = new TextEncoder();
+  const u16 = n=>{ const b=new Uint8Array(2); new DataView(b.buffer).setUint16(0,n,true); return b; };
+  const u32 = n=>{ const b=new Uint8Array(4); new DataView(b.buffer).setUint32(0,n,true); return b; };
+  function crc32(buf){
+    if(!crc32._t){ crc32._t=new Uint32Array(256); for(let i=0;i<256;i++){ let c=i; for(let j=0;j<8;j++) c=c&1?0xEDB88320^(c>>>1):c>>>1; crc32._t[i]=c; } }
+    let c=0xFFFFFFFF;
+    for(let i=0;i<buf.length;i++) c=crc32._t[(c^buf[i])&0xFF]^(c>>>8);
+    return (c^0xFFFFFFFF)>>>0;
+  }
+  function cat(arrays){ const t=arrays.reduce((s,a)=>s+a.length,0); const r=new Uint8Array(t); let o=0; arrays.forEach(a=>{r.set(a,o);o+=a.length;}); return r; }
 
-// Apply
-function editorApply(){
-  const raw=edTA.value.trim();
+  const locals=[]; const central=[]; let offset=0;
+  for(const [name, content] of Object.entries(fileMap)){
+    const nb = enc.encode(name);
+    const db = enc.encode(content);
+    const crc = crc32(db);
+    const lh = cat([
+      new Uint8Array([0x50,0x4B,0x03,0x04]),
+      u16(20),u16(0),u16(0),u16(0),u16(0),
+      u32(crc),u32(db.length),u32(db.length),
+      u16(nb.length),u16(0),nb
+    ]);
+    central.push({nb,crc,size:db.length,offset});
+    locals.push(lh,db);
+    offset += lh.length + db.length;
+  }
+  const cdStart = offset;
+  const cdParts = central.map(({nb,crc,size,offset:off})=>cat([
+    new Uint8Array([0x50,0x4B,0x01,0x02]),
+    u16(20),u16(20),u16(0),u16(0),u16(0),u16(0),
+    u32(crc),u32(size),u32(size),
+    u16(nb.length),u16(0),u16(0),u16(0),u16(0),
+    u32(0),u32(off),nb
+  ]));
+  const cd = cat(cdParts);
+  const eocd = cat([
+    new Uint8Array([0x50,0x4B,0x05,0x06]),
+    u16(0),u16(0),u16(central.length),u16(central.length),
+    u32(cd.length),u32(cdStart),u16(0)
+  ]);
+  dlBlob(new Blob([cat([...locals,cd,eocd])],{type:mimeType}), filename);
+}
+
+// ── Download helper ──
+function dlBlob(blob, name){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  JSON EDITOR
+// ═══════════════════════════════════════════════════════════════════
+const edPanel  = document.getElementById('editor-panel');
+const edTA     = document.getElementById('editor-textarea');
+const edStatus = document.getElementById('editor-status');
+
+function toggleEditor(forceOpen){
+  const open = forceOpen !== undefined ? forceOpen : !edPanel.classList.contains('open');
+  edPanel.classList.toggle('open', open);
+  document.getElementById('btn-editor').classList.toggle('active', open);
+  document.getElementById('canvas-wrap').style.right = open ? '520px' : '0';
+  setTimeout(renderMinimap, 320);
+}
+document.getElementById('btn-editor').addEventListener('click', ()=>toggleEditor());
+
+function edApply(){
   try{
-    const parsed=JSON.parse(raw);
-    if(!parsed.root){throw new Error('Missing "root" key in JSON')}
-    mapData=parsed;
+    const parsed = JSON.parse(edTA.value);
+    if(!parsed.root) throw new Error('Missing "root" key');
+    mapData = parsed;
     applyMapData();
-    edStatus.textContent='✓ Applied successfully';
+    edStatus.textContent='✓ Applied';
     edStatus.className='success';
     setTimeout(()=>{edStatus.textContent='Ready';edStatus.className='';},3000);
   }catch(err){
@@ -1151,58 +1370,35 @@ function editorApply(){
     edStatus.className='error';
   }
 }
-document.getElementById('ed-apply').addEventListener('click',editorApply);
+document.getElementById('ed-apply').addEventListener('click', edApply);
 
-// Ctrl+Enter to apply
-edTA.addEventListener('keydown',e=>{
-  if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();editorApply()}
-  // Tab inserts 2 spaces
-  if(e.key==='Tab'){
-    e.preventDefault();
-    const s=edTA.selectionStart,end=edTA.selectionEnd;
-    edTA.value=edTA.value.substring(0,s)+'  '+edTA.value.substring(end);
-    edTA.selectionStart=edTA.selectionEnd=s+2;
-  }
+edTA.addEventListener('keydown', e=>{
+  if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();edApply();}
+  if(e.key==='Tab'){e.preventDefault();const s=edTA.selectionStart;edTA.value=edTA.value.slice(0,s)+'  '+edTA.value.slice(edTA.selectionEnd);edTA.selectionStart=edTA.selectionEnd=s+2;}
 });
 
-// Format
 document.getElementById('ed-format').addEventListener('click',()=>{
   try{
-    const parsed=JSON.parse(edTA.value);
-    edTA.value=JSON.stringify(parsed,null,2);
-    edStatus.textContent='✓ Formatted';edStatus.className='success';
+    edTA.value=JSON.stringify(JSON.parse(edTA.value),null,2);
+    edStatus.textContent='✓ Formatted'; edStatus.className='success';
     setTimeout(()=>{edStatus.textContent='Ready';edStatus.className='';},2000);
-  }catch(err){
-    edStatus.textContent='✗ Cannot format: '+err.message;edStatus.className='error';
-  }
+  }catch(e){edStatus.textContent='✗ '+e.message;edStatus.className='error';}
 });
 
-// Download
 document.getElementById('ed-download').addEventListener('click',()=>{
-  const blob=new Blob([edTA.value],{type:'application/json'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='data.json';a.click();
-  URL.revokeObjectURL(a.href);
+  dlBlob(new Blob([edTA.value],{type:'application/json'}),'data.json');
 });
 
-// Load file
-document.getElementById('ed-load-file').addEventListener('click',()=>{
-  document.getElementById('ed-file-input').click();
-});
+document.getElementById('ed-load-file').addEventListener('click',()=>document.getElementById('ed-file-input').click());
 document.getElementById('ed-file-input').addEventListener('change',e=>{
-  const f=e.target.files[0];if(!f) return;
-  const reader=new FileReader();
-  reader.onload=ev=>{
-    edTA.value=ev.target.result;
-    editorApply();
-  };
-  reader.readAsText(f);
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=ev=>{edTA.value=ev.target.result;edApply();};
+  r.readAsText(f);
   e.target.value='';
 });
 
-// ── Init ──
-window.addEventListener('resize',()=>{renderMinimap()});
+// ── Init ──────────────────────────────────────────────────────────
 loadData();
 </script>
 </body>
