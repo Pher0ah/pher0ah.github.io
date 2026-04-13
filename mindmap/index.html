@@ -677,7 +677,7 @@ function render(){
         // Expand one level; keep grandchildren collapsed if they were
         n.children.forEach(cid=>{
           const c = nodeMap[cid];
-          if(c.children.length && c.collapsed === undefined) c.collapsed = true;
+          if(c.children.length) c.collapsed = true;
         });
       } else {
         n.collapsed = true;
