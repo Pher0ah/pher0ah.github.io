@@ -1,0 +1,869 @@
+{
+  "id": "bigtalk",
+  "questions": [
+    {
+      "text": "As a kid, what scared you about growing up?",
+      "adult": false
+    },
+    {
+      "text": "Describe your perfect day?",
+      "adult": false
+    },
+    {
+      "text": "Do you fit-in or Stand-out and how?",
+      "adult": false
+    },
+    {
+      "text": "Do you prefer swimming in the ocean or the pool?",
+      "adult": false
+    },
+    {
+      "text": "Do you prefer to watch or participate to learn something new?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever had a near-death experience?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever done something in a hurry and regretted it?",
+      "adult": false
+    },
+    {
+      "text": "How are you making a difference in the world?",
+      "adult": false
+    },
+    {
+      "text": "How do you define true happiness?",
+      "adult": false
+    },
+    {
+      "text": "How do you feel about birthdays?",
+      "adult": false
+    },
+    {
+      "text": "How do you recharge when life gets difficult or overwhelming?",
+      "adult": false
+    },
+    {
+      "text": "How do you support your friends when they are upset?",
+      "adult": false
+    },
+    {
+      "text": "How old do you feel (regardless of your actual age)?",
+      "adult": false
+    },
+    {
+      "text": "If someone gave you $10,000 to spend, what would you do with it?",
+      "adult": false
+    },
+    {
+      "text": "If you came with a guarantee, what would it say?",
+      "adult": false
+    },
+    {
+      "text": "If you could create your own country, what would it be like?",
+      "adult": false
+    },
+    {
+      "text": "If you could have one super-power, what would it be and why?",
+      "adult": false
+    },
+    {
+      "text": "If you could invite three famous people to your home for dinner, who would they be?",
+      "adult": false
+    },
+    {
+      "text": "If you had 24 hours left to live, who would you be with in 23 hours?",
+      "adult": false
+    },
+    {
+      "text": "If you had 30 seconds to talk to the world what would you say?",
+      "adult": false
+    },
+    {
+      "text": "If you were to go back in history and live as someone else, who would it be, and why?",
+      "adult": false
+    },
+    {
+      "text": "If you were to go back in history and live, which time period, and why?",
+      "adult": false
+    },
+    {
+      "text": "If you wrote a one sentence mission statement about your life, what would it be?",
+      "adult": false
+    },
+    {
+      "text": "If your life was a book, what would be its title?",
+      "adult": false
+    },
+    {
+      "text": "Is there anyone in your life that you admire? Why?",
+      "adult": false
+    },
+    {
+      "text": "What are three essential travel items you will never leave behind?",
+      "adult": false
+    },
+    {
+      "text": "What are you curious about lately?",
+      "adult": false
+    },
+    {
+      "text": "What are you looking forward to?",
+      "adult": false
+    },
+    {
+      "text": "What are you passionate about?",
+      "adult": false
+    },
+    {
+      "text": "What are you proud of?",
+      "adult": false
+    },
+    {
+      "text": "What are you thankful for at this very moment?",
+      "adult": false
+    },
+    {
+      "text": "What attributes of your parents shaped you the most?",
+      "adult": false
+    },
+    {
+      "text": "What book changed your perspective?",
+      "adult": false
+    },
+    {
+      "text": "What concerns you about the future?",
+      "adult": false
+    },
+    {
+      "text": "What could you do today that you couldn't do a year ago?",
+      "adult": false
+    },
+    {
+      "text": "What do you do when you can't sleep at night?",
+      "adult": false
+    },
+    {
+      "text": "What do you believe in that you feel is different from others?",
+      "adult": false
+    },
+    {
+      "text": "What do you dream about?",
+      "adult": false
+    },
+    {
+      "text": "What do you fight for?",
+      "adult": false
+    },
+    {
+      "text": "What do you find fun?",
+      "adult": false
+    },
+    {
+      "text": "What do you find beautiful?",
+      "adult": false
+    },
+    {
+      "text": "What do you find challenging?",
+      "adult": false
+    },
+    {
+      "text": "What do you have that you cannot live without?",
+      "adult": false
+    },
+    {
+      "text": "What do you hope to achieve in five years?",
+      "adult": false
+    },
+    {
+      "text": "What do you miss?",
+      "adult": false
+    },
+    {
+      "text": "What do you most need help with?",
+      "adult": false
+    },
+    {
+      "text": "What do you spend too much time doing?",
+      "adult": false
+    },
+    {
+      "text": "What do you think about when you wake up?",
+      "adult": false
+    },
+    {
+      "text": "What do you think the world will be like in fifty years?",
+      "adult": false
+    },
+    {
+      "text": "What do you value that doesn't cost money?",
+      "adult": false
+    },
+    {
+      "text": "What do you want the world to remember about you?",
+      "adult": false
+    },
+    {
+      "text": "What do you want to change in the world?",
+      "adult": false
+    },
+    {
+      "text": "What do you want to do before you die?",
+      "adult": false
+    },
+    {
+      "text": "What do you wish more people knew about you?",
+      "adult": false
+    },
+    {
+      "text": "What does home mean to you?",
+      "adult": false
+    },
+    {
+      "text": "What does success mean to you?",
+      "adult": false
+    },
+    {
+      "text": "What does this world need more of? How can you help?",
+      "adult": false
+    },
+    {
+      "text": "What don’t you spend enough time doing?",
+      "adult": false
+    },
+    {
+      "text": "What fictional place would you most like to visit/live in?",
+      "adult": false
+    },
+    {
+      "text": "What food could you eat every day?",
+      "adult": false
+    },
+    {
+      "text": "What gets you out of bed every day?",
+      "adult": false
+    },
+    {
+      "text": "What gives you hope?",
+      "adult": false
+    },
+    {
+      "text": "What have you learnt from your past mistakes?",
+      "adult": false
+    },
+    {
+      "text": "What have you started but never finished? Why?",
+      "adult": false
+    },
+    {
+      "text": "What have you witnessed that has strengthened your faith in humanity?",
+      "adult": false
+    },
+    {
+      "text": "What helps you to feel calm?",
+      "adult": false
+    },
+    {
+      "text": "What is a bad habit you would like to break?",
+      "adult": false
+    },
+    {
+      "text": "What is a feeling you miss?",
+      "adult": false
+    },
+    {
+      "text": "What is a goal you plan on accomplishing this year?",
+      "adult": false
+    },
+    {
+      "text": "What is a life lesson a grandparent taught you?",
+      "adult": false
+    },
+    {
+      "text": "What is a misconception that people have about you?",
+      "adult": false
+    },
+    {
+      "text": "What is a new habit you want to form?",
+      "adult": false
+    },
+    {
+      "text": "What is a quirk that your family has?",
+      "adult": false
+    },
+    {
+      "text": "What is difficult for you now, but was easy as a child?",
+      "adult": false
+    },
+    {
+      "text": "What is holding you back from doing the things you really want to do?",
+      "adult": false
+    },
+    {
+      "text": "What is one decision you made that changed your life?",
+      "adult": false
+    },
+    {
+      "text": "What is one moment that you want to relive?",
+      "adult": false
+    },
+    {
+      "text": "What is one place you want to travel to?",
+      "adult": false
+    },
+    {
+      "text": "What is one quality you wish you had?",
+      "adult": false
+    },
+    {
+      "text": "What is one question you would ask a fortune-teller?",
+      "adult": false
+    },
+    {
+      "text": "What is one thing that could happen today that would make it great?",
+      "adult": false
+    },
+    {
+      "text": "What is one thing you would never compromise on?",
+      "adult": false
+    },
+    {
+      "text": "What is something new you have recently tried?",
+      "adult": false
+    },
+    {
+      "text": "What is something outside your comfort zone, that you would like to try?",
+      "adult": false
+    },
+    {
+      "text": "What is something you forgot once, and will never forget again?",
+      "adult": false
+    },
+    {
+      "text": "What is something you know that you do differently than most people?",
+      "adult": false
+    },
+    {
+      "text": "What is something you learnt about yourself from your past relationships?",
+      "adult": false
+    },
+    {
+      "text": "What is something you wish you didn't know?",
+      "adult": false
+    },
+    {
+      "text": "What is the best conversation piece in your home?",
+      "adult": false
+    },
+    {
+      "text": "What is the best gift someone can give you?",
+      "adult": false
+    },
+    {
+      "text": "What is the best gift you have ever received?",
+      "adult": false
+    },
+    {
+      "text": "What is the best way to spend a cold day?",
+      "adult": false
+    },
+    {
+      "text": "What is the best way to spend a sunny day?",
+      "adult": false
+    },
+    {
+      "text": "What is the biggest risk you have taken?",
+      "adult": false
+    },
+    {
+      "text": "What is the kindest thing someone has ever done for you?",
+      "adult": false
+    },
+    {
+      "text": "What is the most breathtaking view you have seen?",
+      "adult": false
+    },
+    {
+      "text": "What is the most important lesson you have learnt?",
+      "adult": false
+    },
+    {
+      "text": "What is the weirdest gift you have ever given or received?",
+      "adult": false
+    },
+    {
+      "text": "What is the strangest thing you have eaten?",
+      "adult": false
+    },
+    {
+      "text": "What is your biggest fear?",
+      "adult": false
+    },
+    {
+      "text": "What is your earliest childhood memory?",
+      "adult": false
+    },
+    {
+      "text": "What is your earliest memory of achievement?",
+      "adult": false
+    },
+    {
+      "text": "What is your favourite place in the world?",
+      "adult": false
+    },
+    {
+      "text": "What is your greatest strength?",
+      "adult": false
+    },
+    {
+      "text": "What is your happiest memory?",
+      "adult": false
+    },
+    {
+      "text": "What is your least favourite chore?",
+      "adult": false
+    },
+    {
+      "text": "What is your most annoying habit?",
+      "adult": false
+    },
+    {
+      "text": "What is your most favourite chore?",
+      "adult": false
+    },
+    {
+      "text": "What is your most favourite dessert?",
+      "adult": false
+    },
+    {
+      "text": "What is your next great adventure?",
+      "adult": false
+    },
+    {
+      "text": "What is your number one priority today?",
+      "adult": false
+    },
+    {
+      "text": "What is your usual coping method when you are sad?",
+      "adult": false
+    },
+    {
+      "text": "What job would you choose if money was not a consideration?",
+      "adult": false
+    },
+    {
+      "text": "What little things in life do you take the time to stop and appreciate?",
+      "adult": false
+    },
+    {
+      "text": "What makes a friend a good/best friend?",
+      "adult": false
+    },
+    {
+      "text": "What makes you feel really alive?",
+      "adult": false
+    },
+    {
+      "text": "What makes you feel supported?",
+      "adult": false
+    },
+    {
+      "text": "What motivates you to keep going?",
+      "adult": false
+    },
+    {
+      "text": "What new law would you like to make?",
+      "adult": false
+    },
+    {
+      "text": "What object would you save if your house was on fire?",
+      "adult": false
+    },
+    {
+      "text": "What rule do you like breaking?",
+      "adult": false
+    },
+    {
+      "text": "What rule do you think should not exist?",
+      "adult": false
+    },
+    {
+      "text": "What song makes you want to dance?",
+      "adult": false
+    },
+    {
+      "text": "What topic could you talk about for thirty minutes with no preparation?",
+      "adult": false
+    },
+    {
+      "text": "What was the best compliment you have received?",
+      "adult": false
+    },
+    {
+      "text": "What was the most impactful event in your life?",
+      "adult": false
+    },
+    {
+      "text": "What were you doing the last time you lost track of time?",
+      "adult": false
+    },
+    {
+      "text": "What would you do if you won the lottery?",
+      "adult": false
+    },
+    {
+      "text": "What would you regret not having done by the end of your life?",
+      "adult": false
+    },
+    {
+      "text": "When do you feel the most like yourself?",
+      "adult": false
+    },
+    {
+      "text": "When was the last time someone made you smile?",
+      "adult": false
+    },
+    {
+      "text": "When was the last time you helped a stranger? Why?",
+      "adult": false
+    },
+    {
+      "text": "When was the last time you lied? Why?",
+      "adult": false
+    },
+    {
+      "text": "When was the last time you made someone else smile?",
+      "adult": false
+    },
+    {
+      "text": "When was the last time you were moved to tears?",
+      "adult": false
+    },
+    {
+      "text": "Where do you find peace?",
+      "adult": false
+    },
+    {
+      "text": "Where would you like to wake up Tomorrow?",
+      "adult": false
+    },
+    {
+      "text": "Which hour of the day would you want to skip completely?",
+      "adult": false
+    },
+    {
+      "text": "Which vacation exceeded your expectations and why?",
+      "adult": false
+    },
+    {
+      "text": "Who do you need to get in touch with because it’s been too long?",
+      "adult": false
+    },
+    {
+      "text": "Who do  you turn to for support?",
+      "adult": false
+    },
+    {
+      "text": "Who is your hero or role-model?",
+      "adult": false
+    },
+    {
+      "text": "Who in your life do you love the most? and what are you doing about it?",
+      "adult": false
+    },
+    {
+      "text": "Why do you do what you do?",
+      "adult": false
+    },
+    {
+      "text": "What is a lesson you learned the hard way?",
+      "adult": false
+    },
+    {
+      "text": "What gives your life meaning?",
+      "adult": false
+    },
+    {
+      "text": "What was your biggest dream as a child, and has it changed?",
+      "adult": false
+    },
+    {
+      "text": "How do you think your upbringing shaped who you are today?",
+      "adult": false
+    },
+    {
+      "text": "What values do you most want to pass on to the next generation?",
+      "adult": false
+    },
+    {
+      "text": "What is something you have changed your mind about in the last few years?",
+      "adult": false
+    },
+    {
+      "text": "Who has influenced you the most, and how?",
+      "adult": false
+    },
+    {
+      "text": "What does a meaningful life look like to you?",
+      "adult": false
+    },
+    {
+      "text": "What is a belief you once held strongly that you no longer hold?",
+      "adult": false
+    },
+    {
+      "text": "When was the last time you felt truly understood?",
+      "adult": false
+    },
+    {
+      "text": "What is something you are still trying to figure out about yourself?",
+      "adult": false
+    },
+    {
+      "text": "What part of your life would surprise the people who knew you as a child?",
+      "adult": false
+    },
+    {
+      "text": "What is a small act of kindness you have never forgotten?",
+      "adult": false
+    },
+    {
+      "text": "What is something you are grateful you went through, even though it was hard?",
+      "adult": false
+    },
+    {
+      "text": "What would you tell someone going through what you have already survived?",
+      "adult": false
+    },
+    {
+      "text": "What is a question you wish people asked you more often?",
+      "adult": false
+    },
+    {
+      "text": "What is the bravest thing you have ever done?",
+      "adult": false
+    },
+    {
+      "text": "What is something you are working on becoming better at?",
+      "adult": false
+    },
+    {
+      "text": "What does friendship mean to you now compared to ten years ago?",
+      "adult": false
+    },
+    {
+      "text": "What is a moment you realised you had grown up?",
+      "adult": false
+    },
+    {
+      "text": "What is something you used to want that you no longer do?",
+      "adult": false
+    },
+    {
+      "text": "What is a risk you are glad you took?",
+      "adult": false
+    },
+    {
+      "text": "What is a risk you wish you had taken?",
+      "adult": false
+    },
+    {
+      "text": "What is the most important thing your parents taught you, intentionally or not?",
+      "adult": false
+    },
+    {
+      "text": "What do you hope people feel after spending time with you?",
+      "adult": false
+    },
+    {
+      "text": "What is something you find hard to forgive?",
+      "adult": false
+    },
+    {
+      "text": "What helps you feel grounded when everything feels uncertain?",
+      "adult": false
+    },
+    {
+      "text": "What is a memory that always makes you smile?",
+      "adult": false
+    },
+    {
+      "text": "What is something you believe that most people around you do not?",
+      "adult": false
+    },
+    {
+      "text": "What is a tradition you want to keep alive?",
+      "adult": false
+    },
+    {
+      "text": "What part of getting older are you looking forward to?",
+      "adult": false
+    },
+    {
+      "text": "What is something you wish you had started sooner?",
+      "adult": false
+    },
+    {
+      "text": "What is the kindest thing you have ever done for yourself?",
+      "adult": false
+    },
+    {
+      "text": "What is something that has shaped you that you rarely talk about?",
+      "adult": false
+    },
+    {
+      "text": "What is a dream you have quietly let go of, and how do you feel about it?",
+      "adult": false
+    },
+    {
+      "text": "What is a decision you are proud you made, even though it was difficult?",
+      "adult": false
+    },
+    {
+      "text": "What is a compliment that has stayed with you for years?",
+      "adult": false
+    },
+    {
+      "text": "Who in your life makes you feel the most yourself?",
+      "adult": false
+    },
+    {
+      "text": "What is a piece of advice you ignored but later wished you had taken?",
+      "adult": false
+    },
+    {
+      "text": "What do you think your younger self would be proud of?",
+      "adult": false
+    },
+    {
+      "text": "What does \"enough\" look like to you?",
+      "adult": false
+    },
+    {
+      "text": "What is a story from your life you love telling?",
+      "adult": false
+    },
+    {
+      "text": "What is something you are unlearning?",
+      "adult": false
+    },
+    {
+      "text": "What is a moment that changed how you see the world?",
+      "adult": false
+    },
+    {
+      "text": "What is something ordinary that you find deeply beautiful?",
+      "adult": false
+    },
+    {
+      "text": "What do you want more of in your daily life?",
+      "adult": false
+    },
+    {
+      "text": "What is something you would do differently if no one was watching?",
+      "adult": false
+    },
+    {
+      "text": "What is a fear you have overcome?",
+      "adult": false
+    },
+    {
+      "text": "What is something you hope never changes about you?",
+      "adult": false
+    },
+    {
+      "text": "How has your definition of success changed over time?",
+      "adult": false
+    },
+    {
+      "text": "What is something you are proud of that you rarely get credit for?",
+      "adult": false
+    },
+    {
+      "text": "What is the hardest goodbye you have ever had?",
+      "adult": false
+    },
+    {
+      "text": "What makes you feel safe with another person?",
+      "adult": false
+    },
+    {
+      "text": "What is a moment you felt genuinely free?",
+      "adult": false
+    },
+    {
+      "text": "What part of your daily routine do you secretly treasure?",
+      "adult": false
+    },
+    {
+      "text": "What is something you have never told anyone in this room?",
+      "adult": true
+    },
+    {
+      "text": "What does intimacy mean to you beyond the physical?",
+      "adult": true
+    },
+    {
+      "text": "What is your greatest regret in love?",
+      "adult": true
+    },
+    {
+      "text": "What did your first heartbreak teach you?",
+      "adult": true
+    },
+    {
+      "text": "What do you need from the people you love that you find hard to ask for?",
+      "adult": true
+    },
+    {
+      "text": "What is a wound from a past relationship you are still carrying?",
+      "adult": true
+    },
+    {
+      "text": "What does being truly seen by a partner feel like to you?",
+      "adult": true
+    },
+    {
+      "text": "How has your relationship with your body changed over the years?",
+      "adult": true
+    },
+    {
+      "text": "What is something about love you understand now that you did not at twenty?",
+      "adult": true
+    },
+    {
+      "text": "What is a boundary you wish you had set earlier in life?",
+      "adult": true
+    },
+    {
+      "text": "What is something you are still trying to forgive a loved one for?",
+      "adult": true
+    },
+    {
+      "text": "What does vulnerability cost you, and what does it give you?",
+      "adult": true
+    },
+    {
+      "text": "When did you last let someone fully in, and what made it possible?",
+      "adult": true
+    },
+    {
+      "text": "What do you hope is said about you when you are gone?",
+      "adult": true
+    },
+    {
+      "text": "What is a part of yourself you are still learning to accept?",
+      "adult": true
+    },
+    {
+      "text": "What is something you wish your parents had done differently?",
+      "adult": true
+    },
+    {
+      "text": "What does it mean to you to be loved unconditionally?",
+      "adult": true
+    }
+  ]
+}

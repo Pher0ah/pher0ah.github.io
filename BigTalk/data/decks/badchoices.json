@@ -1,0 +1,413 @@
+{
+  "id": "badchoices",
+  "questions": [
+    {
+      "text": "Have you ever ghosted someone to avoid an awkward conversation?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever pretended not to see someone you know in public?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever lied about your age to get a discount?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever stolen something and never got caught?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever broken something at a friend's house and not told them?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever read someone's messages without permission?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever blamed a fart on a pet or a child?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever faked being sick to get out of work?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever cried to get out of a speeding ticket?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever returned a worn outfit for a full refund?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever eaten food off the floor and said nothing?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever stalked an ex on social media for over an hour?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever sent a text about someone to that exact person by mistake?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever pretended to love a gift you secretly hated?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever lied about reading a book to sound smart?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever snooped through someone's bathroom cabinet?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever faked a phone call to avoid talking to someone?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever re-gifted a present to the person who gave it to you?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever pretended your phone died to ignore someone?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever taken credit for someone else's idea at work?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever cheated on a test or exam?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever lied to your boss's face and gotten away with it?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever quietly left a group chat to escape the drama?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever judged someone entirely on their shoes?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever pretended to be asleep to avoid responsibility?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever lied about where you were to a partner or parent?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever kept money you found that wasn't yours?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever ditched a friend in public to dodge an introduction?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever sworn at another driver and then realised you knew them?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever ruined a surprise party by accident?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever pretended to be busy to avoid plans you already agreed to?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever ranked your friends from favourite to least favourite in your head?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever screenshotted a private chat to send to someone else?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever lied on a dating profile?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever pretended to understand a joke you completely missed?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever told a white lie that completely snowballed?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever taken something from a hotel room that wasn't a toiletry?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever let someone else take the blame for something you did?",
+      "adult": false
+    },
+    {
+      "text": "Would you rather win $50,000 yourself or watch your best friend win $500,000?",
+      "adult": false
+    },
+    {
+      "text": "Would you rather have your search history made public or your bank statement?",
+      "adult": false
+    },
+    {
+      "text": "Would you rather lose all your photos or all your contacts?",
+      "adult": false
+    },
+    {
+      "text": "Would you rather never be able to lie or never be able to keep a secret?",
+      "adult": false
+    },
+    {
+      "text": "Would you rather have your texts read aloud at this table or your camera roll shown?",
+      "adult": false
+    },
+    {
+      "text": "Would you rather date someone with no sense of humour or no ambition?",
+      "adult": false
+    },
+    {
+      "text": "Would you rather marry a billionaire you don't love or your soulmate who's broke?",
+      "adult": false
+    },
+    {
+      "text": "Would you rather know how you die or when you die?",
+      "adult": false
+    },
+    {
+      "text": "Would you rather your partner read your mind for a day or your messages for a year?",
+      "adult": false
+    },
+    {
+      "text": "Would you rather be famous for something embarrassing or never be remembered at all?",
+      "adult": false
+    },
+    {
+      "text": "Would you rather your ex or your boss saw your search history?",
+      "adult": false
+    },
+    {
+      "text": "Would you rather date someone exactly like your ex or exactly like your parent?",
+      "adult": false
+    },
+    {
+      "text": "Would you rather everyone knew your weight or your number of exes?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever sent a nude to the wrong person?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever hooked up with someone and forgotten their name?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever faked an orgasm?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever had a one-night stand?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever kissed someone whose name you never learned?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever had a crush on a friend's partner?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever sent a risky text during a work meeting?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever kissed someone in this room?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever had a friends-with-benefits arrangement?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever lied about how many people you've slept with?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever hooked up with a coworker?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever been walked in on during sex?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever had a sex dream about someone you really shouldn't have?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever swiped on a dating app while in a relationship?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever gone home with someone you met that same night?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever sent a thirst trap to get someone's attention?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever stayed in a relationship purely for the sex?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever fancied two people at the same time?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever done a walk of shame the morning after?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever dated two people at once without them knowing?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever kissed someone just to make an ex jealous?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever hooked up with someone at a wedding?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever pretended to be single when you weren't?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever had a hookup you swore you'd take to the grave?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever sexted someone you had never actually met?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever been skinny-dipping?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever joined the mile-high club?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever had a friend catch you mid-hookup?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever invented an excuse to get out of a date?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever flirted your way out of trouble?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever gone back to an ex purely out of boredom?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever made a move on someone and been flat-out rejected?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever sent the same flirty text to more than one person?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever had a drunken kiss you instantly regretted?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever ended a relationship over text to avoid the conversation?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever pretended to be more experienced than you really are?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever faked an emergency to escape a terrible date?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever dated someone mainly because they were rich?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever cheated on a partner?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever been the other person in someone's relationship?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever hooked up with a friend and never spoken of it again?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever fallen for someone you knew was bad for you?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever flirted with someone just to get a free drink?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever pretended to enjoy something in bed that you didn't?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever woken up next to someone with no memory of how you got there?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever kept dating someone just to avoid being single?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever told someone I love you without meaning it?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever had a secret crush on someone at this table?",
+      "adult": true
+    },
+    {
+      "text": "Would you rather have one wild night you can't remember or a dull one you'll never forget?",
+      "adult": true
+    },
+    {
+      "text": "Would you rather kiss the person on your left or the person on your right?",
+      "adult": true
+    },
+    {
+      "text": "Would you rather reveal your body count or your bank balance to the table?",
+      "adult": true
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "couples",
+  "questions": [
+    {
+      "text": "Who was your first crush, and what were they like?",
+      "adult": false
+    },
+    {
+      "text": "What do you find sexiest about me?",
+      "adult": true
+    },
+    {
+      "text": "How old were you when you lost your virginity?",
+      "adult": true
+    },
+    {
+      "text": "What was your first sexual experience like?",
+      "adult": true
+    },
+    {
+      "text": "Who is more inclined to be jealous, you or me?",
+      "adult": false
+    }
+  ]
+}

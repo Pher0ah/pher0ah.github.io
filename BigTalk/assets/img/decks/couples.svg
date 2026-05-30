@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Couples">
+  <defs>
+    <linearGradient id="c" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff7eb3"/>
+      <stop offset="1" stop-color="#ff4f81"/>
+    </linearGradient>
+  </defs>
+  <g fill="url(#c)">
+    <path d="M88 60c-16 0-29 13-29 29 0 32 29 52 53 70 24-18 53-38 53-70 0-16-13-29-29-29-11 0-20 6-24 15-4-9-13-15-24-15z" opacity=".55"/>
+    <path d="M70 78c-16 0-29 13-29 29 0 32 29 52 53 70 24-18 53-38 53-70 0-16-13-29-29-29-11 0-20 6-24 15-4-9-13-15-24-15z"/>
+  </g>
+  <text x="120" y="214" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="30" font-style="italic" fill="#b3174d">Couples</text>
+</svg>
