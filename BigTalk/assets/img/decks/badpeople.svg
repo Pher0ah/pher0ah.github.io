@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 170" role="img" aria-label="Bad People">
+  <g font-family="'Arial Black', 'Arial Narrow Bold', Arial, sans-serif" font-weight="900"
+     fill="#ffffff" text-anchor="middle">
+    <text x="150" y="82" font-size="82" letter-spacing="-3">BAD</text>
+    <text x="150" y="130" font-size="44" letter-spacing="1">PEOPLE</text>
+  </g>
+  <rect x="44" y="142" width="212" height="9" rx="2" fill="#e01b1b"/>
+</svg>

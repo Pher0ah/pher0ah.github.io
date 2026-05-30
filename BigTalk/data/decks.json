@@ -1,0 +1,43 @@
+{
+  "$comment": "Registry of all available decks. To add a new deck: add an entry here and drop a matching data/decks/<id>.json question file plus a logo in assets/img/decks/. Set \"card\" to \"dark\" when the logo is light-coloured so it shows on a black card (defaults to \"light\").",
+  "decks": [
+    {
+      "id": "bigtalk",
+      "name": "BigTalk",
+      "title": "Make Big Talk",
+      "tagline": "Skip the small talk. Ask something that matters.",
+      "logo": "assets/img/decks/bigtalk.svg",
+      "accent": "#3ddc84",
+      "file": "data/decks/bigtalk.json"
+    },
+    {
+      "id": "badpeople",
+      "name": "Bad People",
+      "title": "Bad People",
+      "tagline": "Find out what your friends really think of you.",
+      "logo": "assets/img/decks/badpeople.svg",
+      "accent": "#e5484d",
+      "card": "dark",
+      "file": "data/decks/badpeople.json"
+    },
+    {
+      "id": "badchoices",
+      "name": "Bad Choices",
+      "title": "Bad Choices",
+      "tagline": "The questions you'd never normally ask out loud.",
+      "logo": "assets/img/decks/badchoices.svg",
+      "accent": "#3b82f6",
+      "card": "dark",
+      "file": "data/decks/badchoices.json"
+    },
+    {
+      "id": "couples",
+      "name": "Couples",
+      "title": "Couples Quiz",
+      "tagline": "For two people who think they know each other.",
+      "logo": "assets/img/decks/couples.svg",
+      "accent": "#ff4f81",
+      "file": "data/decks/couples.json"
+    }
+  ]
+}

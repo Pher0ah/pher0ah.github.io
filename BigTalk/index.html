@@ -1,38 +1,135 @@
 <!DOCTYPE html>
-<html lang="en-AU" >
+<html lang="en-AU">
 <head>
-  <meta charset='UTF-8'>
-  <meta name="viewport" content='width=device-width, initial-scale=1.0'>
-  <title>BigTalk</title>
+  <meta charset="UTF-8" />
+  <title>BigTalk — Conversation Cards</title>
 
-  <!-- Make this Apple iOS Compatible-->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="BigTalk">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="apple-touch-icon" href="/Images/BTicon.png">
+  <!-- Description / SEO -->
+  <meta name="author" content="Hany Elkady" />
+  <meta name="description" content="BigTalk is a single-page conversation-card game for parties and gatherings. Flip a card, ask a deep question, talk for real." />
+  <meta name="keywords" content="conversation cards, icebreaker, party game, big talk, questions" />
 
-  <!-- Load Website Style Sheet -->
-  <link rel='manifest' href='manifest.webmanifest'>
-  <link rel="stylesheet" href='style.css'>
-  <link rel="shortcut icon" href='/Images/bigtalk.ico' />
+  <!-- Responsive + theme colour (kept in sync with the active deck by JS) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#101014" id="theme-color" />
+  <meta name="color-scheme" content="dark" />
 
+  <!-- Open Graph -->
+  <meta property="og:title" content="BigTalk — Conversation Cards" />
+  <meta property="og:type" content="website" />
+  <meta property="og:description" content="Skip the small talk. Flip a card and ask something that matters." />
+  <meta property="og:image" content="assets/img/icons/icon-512.png" />
+
+  <!-- Installable web app (relative paths so it works on GitHub Pages sub-paths) -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" id="favicon" href="assets/img/icons/favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" id="apple-icon" href="assets/img/icons/icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="BigTalk" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-<div class="container">
-  <div class="card" onclick="flipCard(this)">
-    
-    <!-- Front of Card -->
-    <div class="front">
+  <!-- ============ Top bar ============ -->
+  <header class="topbar">
+    <button class="hamburger" id="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="menu-panel">
+      <span></span><span></span><span></span>
+    </button>
+    <h1 class="topbar__title" id="deck-title">BigTalk</h1>
+    <span class="topbar__spacer" aria-hidden="true"></span>
+  </header>
+
+  <!-- ============ Game stage ============ -->
+  <main class="stage" id="stage">
+    <div class="card-stage">
+      <button class="card" id="card" aria-label="Flip card to reveal a question">
+        <!-- Front: the deck logo -->
+        <div class="card__face card__face--front">
+          <img class="card__logo" id="card-logo" alt="" decoding="async" />
+        </div>
+        <!-- Back: the question -->
+        <div class="card__face card__face--back">
+          <p class="card__question" id="card-question"></p>
+          <img class="card__watermark" id="card-watermark" alt="" aria-hidden="true" decoding="async" />
+        </div>
+      </button>
+    </div>
+    <p class="stage__hint" id="hint">Tap the card to begin</p>
+  </main>
+
+  <!-- ============ Slide-in menu (Settings / About) ============ -->
+  <div class="scrim" id="scrim" hidden></div>
+
+  <aside class="menu" id="menu-panel" aria-hidden="true" aria-label="Menu">
+    <div class="menu__head">
+      <nav class="menu__tabs" role="tablist" aria-label="Menu sections">
+        <button class="menu__tab is-active" id="tab-settings" role="tab" aria-selected="true" aria-controls="pane-settings">Settings</button>
+        <button class="menu__tab" id="tab-about" role="tab" aria-selected="false" aria-controls="pane-about">About</button>
+      </nav>
+      <button class="menu__close" id="menu-close" aria-label="Close menu">&times;</button>
     </div>
 
-    <!-- Back of Card -->
-    <div class="back" id="question">
-        BigTalk Question?
-      </div>
+    <!-- Settings pane -->
+    <section class="pane is-active" id="pane-settings" role="tabpanel" aria-labelledby="tab-settings">
+      <h2 class="pane__heading">Choose a deck</h2>
+      <p class="pane__sub">Pick which questions to load. Your choice is remembered.</p>
+      <ul class="deck-list" id="deck-list"><!-- built by JS --></ul>
 
-  </div>
-</div>
-  <script  src="./questions.js"></script>
-  <script  src="./functions.js"></script>
+      <h2 class="pane__heading">Content</h2>
+      <label class="switch">
+        <span class="switch__text">
+          <span class="switch__label">Adult theme</span>
+          <span class="switch__hint">Include more personal &amp; mature questions.</span>
+        </span>
+        <input type="checkbox" id="adult-toggle" />
+        <span class="switch__track" aria-hidden="true"></span>
+      </label>
+
+      <h2 class="pane__heading">Accent colour</h2>
+      <p class="pane__sub">Personalise the highlight colour used across the app.</p>
+      <div class="accent-row">
+        <input type="color" id="accent-picker" class="accent-picker" aria-label="Pick accent colour" />
+        <span class="accent-value" id="accent-value">#3ddc84</span>
+        <button class="btn btn--ghost" id="accent-reset">Reset to deck default</button>
+      </div>
+    </section>
+
+    <!-- About pane -->
+    <section class="pane" id="pane-about" role="tabpanel" aria-labelledby="tab-about" hidden>
+      <h2 class="pane__heading">About BigTalk</h2>
+      <p>
+        <strong>BigTalk</strong> is a deliberately simple party game: flip a card, read the
+        question aloud, and let everyone answer <em>for real</em>. Then flip it back and pass
+        it on — the next person flips for a fresh question. No screens to stare at, no scores
+        to keep. Just better conversations.
+      </p>
+      <p>
+        The idea grew out of the wonderful
+        <a href="https://www.makebigtalk.com" target="_blank" rel="noopener noreferrer">Make Big Talk</a>
+        project, which champions skipping shallow small talk in favour of questions that
+        actually mean something. This app takes that spirit but isn't limited to it: the
+        same card mechanic happily hosts other decks — cheeky <em>Bad People</em> "who's most
+        likely" rounds, daring <em>Bad Choices</em>, and intimate <em>Couples</em> prompts —
+        with room to add your own decks over time.
+      </p>
+      <p>
+        Everything runs entirely in your browser. Once loaded it works offline and can be
+        installed to your home screen like a native app. No accounts, no tracking, no data
+        ever leaves your device.
+      </p>
+      <h2 class="pane__heading">Add your own deck</h2>
+      <p class="pane__sub">
+        Drop a JSON file in <code>data/decks/</code>, register it in
+        <code>data/decks.json</code>, and it appears in this list — no code changes needed.
+      </p>
+      <p class="about__credit">
+        Made with care by Hany Elkady · <span id="app-version">v2.0</span>
+      </p>
+    </section>
+  </aside>
+
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>

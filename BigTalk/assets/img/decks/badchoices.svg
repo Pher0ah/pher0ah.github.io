@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 170" role="img" aria-label="Bad Choices">
+  <g font-family="'Arial Black', 'Arial Narrow Bold', Arial, sans-serif" font-weight="900"
+     fill="#ffffff" text-anchor="middle">
+    <text x="140" y="82" font-size="82" letter-spacing="-3">BAD</text>
+    <text x="140" y="128" font-size="40" letter-spacing="2">CHOICES</text>
+  </g>
+  <rect x="52" y="140" width="176" height="9" rx="2" fill="#2f5fd0"/>
+</svg>
