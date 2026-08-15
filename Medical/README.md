@@ -6,43 +6,53 @@ Open `index.html` in any browser, on a phone or a desktop.
 
 | File | What it is |
 |---|---|
-| `index.html` | The whole application, with a copy of the data embedded so it works from `file://` |
+| `index.html` | The dashboard. Holds no data of its own — it reads the record at startup |
 | `health-data.json` | The record itself — the file you edit, back up and version |
-| `rebuild.py` | Re-embeds `health-data.json` into `index.html` after you edit the JSON |
-| `lab/` | The source PDFs and spreadsheet the record was built from |
+| `serve.py` | Serves the folder on localhost so the dashboard can load the record by itself |
+| `lab/` | The source PDFs, spreadsheet and CSV exports the record was built from |
 
 ---
 
 ## Using it
 
-**Open** — double-click `index.html`. It loads the embedded data immediately.
+The dashboard and the record are separate files. `index.html` carries no data; it loads
+`health-data.json` at startup, and writes your changes back to a JSON file when you press Save.
 
-**Load** — pick any record JSON file. Use this to pull in a copy edited elsewhere, or to
-move the record between devices.
+### Opening it
 
-**Save** — writes the current state to `health-data.json`. On Chrome and Edge you get a real
-save dialog; other browsers download the file.
-
-**Add** — a form for a lab result, a blood-pressure or vitals reading, a medication, a
-condition, or an imaging/report entry. New tests that aren't in the catalogue can be defined
-inline (name, unit, category, reference range).
-
-Every change is written to browser local storage straight away, so nothing is lost if you
-close the tab. That copy is per-browser — **use Save to write the JSON file** whenever you
-want the change to survive beyond this browser.
-
-### Keeping the two files in step
-
-The embedded copy inside `index.html` is only the starting point. After you edit
-`health-data.json` — by hand or by saving from the dashboard — run:
+**With `serve.py` (recommended).** Run:
 
 ```bash
-python rebuild.py
+python serve.py
 ```
 
-That re-embeds the JSON and keeps a backup at `index.html.bak`. Skip it and the app still
-works; it just starts from the older bundled snapshot on a device that has no local storage
-copy yet.
+It serves the folder on `http://127.0.0.1:8765` and opens the dashboard, which then reads
+`health-data.json` from the folder every single time — no clicking, always current. The server
+binds to localhost only, so nothing is exposed to your network. Ctrl+C stops it.
+
+**By double-clicking `index.html`.** This works, with one wrinkle: browsers forbid a page opened
+over `file://` from reading other files on disk, so the dashboard cannot fetch the record on its
+own. It shows a short screen asking you to pick `health-data.json` once. After that the record is
+kept in the browser's local storage and reloads automatically.
+
+Because that stored copy can fall behind the file, the dashboard says which one you are looking
+at — under the patient name, and in a banner offering to re-open the file when it is showing
+the browser copy. If you have edited `health-data.json` outside the dashboard, click that button.
+
+### Loading and saving
+
+**Load** opens any record JSON. On Chrome and Edge this gives the dashboard a writable handle to
+that exact file, so **Save** afterwards writes straight back to it with no dialog. Elsewhere Save
+opens a save dialog, or downloads `health-data.json` if the browser has neither.
+
+**Add** is a form for a lab result, a blood-pressure or vitals reading, a medication, a condition,
+or an imaging/report entry. New tests not in the catalogue can be defined inline (name, unit,
+category, reference range), and results entered in another unit are converted on the way in.
+
+Every change is written to browser local storage immediately, so nothing is lost if the tab
+closes. That is a safety net, not a save: until you press **Save**, `health-data.json` is
+unchanged. The Save button turns amber while you have unsaved edits, and the browser warns you
+if you try to leave with work outstanding.
 
 ### Moving through time
 
@@ -239,10 +249,21 @@ One panel with `date`, `method`, `unit`, `antigensTested`, `negativeCount`, a `d
 string, and `positives`: `[{ "group", "name", "antigen", "value" }]`. Bands are drawn at
 5 / 10 / 20 µg/mL.
 
-### `followUps` (optional)
+### `followUps`
 
-If present, replaces the "Worth raising with your doctor" cards on the Overview tab:
-`[{ "level": "bad" | "warn" | "", "title": "...", "text": "..." }]`.
+The "Worth raising with your doctor" cards on the Overview tab. These live in the record rather
+than in the dashboard, so they can be rewritten as the picture changes without touching
+`index.html`:
+
+```json
+[{ "level": "bad" | "warn" | "", "title": "...", "text": "..." }]
+```
+
+`level` only sets the colour of the stripe — `bad` red, `warn` amber, empty neutral. Omit the
+whole key and the section disappears.
+
+`index.html` contains no personal information at all: every name, value and clinical note comes
+from the record file.
 
 ---
 
