@@ -6,8 +6,8 @@ Open `index.html` in any browser, on a phone or a desktop.
 
 > **Hosted copy.** This folder is published at
 > <https://www.egynomics.com/Medical/>, which is a public web address. Only the dashboard is
-> published here — `index.html` holds no personal data of any kind. The record itself
-> (`health-data.json`) is deliberately **not** in this repository and never should be: use the
+> published there — `index.html` holds no personal data of any kind. The record itself
+> (`health-data.json`) is deliberately **not** in that repository and never should be: use the
 > **Load** button to open it from your own device. The original reports in `lab/` are likewise
 > kept off GitHub entirely.
 
@@ -16,6 +16,7 @@ Open `index.html` in any browser, on a phone or a desktop.
 | `index.html` | The dashboard. Holds no data of its own — it reads the record at startup |
 | `health-data.json` | The record itself — the file you edit, back up and version |
 | `serve.py` | Serves the folder on localhost so the dashboard can load the record by itself |
+| `publish.py` | Pushes the dashboard to the public site; refuses to publish the record |
 | `lab/` | The source PDFs, spreadsheet and CSV exports the record was built from |
 
 ---
