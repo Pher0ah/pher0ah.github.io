@@ -1,1 +1,7 @@
 .DS_Store
+# The health record and its source reports are personal medical data.
+# This repository is public and is served at www.egynomics.com - keep them out.
+Medical/health-data.json
+Medical/lab/
+Medical/*.pdf
+Medical/serve.py

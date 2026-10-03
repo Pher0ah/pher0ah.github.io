@@ -4,6 +4,13 @@ A single-page dashboard for a 20-year personal medical record — labs, vitals, 
 conditions, imaging and a food-IgG panel. No server, no build step, no internet connection.
 Open `index.html` in any browser, on a phone or a desktop.
 
+> **Hosted copy.** This folder is published at
+> <https://www.egynomics.com/Medical/>, which is a public web address. Only the dashboard is
+> published here — `index.html` holds no personal data of any kind. The record itself
+> (`health-data.json`) is deliberately **not** in this repository and never should be: use the
+> **Load** button to open it from your own device. The original reports in `lab/` are likewise
+> kept off GitHub entirely.
+
 | File | What it is |
 |---|---|
 | `index.html` | The dashboard. Holds no data of its own — it reads the record at startup |
@@ -66,10 +73,26 @@ history in miniature with the visible slice highlighted:
 - **Double-tap the dial**, or the ⇄ button, to snap back to the whole record.
 - The **− and +** buttons beside the date label zoom out and in a step at a time, down to a
   two-week window.
-- The **1Y / 3Y / 5Y / 10Y / ALL** pills set the opening window — charts open on 3Y by default.
+- The **Last 3 / 1Y / 3Y / 5Y / 10Y / ALL** pills set the opening window.
+
+**Last 3** is the default, and it follows the data rather than the calendar: the window opens on
+whatever span covers that test’s three most recent readings. A test last run in 2011 opens on its
+own results instead of on an empty stretch of the last three years, and a test run monthly opens
+tight. Because it is measured in readings, the span differs per graph — CK spans six years on its
+last three, blood pressure spans about two weeks.
 
 When a window contains no results the chart says so and names the nearest result on either
 side, so an empty stretch reads as "not tested since 2021" rather than looking broken.
+
+On the Vitals tab the window also drives the statistics and the reading log, so the tiles always
+describe exactly the readings on screen — the Average tile states how many readings it covers.
+
+### The Lab Tests list
+
+Tests are listed folded, one per row, showing only the latest result with its trend and status.
+Opening a row reveals that test’s graph, its scroll dial and the full table of results; its chart
+is only built at that moment, so a catalogue of eighty-odd tests still opens instantly. Rows are
+grouped by category, and the search box and category chips filter the list.
 
 ### On a phone
 
@@ -229,7 +252,25 @@ asterisk in the table.
 ```
 
 `status` is `active`, `monitoring`, `controlled` or `resolved`; `severity` is `mild`,
-`moderate` or `severe` and sets the timeline colour.
+`moderate` or `severe` and sets the timeline colour. Leave `severity` out when the source does
+not grade it — the dashboard simply omits the pill rather than inventing a grade.
+
+`evidence` records what the entry actually rests on, so a finding from an ultrasound report and a
+symptom written down from memory do not look alike:
+
+```json
+"evidence": {
+  "kind": "lab" | "imaging" | "pathology" | "report" | "self-reported",
+  "detail": "Ultrasound abdomen & pelvis, 30 Aug 2025, Saudi German Hospital.",
+  "derivedDate": true
+}
+```
+
+Anything marked `self-reported` is drawn in amber and labelled *not in any report*. Set
+`derivedDate` when the onset was worked back from a phrase rather than recorded — the card then
+shows *(estimated, no date recorded)* instead of a date that looks measured. Four entries in this
+record are of that kind: erectile dysfunction, lower urinary tract symptoms, severe fatigue and
+weight regain, all from one narrative list in the consolidated spreadsheet.
 
 ### `events`
 

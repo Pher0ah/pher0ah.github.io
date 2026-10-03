@@ -176,6 +176,45 @@ html[data-theme="dark"] .ranges button.on{background:var(--acc);color:#fff}
 .tip.on{opacity:1}
 .tip b{font-size:13.5px}
 
+/* evidence provenance */
+.ev{margin-top:10px;padding:9px 11px;border-radius:var(--rs);background:var(--panel2);
+  border:1px solid var(--line);font-size:12px;line-height:1.55;color:var(--tx2)}
+.ev.unver{background:var(--warnBg);border-color:transparent}
+.ev-h{display:flex;align-items:center;gap:6px;font-weight:640;font-size:11px;
+  letter-spacing:.03em;text-transform:uppercase;margin-bottom:4px;color:var(--tx3)}
+.ev.unver .ev-h{color:var(--warn)}
+.ev-h svg{width:13px;height:13px;flex:0 0 auto}
+.acc-warn{color:var(--warn)}
+
+/* ============================================================ folded test list */
+.acc{border:1px solid var(--line);border-radius:var(--rs);background:var(--panel);
+  margin-bottom:8px;overflow:hidden;box-shadow:var(--shadow)}
+.acc-h{display:flex;align-items:center;gap:11px;width:100%;padding:12px 14px;text-align:left;
+  transition:background .13s}
+.acc-h:hover{background:var(--panel2)}
+.acc.open .acc-h{background:var(--panel2);border-bottom:1px solid var(--line)}
+.acc-nm{flex:1;min-width:0}
+.acc-nm b{display:block;font-size:14px;font-weight:600;line-height:1.3;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acc-nm small{display:block;font-size:11px;color:var(--tx3);margin-top:2px}
+.acc-v{display:flex;align-items:baseline;gap:5px;flex:0 0 auto;justify-content:flex-end}
+.acc-v b{font-size:19px;font-weight:680;letter-spacing:-.02em;line-height:1}
+.acc-v i{font-style:normal;font-size:11px;color:var(--tx3)}
+.acc-dt{font-size:11px;color:var(--tx3);flex:0 0 auto;width:78px;text-align:right}
+.acc-c{width:15px;height:15px;color:var(--tx3);flex:0 0 auto;transition:transform .2s}
+.acc.open .acc-c{transform:rotate(90deg);color:var(--acc)}
+.acc-b{display:none;padding:14px}
+.acc.open .acc-b{display:block}
+.acc-chart{padding:6px 4px 2px}
+.acc-empty{padding:10px 0;font-size:12.5px;color:var(--tx3)}
+@media (max-width:720px){
+  .acc-h{padding:11px 12px;gap:9px}
+  .acc-dt{display:none}
+  .acc-nm small{display:none}
+  .acc-v b{font-size:17px}
+  .acc-b{padding:12px 8px}
+}
+
 /* ============================================================ tables */
 .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--rs)}
 table{width:100%;border-collapse:collapse;font-size:13.5px}
@@ -412,11 +451,29 @@ const KEY="healthrecord.v1";
 const LS={ get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
            set(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ return false; } },
            ok(){ try{ localStorage.setItem("__t","1"); localStorage.removeItem("__t"); return true; }catch(e){ return false; } } };
-const S={ data:null, tab:"overview", range:"3Y", labCat:"all", labQ:"", vRange:"3Y", srcLabel:"" };
+const S={ data:null, tab:"overview", range:"R3", labCat:"all", labQ:"", vRange:"R3", srcLabel:"" };
 const REG=new Map(); let regN=0;
 function reg(o){ const k="r"+(++regN); REG.set(k,o); return k; }
 
-const RANGES=[{k:"1Y",y:1},{k:"3Y",y:3},{k:"5Y",y:5},{k:"10Y",y:10},{k:"ALL",y:null}];
+const RANGES=[{k:"R3",n:"Last 3",pts:3},{k:"1Y",y:1},{k:"3Y",y:3},{k:"5Y",y:5},
+               {k:"10Y",y:10},{k:"ALL",y:null}];
+/* Opening window for a series. "Last 3" follows the data instead of the calendar,
+   so a test last run in 2011 still opens on its own readings rather than on an
+   empty stretch of the last three years. */
+function windowFor(range,pts){
+  if(range==="ALL"||!pts||!pts.length) return {};
+  const r=RANGES.find(x=>x.k===range);
+  if(r&&r.pts){
+    const slice=pts.slice(-r.pts);
+    const a=slice[0].t, b=slice[slice.length-1].t;
+    const pad=Math.max((b-a)*0.12, DAY*5);
+    /* keep a little breathing room on the right, but do not open onto months
+       of empty future just because the readings are far apart */
+    const to=Math.min(b+pad, Math.max(b,anchorTime())+Math.min(pad,DAY*45));
+    return {from:a-pad, to:to};
+  }
+  return {from:cutoff(range), to:anchorTime()};
+}
 function anchorTime(){
   let mx=Date.now();
   (S.data.labResults||[]).forEach(r=>{const t=pd(r.date); if(t>mx) mx=t;});
@@ -875,12 +932,12 @@ function labSeriesCfg(testId,range,opts){
   /* every point is handed to the chart; `range` only sets the opening window,
      and the scroll dial moves it over the rest of the history */
   const pts=series(testId).map(p=>({t:p.t,v:p.v,rec:p.rec,flag:flagOf(p.v,r.lo,r.hi)}));
-  const cut=cutoff(range);
+  const win=windowFor(range,pts);
   return {
     series:[{name:c.name,points:pts,color:cssv("--acc"),fill:true,dotByFlag:true}],
     band:{lo:c.refLow,hi:c.refHigh}, decimals:c.decimals, unit:c.unit,
     height:o.height||120, axis:o.axis!==false,
-    from: range==="ALL"?undefined:cut, to: range==="ALL"?undefined:anchorTime()
+    from:win.from, to:win.to
   };
 }
 function tickerCard(testId,range,opts){
@@ -942,7 +999,7 @@ function go(tab){
 }
 function rangeBar(cur,on){
   const w=document.createElement("div"); w.className="ranges";
-  w.innerHTML=RANGES.map(r=>'<button data-r="'+r.k+'"'+(cur===r.k?' class="on"':'')+'>'+r.k+'</button>').join("");
+  w.innerHTML=RANGES.map(r=>'<button data-r="'+r.k+'"'+(cur===r.k?' class="on"':'')+'>'+(r.n||r.k)+'</button>').join("");
   w.addEventListener("click",e=>{const b=e.target.closest("button"); if(b) on(b.dataset.r);});
   return w;
 }
@@ -1038,8 +1095,8 @@ function vLabs(){
   const bar=document.createElement("div"); bar.className="toolbar";
   const sb=document.createElement("div"); sb.className="searchbar";
   sb.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>'+
-    '<input type="search" placeholder="Search tests…" value="'+esc(S.labQ)+'">';
-  sb.querySelector("input").addEventListener("input",e=>{S.labQ=e.target.value; drawGrid();});
+    '<input type="search" placeholder="Search tests\u2026" value="'+esc(S.labQ)+'">';
+  sb.querySelector("input").addEventListener("input",e=>{S.labQ=e.target.value; drawList();});
   bar.appendChild(sb);
   bar.appendChild(rangeBar(S.range,r=>{S.range=r; vLabs();}));
   v.appendChild(bar);
@@ -1051,19 +1108,109 @@ function vLabs(){
   chips.addEventListener("click",e=>{const b=e.target.closest(".chip"); if(!b)return; S.labCat=b.dataset.c; vLabs();});
   v.appendChild(chips);
 
-  const grid=document.createElement("div"); grid.className="grid g-charts"; v.appendChild(grid);
-  function drawGrid(){
-    clearCharts(); grid.innerHTML="";
+  const hint=document.createElement("div"); hint.className="small muted";
+  hint.style.margin="0 0 10px"; hint.textContent="Tap a test to open its history.";
+  v.appendChild(hint);
+
+  const list=document.createElement("div"); v.appendChild(list);
+  function drawList(){
+    clearCharts(); list.innerHTML="";
     const q=S.labQ.trim().toLowerCase();
-    let list=ids.filter(i=>(S.labCat==="all"||cat(i).category===S.labCat) &&
+    let ls=ids.filter(i=>(S.labCat==="all"||cat(i).category===S.labCat) &&
       (!q||cat(i).name.toLowerCase().includes(q)||i.includes(q)));
-    list.sort((a,b)=>{ const A=cat(a),B=cat(b);
+    ls.sort((a,b)=>{ const A=cat(a),B=cat(b);
       return A.category===B.category ? A.name.localeCompare(B.name) : A.category.localeCompare(B.category); });
-    if(!list.length){ grid.innerHTML='<div class="empty">No tests match “'+esc(S.labQ)+'”</div>'; return; }
-    list.forEach(id=>{ const c=tickerCard(id,S.range,{h:96,brush:"compact"}); if(c) grid.appendChild(c); });
+    if(!ls.length){ list.innerHTML='<div class="empty">No tests match \u201c'+esc(S.labQ)+'\u201d</div>'; return; }
+    let lastCat=null;
+    ls.forEach(id=>{
+      const c=cat(id);
+      if(S.labCat==="all" && c.category!==lastCat){
+        lastCat=c.category;
+        const h=document.createElement("div"); h.className="sech"; h.style.margin="16px 0 8px";
+        h.innerHTML='<h2 style="font-size:13px;color:var(--tx2)">'+esc(c.category)+'</h2>';
+        list.appendChild(h);
+      }
+      const row=accRow(id); if(row) list.appendChild(row);
+    });
   }
-  drawGrid();
+  drawList();
 }
+
+/* one folded row: latest result only, until it is opened */
+function accRow(testId){
+  const c=cat(testId), all=allSeries(testId);
+  if(!all.length) return null;
+  const last=all[all.length-1], r=refOf(last.rec,c), f=flagOf(last.v,r.lo,r.hi);
+  const prev=all.length>1?all[all.length-2]:null;
+  let delta="";
+  if(prev&&prev.v!=null&&last.v!=null&&prev.v!==0){
+    const d=last.v-prev.v, q=trendQuality(prev.v,last.v,r.lo,r.hi);
+    const col=q==="good"?"var(--ok)":q==="bad"?"var(--bad)":"var(--tx3)";
+    delta='<span class="tk-d num" style="color:'+col+'">'+(d>0?"\u25b2":d<0?"\u25bc":"\u25ac")+
+      " "+nf(Math.abs(d),c.decimals)+'</span>';
+  }
+  const el=document.createElement("div"); el.className="acc";
+  el.innerHTML=
+    '<button class="acc-h" aria-expanded="false">'+
+      '<span class="acc-nm"><b>'+esc(c.name)+'</b><small>'+esc(c.category)+' \u00b7 '+
+        all.length+' result'+(all.length>1?"s":"")+'</small></span>'+
+      '<span class="acc-v"><b class="num">'+(last.v!=null?nf(last.v,c.decimals):esc(last.rec.text||"\u2014"))+
+        '</b><i>'+esc(c.unit||"")+'</i>'+delta+'</span>'+
+      '<span class="pill '+FLAGCLS[f]+'"><i class="dot"></i>'+FLAGTXT[f]+'</span>'+
+      '<span class="acc-dt num">'+fmtD(last.rec.date)+'</span>'+
+      '<svg class="acc-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>'+
+    '</button><div class="acc-b"></div>';
+  const head=el.querySelector(".acc-h"), body=el.querySelector(".acc-b");
+  head.addEventListener("click",()=>{
+    const open=el.classList.toggle("open");
+    head.setAttribute("aria-expanded",open?"true":"false");
+    if(open && !body.dataset.built){ body.appendChild(testBody(testId,S.range)); body.dataset.built="1"; }
+  });
+  return el;
+}
+
+/* chart + dial + the full result table for one test, shared by the folded row
+   and the pop-up opened from the Overview tiles */
+function testBody(testId,rng){
+  const c=cat(testId), all=allSeries(testId);
+  const wrap=document.createElement("div");
+  const hasChart=series(testId).length>0;
+  wrap.innerHTML=
+    '<div class="card acc-chart"><div class="chartbox"></div></div>'+
+    ((c.refLow!=null||c.refHigh!=null)
+      ? '<div class="legend"><span><i style="background:var(--band);border:1px solid var(--line2)"></i>'+
+        'Reference range '+refTxt(c.refLow,c.refHigh,c.decimals)+' '+esc(c.unit||"")+'</span></div>'
+      : '')+
+    '<h4 style="margin:16px 0 8px;font-size:13px">All results ('+all.length+')</h4>'+
+    '<div class="card tbl-wrap"><table><thead><tr><th>Date</th><th>Value</th><th>Status</th>'+
+    '<th>Lab\u2019s own range</th><th>Source</th><th></th></tr></thead><tbody>'+
+    all.slice().reverse().map(p=>{
+      const rr=refOf(p.rec,c), ff=flagOf(p.v,rr.lo,rr.hi), sr=srcRefOf(p.rec);
+      return '<tr><td class="num">'+fmtD(p.rec.date)+'</td>'+
+      '<td class="num"><b>'+(p.v!=null?nf(p.v,c.decimals):esc(p.rec.text||"\u2014"))+'</b>'+
+        (p.rec.orig?'<br><span class="muted small">as reported: '+esc(p.rec.orig.value)+' '+esc(p.rec.orig.unit)+'</span>':'')+
+        (p.rec.text&&p.v!=null?' <span class="muted small">'+esc(p.rec.text)+'</span>':'')+'</td>'+
+      '<td><span class="pill '+FLAGCLS[ff]+'">'+FLAGTXT[ff]+'</span></td>'+
+      '<td class="small num '+(refDiffers(p.rec,c)?'':'muted')+'">'+
+        (sr?refTxt(sr.lo,sr.hi,c.decimals)+(refDiffers(p.rec,c)?' <span class="muted">\u2260</span>':''):'\u2014')+'</td>'+
+      '<td class="small muted">'+esc(p.rec.source||"\u2014")+(p.rec.note?'<br>'+esc(p.rec.note):"")+'</td>'+
+      '<td><button class="del" data-del="'+reg(p.rec)+'" title="Delete">\u00d7</button></td></tr>';
+    }).join("")+'</tbody></table></div>'+
+    '<div class="small muted" style="margin-top:7px">Status is judged against the '+
+    esc(c.rangeSource||refLabName())+' range of '+refTxt(c.refLow,c.refHigh,c.decimals)+' '+esc(c.unit||"")+
+    ', so the whole history is measured the same way. Where the reporting laboratory printed a '+
+    'different range it is shown above and marked \u2260.</div>';
+  const box=wrap.querySelector(".chartbox");
+  if(hasChart) mountChart(box,labSeriesCfg(testId,rng||S.range,{height:220,axis:true}),{brush:"full"});
+  else box.parentElement.innerHTML='<div class="acc-empty">Qualitative test \u2014 see the results below.</div>';
+  $$("[data-del]",wrap).forEach(b=>b.addEventListener("click",()=>{
+    if(!confirm("Delete this result?")) return;
+    const o=REG.get(b.dataset.del), arr=S.data.labResults, i=arr.indexOf(o);
+    if(i>=0){ arr.splice(i,1); save(); closeModal(); toast("Result deleted"); go(S.tab); }
+  }));
+  return wrap;
+}
+
 function openTest(testId){
   const c=cat(testId), all=allSeries(testId);
   let rng=S.range;
@@ -1073,46 +1220,18 @@ function openTest(testId){
     body.innerHTML=
       '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px">'+
         '<div><div class="num" style="font-size:32px;font-weight:700;letter-spacing:-.03em">'+
-          (last.v!=null?nf(last.v,c.decimals):esc(last.rec.text||"—"))+
+          (last.v!=null?nf(last.v,c.decimals):esc(last.rec.text||"\u2014"))+
           ' <span style="font-size:14px;color:var(--tx3);font-weight:500">'+esc(c.unit||"")+'</span></div>'+
-          '<div class="small muted">'+fmtD(last.rec.date)+' · '+esc(last.rec.source||"")+'</div></div>'+
+          '<div class="small muted">'+fmtD(last.rec.date)+' \u00b7 '+esc(last.rec.source||"")+'</div></div>'+
         '<span class="pill '+FLAGCLS[f]+'"><i class="dot"></i>'+FLAGTXT[f]+'</span>'+
         '<div style="flex:1"></div><div id="mdRange"></div></div>'+
-      '<div class="card" style="padding:10px 6px 4px"><div class="chartbox" id="mdChart"></div></div>'+
-      (r.lo!=null||r.hi!=null?'<div class="legend"><span><i style="background:var(--band);border:1px solid var(--line2)"></i>Reference range '+
-        (r.lo!=null?nf(r.lo,c.decimals):"≤")+(r.lo!=null&&r.hi!=null?"–":"")+(r.hi!=null?nf(r.hi,c.decimals):"+")+
-        ' '+esc(c.unit||"")+'</span></div>':'')+
-      '<h4 style="margin:18px 0 8px;font-size:13px">All results ('+all.length+')</h4>'+
-      '<div class="card tbl-wrap"><table><thead><tr><th>Date</th><th>Value</th><th>Status</th>'+
-      '<th>Lab\u2019s own range</th><th>Source</th><th></th></tr></thead><tbody>'+
-      all.slice().reverse().map(p=>{
-        const rr=refOf(p.rec,c), ff=flagOf(p.v,rr.lo,rr.hi), sr=srcRefOf(p.rec);
-        return '<tr><td class="num">'+fmtD(p.rec.date)+'</td>'+
-        '<td class="num"><b>'+(p.v!=null?nf(p.v,c.decimals):esc(p.rec.text||"—"))+'</b>'+
-          (p.rec.orig?'<br><span class="muted small">as reported: '+esc(p.rec.orig.value)+' '+esc(p.rec.orig.unit)+'</span>':'')+
-          (p.rec.text&&p.v!=null?' <span class="muted small">'+esc(p.rec.text)+'</span>':'')+'</td>'+
-        '<td><span class="pill '+FLAGCLS[ff]+'">'+FLAGTXT[ff]+'</span></td>'+
-        '<td class="small num '+(refDiffers(p.rec,c)?'':'muted')+'">'+
-          (sr?refTxt(sr.lo,sr.hi,c.decimals)+(refDiffers(p.rec,c)?' <span class="muted">≠</span>':''):'—')+'</td>'+
-        '<td class="small muted">'+esc(p.rec.source||"—")+(p.rec.note?'<br>'+esc(p.rec.note):"")+'</td>'+
-        '<td><button class="del" data-del="'+reg(p.rec)+'" title="Delete">×</button></td></tr>';
-      }).join("")+'</tbody></table></div>'+
-      '<div class="small muted" style="margin-top:7px">Status is judged against the '+
-      esc(c.rangeSource||refLabName())+' range of '+refTxt(c.refLow,c.refHigh,c.decimals)+' '+esc(c.unit||"")+
-      ', so the whole history is measured the same way. Where the reporting laboratory printed a '+
-      'different range it is shown above and marked ≠.</div>';
-    const rb=rangeBar(rng,x=>{rng=x; build();}); $("#mdRange",body).appendChild(rb);
-    if(series(testId).length) mountChart($("#mdChart",body),labSeriesCfg(testId,rng,{height:250,axis:true}),{brush:"full"});
-    else $("#mdChart",body).innerHTML='<div class="empty">Qualitative test — see the table below</div>';
-    $$("[data-del]",body).forEach(b=>b.addEventListener("click",()=>{
-      if(!confirm("Delete this result?")) return;
-      const o=REG.get(b.dataset.del), arr=S.data.labResults, i=arr.indexOf(o);
-      if(i>=0){arr.splice(i,1); save(); closeModal(); toast("Result deleted"); go(S.tab);}
-    }));
+      '<div id="mdBody"></div>';
+    $("#mdRange",body).appendChild(rangeBar(rng,x=>{rng=x; build();}));
+    $("#mdBody",body).appendChild(testBody(testId,rng));
   }
   build();
-  showModal(c.name,c.category+" · "+all.length+" result"+(all.length>1?"s":"")+" · "+
-    fmtD(all[0].rec.date)+" – "+fmtD(all[all.length-1].rec.date), body);
+  showModal(c.name,c.category+" \u00b7 "+all.length+" result"+(all.length>1?"s":"")+" \u00b7 "+
+    fmtD(all[0].rec.date)+" \u2013 "+fmtD(all[all.length-1].rec.date), body);
 }
 
 /* ---------------------------------------------------------------- vitals */
@@ -1134,13 +1253,14 @@ function vVitals(){
   bar.appendChild(rangeBar(S.vRange,r=>{S.vRange=r; vVitals();}));
   v.appendChild(bar);
 
-  const cut=cutoff(S.vRange);
-  const rows=all.filter(r=>pd(r.date)>=cut);
-  const use=rows.length?rows:all;
   const tOf=r=>pd(r.date)+(r.time?(parseInt(r.time.slice(0,2),10)*3600+parseInt(r.time.slice(3,5),10)*60)*1000:0);
+  const bpAll=all.filter(r=>r.systolic!=null);
+  const bpWin=windowFor(S.vRange,bpAll.map(r=>({t:tOf(r)})));
+  const wFrom=bpWin.from!=null?bpWin.from:-Infinity, wTo=bpWin.to!=null?bpWin.to:Infinity;
+  const rows=all.filter(r=>{const t=tOf(r); return t>=wFrom&&t<=wTo;});
+  const use=rows.length?rows:all;
 
   const bp=use.filter(r=>r.systolic!=null);
-  const bpAll=all.filter(r=>r.systolic!=null);
   const last=bpAll.slice(-1)[0];
   if(bp.length){
     const sysV=bp.map(r=>r.systolic), diaV=bp.map(r=>r.diastolic), pulV=bp.filter(r=>r.pulse!=null).map(r=>r.pulse);
@@ -1168,7 +1288,7 @@ function vVitals(){
         {name:"Pulse",points:bpAll.filter(r=>r.pulse!=null).map(r=>({t:tOf(r),v:r.pulse,rec:r})),color:cssv("--tx3"),width:1.3,dash:[4,3]},
       ],
       band:{lo:70,hi:130}, decimals:0, unit:"mmHg", height:270, axis:true,
-      from: S.vRange==="ALL"?undefined:cut, to: S.vRange==="ALL"?undefined:anchorTime()
+      from:bpWin.from, to:bpWin.to
     },{brush:"full"});
     const lg=document.createElement("div"); lg.className="legend"; lg.style.margin="-8px 0 18px";
     lg.innerHTML='<span><i style="background:'+cssv("--bad")+'"></i>Systolic</span><span><i style="background:'+cssv("--acc")+'"></i>Diastolic</span>'+
@@ -1193,9 +1313,9 @@ function vVitals(){
         '<div class="tk-v"><b class="num">'+nf(lastv[e[0]],e[3])+'</b><span class="tk-u">'+e[2]+'</span></div>'+
         '<div class="chartbox"></div><div class="tk-f"><span>'+fmtD(lastv.date)+'</span><span>'+pts.length+' readings</span></div>';
       g.appendChild(card);
+      const exWin=windowFor(S.vRange,allPts);
       mountChart(card.querySelector(".chartbox"),{series:[{name:e[1],points:allPts,color:cssv("--acc"),fill:true}],
-        decimals:e[3],unit:e[2],height:96,axis:false,
-        from:S.vRange==="ALL"?undefined:cut, to:S.vRange==="ALL"?undefined:anchorTime()},
+        decimals:e[3],unit:e[2],height:96,axis:false, from:exWin.from, to:exWin.to},
         {brush:allPts.length>1?"compact":false});
     });
     s.appendChild(g); v.appendChild(s);
@@ -1227,6 +1347,25 @@ function vVitals(){
 const CLSCOL={"Antihypertensive":"#ef4444","Lipid-lowering":"#3b82f6","Antiplatelet":"#a855f7",
   "Supplement":"#22c55e","GLP-1 / GIP agonist":"#f59e0b","Other":"#64748b"};
 function condColor(c){ return {severe:"#dc2626",moderate:"#f59e0b",mild:"#3b82f6"}[c.severity]||"#64748b"; }
+const EV_LABEL={lab:"Laboratory results",imaging:"Imaging report",pathology:"Pathology report",
+  report:"Clinical records","self-reported":"Self-reported \u2014 not in any report"};
+const EV_ICON={
+  lab:'<path d="M9 3v7L4.6 17.4A2 2 0 0 0 6.3 20.5h11.4a2 2 0 0 0 1.7-3.1L15 10V3"/><path d="M8 3h8"/>',
+  imaging:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/>',
+  pathology:'<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',
+  report:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
+  "self-reported":'<path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>'};
+/* A condition backed by a lab or an imaging report and one written down from memory
+   are not the same kind of fact, so they must not look the same. */
+function evidenceBlock(c){
+  const e=c.evidence; if(!e) return "";
+  const un=e.kind==="self-reported";
+  return '<div class="ev'+(un?" unver":"")+'">'+
+    '<div class="ev-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '+
+      'stroke-linecap="round" stroke-linejoin="round">'+(EV_ICON[e.kind]||EV_ICON.report)+'</svg>'+
+      esc(EV_LABEL[e.kind]||e.kind)+'</div>'+
+    esc(e.detail||"")+'</div>';
+}
 function buildTimeline(items,opt){
   /* items: {label, sub, start, end, ongoing, color, text}
      A missing start, or a missing end on a finished course, is drawn as a faded edge —
@@ -1402,9 +1541,12 @@ function condCard(c){
       '<span class="pill p-mut">'+esc(c.category||"")+'</span>'+
       (c.severity?'<span class="pill '+sev+'">'+esc(c.severity)+'</span>':'')+
       '<span class="pill p-mut">'+dur+'</span></div>'+
-    '<div class="kv"><b>Onset</b><span>'+fmtD(c.onset)+(c.onsetApprox?" (approx.)":"")+
+    '<div class="kv"><b>Onset</b><span>'+fmtD(c.onset)+
+      (c.evidence&&c.evidence.derivedDate?' <span class="acc-warn">(estimated, no date recorded)</span>'
+        :(c.onsetApprox?" (approx.)":""))+
       (c.resolved?' → resolved '+fmtD(c.resolved):"")+'</span></div>'+
     (c.note?'<div style="margin-top:9px;font-size:13px;color:var(--tx2);line-height:1.55">'+esc(c.note)+'</div>':'')+
+    evidenceBlock(c)+
     '<div style="margin-top:10px;text-align:right"><button class="del" data-del="'+reg(c)+'">× remove</button></div>';
   d.querySelector("[data-del]").addEventListener("click",()=>{
     if(!confirm("Delete this condition?")) return;
@@ -1745,8 +1887,13 @@ function applyData(o,label,dirty){
 }
 
 /* ---- opening ---------------------------------------------------------- */
+/* The File System Access API only works on a real http(s) origin. Opened from
+   disk it exists but throws, and the rejection arrives too late to fall back to
+   the file input, because the click gesture has already expired. So decide
+   before calling, and reach the input synchronously. */
+function fsApiUsable(){ return /^https?:$/.test(location.protocol); }
 function openFile(){
-  if(window.showOpenFilePicker){
+  if(window.showOpenFilePicker && fsApiUsable()){
     window.showOpenFilePicker({types:[{description:"Health record",accept:{"application/json":[".json"]}}]})
       .then(hs=>{ const h=hs[0]; return h.getFile().then(f=>f.text()).then(t=>{
           FILE_HANDLE=h; applyData(JSON.parse(t),f.name,false); toast("Loaded "+f.name); }); })
@@ -1780,7 +1927,7 @@ function exportJSON(){
   pickSave(out);
 }
 function pickSave(out){
-  if(window.showSaveFilePicker){
+  if(window.showSaveFilePicker && fsApiUsable()){
     window.showSaveFilePicker({suggestedName:DATA_FILE,
         types:[{description:"Health record",accept:{"application/json":[".json"]}}]})
       .then(h=>h.createWritable().then(w=>w.write(out).then(()=>w.close())).then(()=>{
