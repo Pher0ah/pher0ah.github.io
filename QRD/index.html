@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#111214">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="QR Cube">
+  <title>QR Cube</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="bar">
+    <h1>QR Cube</h1>
+    <button class="icon-btn" id="menuBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false">⋯</button>
+    <nav class="menu" id="menu" role="menu">
+      <button role="menuitem" data-act="look">Die &amp; backdrop…</button>
+      <button role="menuitem" data-act="export">Export backup</button>
+      <button role="menuitem" data-act="import">Import backup</button>
+      <button role="menuitem" data-act="reset">Reset view</button>
+    </nav>
+    <input type="file" id="importFile" accept="application/json,.json" hidden>
+  </header>
+
+  <main class="stage" id="stage">
+    <div class="shadow"></div>
+    <canvas id="die" aria-label="QR die"></canvas>
+    <div class="press" id="press"></div>
+  </main>
+
+  <p class="hint">Drag to spin · Hold to scan · Double-tap to edit</p>
+
+  <!-- Full-screen QR -->
+  <div class="full" id="full" aria-hidden="true">
+    <div class="full-qr" id="fullQr"></div>
+  </div>
+
+  <!-- Editor sheet -->
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <form class="sheet" id="sheet" autocomplete="off" novalidate>
+    <div class="sheet-head">
+      <button type="button" class="text-btn" data-act="cancel">Cancel</button>
+      <strong id="sheetTitle">Edit side</strong>
+      <button type="submit" class="text-btn primary">Save</button>
+    </div>
+    <div class="sheet-body">
+      <div class="preview" id="preview"></div>
+
+      <label class="field">
+        <span>QR type</span>
+        <select name="type" id="typeSelect"></select>
+      </label>
+      <label class="field">
+        <span>Label (shown under the code)</span>
+        <input name="label" maxlength="60" placeholder="Optional">
+      </label>
+
+      <div id="typeFields"></div>
+
+      <fieldset class="group">
+        <legend>Centre logo</legend>
+        <div class="seg" id="logoSeg">
+          <label><input type="radio" name="logoMode" value="none" checked><span>None</span></label>
+          <label><input type="radio" name="logoMode" value="file"><span>Upload</span></label>
+          <label data-only="url"><input type="radio" name="logoMode" value="favicon"><span>Site icon</span></label>
+        </div>
+        <div class="logo-file" data-show="file">
+          <input type="file" id="logoFile" accept=".svg,.png,.ico,.jpg,.jpeg,.webp,image/*">
+          <small>SVG, PNG or ICO. Raster images are scaled down to 256 px.</small>
+        </div>
+        <div class="logo-fav" data-show="favicon">
+          <small id="favStatus">The icon is fetched from the website. If the site blocks this, Google's favicon service is used instead.</small>
+          <button type="button" class="small-btn" id="favRefresh">Refresh icon</button>
+        </div>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>Appearance</legend>
+        <div class="seg">
+          <label><input type="radio" name="inkMode" value="auto" checked><span>Auto colour</span></label>
+          <label><input type="radio" name="inkMode" value="custom"><span>Custom colour</span></label>
+        </div>
+        <small class="muted ink-auto-note">The code is printed in a colour that complements the die.</small>
+        <div class="row">
+          <label class="field ink-custom"><span>QR colour</span><input type="color" name="fg" value="#000000"></label>
+          <label class="field"><span>Error correction</span>
+            <select name="ecc">
+              <option value="L">L · 7%</option>
+              <option value="M" selected>M · 15%</option>
+              <option value="Q">Q · 25%</option>
+              <option value="H">H · 30%</option>
+            </select>
+          </label>
+        </div>
+        <small class="muted" id="eccNote">With a logo, error correction is set to H automatically.</small>
+      </fieldset>
+
+      <button type="button" class="danger-btn" data-act="clear">Clear this side</button>
+    </div>
+  </form>
+
+  <!-- Die & backdrop settings (changes apply live) -->
+  <form class="sheet" id="lookSheet" autocomplete="off" novalidate>
+    <div class="sheet-head">
+      <button type="button" class="text-btn" data-act="look-reset">Reset</button>
+      <strong>Die &amp; backdrop</strong>
+      <button type="submit" class="text-btn primary">Done</button>
+    </div>
+    <div class="sheet-body">
+      <fieldset class="group">
+        <legend>Material</legend>
+        <div class="swatches" id="materialList"></div>
+      </fieldset>
+      <fieldset class="group">
+        <legend>Colours</legend>
+        <div class="row">
+          <label class="field"><span>Die</span><input type="color" name="die"></label>
+          <label class="field"><span>Backdrop</span><input type="color" name="backdrop"></label>
+        </div>
+        <small class="muted">Sides set to auto colour print their code in a complementary colour that contrasts enough to scan.</small>
+      </fieldset>
+    </div>
+  </form>
+
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/" } }
+  </script>
+  <script src="vendor/qrcode.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
