@@ -12,7 +12,7 @@
    Bump CACHE when you change shell files to force an update.
    ========================================================================= */
 
-const CACHE = "bigtalk-v1.0.1";
+const CACHE = "bigtalk-v1.0.2";
 
 const SHELL = [
   "./",
@@ -29,7 +29,9 @@ const SHELL = [
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting())
+    // cache: "reload" skips the browser's HTTP cache (GitHub Pages keeps files for 10 min),
+    // so a new version never re-caches stale copies of the old files.
+    caches.open(CACHE).then((cache) => cache.addAll(SHELL.map((url) => new Request(url, { cache: "reload" })))).then(() => self.skipWaiting())
   );
 });
 
@@ -49,7 +51,22 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== location.origin) return; // leave cross-origin requests alone
 
-  // Page navigations: prefer fresh, fall back to cache when offline.
+  // Page navigations and the manifest: prefer fresh, fall back to cache when offline.
+  // (A cached manifest would keep an old app id / scope, which breaks installing.)
+  if (url.pathname.endsWith(".webmanifest")) {
+    event.respondWith(
+      fetch(request, { cache: "no-cache" })
+        .then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE).then((cache) => cache.put(request, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request))
+    );
+    return;
+  }
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request).catch(() => caches.match("./index.html"))
