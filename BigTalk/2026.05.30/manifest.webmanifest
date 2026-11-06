@@ -2,7 +2,9 @@
   "name": "Big Talk Cards",  
   "short_name": "BigTalk",
   "lang": "en-AU",
-  "start_url": "https://www.egynomics.com/BigTalk",
+  "id": "/BigTalk/",
+  "start_url": "/BigTalk/",
+  "scope": "/BigTalk/",
   "display": "standalone",
   "theme_color": "green",
   "icons": [

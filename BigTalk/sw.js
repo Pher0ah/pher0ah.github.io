@@ -12,7 +12,7 @@
    Bump CACHE when you change shell files to force an update.
    ========================================================================= */
 
-const CACHE = "bigtalk-v1.0.0";
+const CACHE = "bigtalk-v1.0.1";
 
 const SHELL = [
   "./",
