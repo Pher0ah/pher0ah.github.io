@@ -302,15 +302,24 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   const str = v => (typeof v === 'string' ? v : '');
   const num = (v, d, lo, hi) => (Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d);
   const imgUrl = v => (typeof v === 'string' && /^(data:image\/|https?:)/i.test(v) ? v : '');
-  /** Form data: strings and booleans, plus lists of such objects (phones, emails…). */
-  function cleanData(d) {
+  /** Rebuild form data from a type's field schema: only known fields survive; a select
+   *  always holds one of its options, a checkbox a boolean, everything else a string,
+   *  and each list entry (phone, email…) is rebuilt from its own fields the same way. */
+  function fitToSchema(spec, d) {
     const out = {};
     if (!isObj(d)) return out;
-    for (const [k, v] of Object.entries(d)) {
-      if (Array.isArray(v)) out[k] = v.filter(isObj).map(cleanData);
-      else if (typeof v === 'string' || typeof v === 'boolean') out[k] = v;
-      else if (Number.isFinite(v)) out[k] = String(v);
-    }
+    const walk = list => list.forEach(f => {
+      if (f.row) return walk(f.row);
+      if (f.group) {
+        if (Array.isArray(d[f.group])) out[f.group] = d[f.group].filter(isObj).map(item => fitToSchema(f.fields, item));
+        return;
+      }
+      const v = d[f.k];
+      if (f.type === 'checkbox') out[f.k] = v === true;
+      else if (f.type === 'select') out[f.k] = f.opts.some(([o]) => o === v) ? v : f.opts[0][0];
+      else out[f.k] = typeof v === 'string' ? v : Number.isFinite(v) ? String(v) : '';
+    });
+    walk(spec);
     return out;
   }
   function cleanFace(f) {
@@ -323,11 +332,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
       logo.fit = { fit: F.fit === 'cover' ? 'cover' : 'contain', zoom: num(F.zoom, 1, 0.3, 4), x: num(F.x, 0, -2, 2), y: num(F.y, 0, -2, 2),
                    shape: ['square', 'rounded', 'circle'].includes(F.shape) ? F.shape : 'square', bg: F.bg === 'white' ? 'white' : 'none' };
     }
-    // Fields the form shows as lists (phones, emails…) must be lists of entries.
-    const data = cleanData(f.data);
-    const lists = spec => spec.flatMap(x => (x.row ? lists(x.row) : x.group ? [x.group] : []));
-    for (const g of lists(TYPES[f.type].fields)) if (g in data && !Array.isArray(data[g])) delete data[g];
-    return { type: f.type, label: str(f.label).slice(0, 60), data, logo,
+    return { type: f.type, label: str(f.label).slice(0, 60), data: fitToSchema(TYPES[f.type].fields, f.data), logo,
              inkMode: f.inkMode === 'custom' ? 'custom' : 'auto', fg: isHex(f.fg) ? f.fg : '#000000',
              ecc: ['L', 'M', 'Q', 'H'].includes(f.ecc) ? f.ecc : 'M' };
   }
@@ -1385,13 +1390,14 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     if (adjImg) drawLogo(adjCanvas.getContext('2d'), adjImg, adjCanvas.width, draft.logo.fit);
   }
   // The edited picture becomes the logo; untouched, the original (crisp SVG) is kept.
-  const commitAdjust = debounce(() => {
+  /** Make the adjusted picture the logo. Called (debounced) while adjusting, and directly by Save. */
+  function flushAdjust() {
     if (!draft || !adjImg) return;
     const f = draft.logo.fit;
     const plain = Object.keys(LOGO_FIT0).every(k => f[k] === LOGO_FIT0[k]);
     draft.logo.src = plain ? draft.logo.orig : adjCanvas.toDataURL('image/png');
-    updatePreview();
-  }, 150);
+  }
+  const commitAdjust = debounce(() => { flushAdjust(); updatePreview(); }, 150);
   function changeFit(patch) {
     Object.assign(draft.logo.fit, patch);
     drawAdjust();
@@ -1444,6 +1450,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   sheet.addEventListener('submit', e => {
     e.preventDefault();
     if (!draft) return;
+    flushAdjust();   // a logo adjustment made just before Save must not be lost
     readForm();
     const text = encodeFace(draft);
     if (text && !qrModules(text, draft)) {

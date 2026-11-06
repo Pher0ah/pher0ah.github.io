@@ -1,6 +1,6 @@
 // Offline cache for the app shell. Bump VERSION when files change.
 const PREFIX = 'qrcube-';
-const VERSION = PREFIX + 'v9';
+const VERSION = PREFIX + 'v10';
 const SHELL = [
   './', 'index.html', 'styles.css', 'app.js', 'vendor/qrcode.js', 'vendor/jsQR.js',
   'vendor/three/three.module.js', 'vendor/three/three.core.js',
@@ -37,7 +37,8 @@ self.addEventListener('fetch', e => {
         // Only complete, successful answers are kept for offline use (no errors or partial ranges).
         if (res.status === 200 && res.type === 'basic') {
           const copy = res.clone();
-          caches.open(VERSION).then(c => c.put(e.request, copy)).catch(() => {});
+          // waitUntil keeps the worker alive until the copy is stored.
+          e.waitUntil(caches.open(VERSION).then(c => c.put(e.request, copy)).catch(() => {}));
         }
         return res;
       })
