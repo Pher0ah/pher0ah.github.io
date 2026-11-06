@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#111214">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
@@ -26,7 +26,7 @@
       <button role="menuitem" data-act="export">Export backup</button>
       <button role="menuitem" data-act="import">Import backup</button>
       <button role="menuitem" data-act="reset">Reset view</button>
-      <small class="ver">Version 10</small>
+      <small class="ver" id="appVersion"></small>
     </nav>
     <input type="file" id="importFile" accept="application/json,.json" hidden>
   </header>
@@ -39,9 +39,15 @@
 
   <p class="hint">Drag to spin · Hold to scan · Double-tap to edit</p>
 
+  <details class="face-access" id="faceAccess">
+    <summary>All six sides</summary>
+    <div id="faceList"></div>
+  </details>
+
   <!-- Full-screen QR -->
   <div class="full" id="full" aria-hidden="true">
     <div class="full-qr" id="fullQr"></div>
+    <button type="button" class="small-btn" id="fullClose">Close QR code</button>
   </div>
 
   <!-- Editor sheet -->

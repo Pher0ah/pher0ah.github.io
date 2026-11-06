@@ -474,3 +474,15 @@ small, .muted { color: var(--muted); font-size: 12px; }
 .cp-swatches button { aspect-ratio: 1; border-radius: 8px; border: 1px solid rgba(255,255,255,.15); padding: 0; }
 .cp-swatches button[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 2px; }
 .cp-actions { display: flex; justify-content: space-between; align-items: center; margin: -8px -8px 0; }
+
+/* Accessible direct actions, also available without WebGL. */
+.face-access { position: fixed; z-index: 6; bottom: calc(env(safe-area-inset-bottom) + 48px); left: 50%; transform: translateX(-50%); width: min(92vw, 460px); max-height: 55dvh; overflow: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
+.face-access summary { cursor: pointer; text-align: center; }
+.face-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; }
+.face-row span { flex: 1; overflow-wrap: anywhere; }
+.face-row button { padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+.face-row button:disabled { opacity: .4; cursor: default; }
+.no-webgl .stage { display: none; }
+.no-webgl .face-access { top: 20%; bottom: auto; max-height: 65dvh; }
+.menu:not(.open), .sheet:not(.open), .scanner:not(.open), .cp:not(.open) { visibility: hidden; }
+button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }

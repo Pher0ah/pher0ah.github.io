@@ -1,3 +1,8 @@
+import './version.js';
+import { clone, debounce, hexRgb, rgbHex } from './utils.js';
+import { TYPES, encodeFace, parseQr } from './formats.js';
+import { createStorage } from './storage.js';
+import { paintSurface } from './surfaces.js';
 /* QR Cube — a die of QR codes.
  * Plain ES modules, no build step. The die is a three.js rounded-box mesh;
  * everything else visual (press ring, sheets, menus, full-screen fade) is
@@ -22,8 +27,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
-  const clone = o => JSON.parse(JSON.stringify(o));
-  const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+
 
   /* ================================================================
    * State
@@ -33,13 +37,14 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   function load() {
     try {
       const s = JSON.parse(localStorage.getItem(STORE));
+      try { const q = JSON.parse(localStorage.getItem(STORE + '.view')); if (s && Array.isArray(q)) s.q3 = q; } catch {} 
       if (s && Array.isArray(s.faces) && s.faces.length === 6) return s;
     } catch { /* ignore */ }
     return blankState();
   }
   /** Persist the state; false (after telling the user, unless quiet) when storage is full. */
   function save(quiet = false) {
-    try { localStorage.setItem(STORE, JSON.stringify(state)); return true; }
+    try { localStorage.setItem(STORE, JSON.stringify({ ...state, q3: null })); return true; }
     catch {
       if (!quiet) alert('Could not save: storage is full. Try a smaller logo, or clear a side you no longer need.');
       return false;
@@ -68,8 +73,6 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   state.look = { ...DEFAULT_LOOK, ...state.look };
   if (!MATERIALS[state.look.material]) state.look.material = DEFAULT_LOOK.material;
 
-  const hexRgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
-  const rgbHex = c => '#' + c.map(v => Math.round(Math.min(1, Math.max(0, v)) * 255).toString(16).padStart(2, '0')).join('');
   function luminance(hex) {
     const [r, g, b] = hexRgb(hex).map(v => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
@@ -117,235 +120,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   /* ================================================================
    * QR types: form schema + encoder
    * ================================================================ */
-  const opt = list => list.map(v => Array.isArray(v) ? v : [v, v[0].toUpperCase() + v.slice(1)]);
-
-  const TYPES = {
-    url: {
-      name: 'Webpage',
-      fields: [{ k: 'url', label: 'Web address', type: 'url', ph: 'https://example.com' }],
-      encode: d => d.url ? normUrl(d.url) : ''
-    },
-    vcard: {
-      name: 'Contact card',
-      fields: [
-        { row: [
-          { k: 'prefix', label: 'Prefix', ph: 'Dr.' },
-          { k: 'first', label: 'First name' },
-          { k: 'middle', label: 'Middle name' }
-        ] },
-        { row: [
-          { k: 'last', label: 'Last name' },
-          { k: 'suffix', label: 'Suffix', ph: 'Jr.' },
-          { k: 'nickname', label: 'Nickname' }
-        ] },
-        { row: [
-          { k: 'org', label: 'Company' },
-          { k: 'dept', label: 'Department' }
-        ] },
-        { row: [
-          { k: 'title', label: 'Job title' },
-          { k: 'role', label: 'Role' }
-        ] },
-        { group: 'phones', label: 'Phone numbers', add: 'Add phone', start: 1, fields: [
-          { k: 'type', label: 'Type', type: 'select', opts: opt(['cell', 'work', 'home', 'main', 'fax', 'pager', 'other']) },
-          { k: 'value', label: 'Number', type: 'tel', ph: '+1 555 123 4567' }
-        ] },
-        { group: 'emails', label: 'Email addresses', add: 'Add email', start: 1, fields: [
-          { k: 'type', label: 'Type', type: 'select', opts: opt(['work', 'home', 'other']) },
-          { k: 'value', label: 'Email', type: 'email' }
-        ] },
-        { group: 'addresses', label: 'Addresses', add: 'Add address', fields: [
-          { k: 'type', label: 'Type', type: 'select', opts: opt(['work', 'home', 'other']) },
-          { k: 'street', label: 'Street' },
-          { k: 'ext', label: 'Apt / Suite' },
-          { k: 'pobox', label: 'PO box' },
-          { row: [{ k: 'city', label: 'City' }, { k: 'region', label: 'State / Region' }] },
-          { row: [{ k: 'postal', label: 'Postcode' }, { k: 'country', label: 'Country' }] }
-        ] },
-        { group: 'urls', label: 'Websites', add: 'Add website', fields: [
-          { k: 'type', label: 'Type', type: 'select', opts: opt(['work', 'home', 'other']) },
-          { k: 'value', label: 'URL', type: 'url', ph: 'https://' }
-        ] },
-        { group: 'social', label: 'Social profiles', add: 'Add profile', fields: [
-          { k: 'type', label: 'Service', type: 'select', opts: opt(['linkedin', 'x', 'instagram', 'facebook', 'github', 'tiktok', 'youtube', 'mastodon', 'threads', 'bluesky', 'other']) },
-          { k: 'value', label: 'Profile URL', type: 'url', ph: 'https://' }
-        ] },
-        { k: 'bday', label: 'Birthday', type: 'dmy' },
-        { k: 'anniv', label: 'Anniversary', type: 'dmy' },
-        { k: 'note', label: 'Note', type: 'textarea' }
-      ],
-      encode: encodeVCard
-    },
-    wifi: {
-      name: 'Wi-Fi network',
-      fields: [
-        { k: 'ssid', label: 'Network name (SSID)' },
-        { k: 'auth', label: 'Security', type: 'select', opts: [['WPA', 'WPA / WPA2 / WPA3'], ['WEP', 'WEP'], ['nopass', 'None (open)']] },
-        { k: 'pass', label: 'Password', type: 'text' },
-        { k: 'hidden', label: 'Hidden network', type: 'checkbox' }
-      ],
-      encode: d => {
-        if (!d.ssid) return '';
-        const e = s => String(s).replace(/([\\;,:"])/g, '\\$1');
-        const auth = d.auth || 'WPA';
-        return `WIFI:T:${auth};S:${e(d.ssid)};${auth !== 'nopass' ? `P:${e(d.pass || '')};` : ''}${d.hidden ? 'H:true;' : ''};`;
-      }
-    },
-    email: {
-      name: 'Email',
-      fields: [
-        { k: 'to', label: 'To', type: 'email' },
-        { row: [{ k: 'cc', label: 'Cc', type: 'email' }, { k: 'bcc', label: 'Bcc', type: 'email' }] },
-        { k: 'subject', label: 'Subject' },
-        { k: 'body', label: 'Message', type: 'textarea' }
-      ],
-      encode: d => {
-        if (!d.to && !d.subject && !d.body) return '';
-        const p = ['cc', 'bcc', 'subject', 'body'].filter(k => d[k]).map(k => `${k}=${encodeURIComponent(d[k])}`);
-        return `mailto:${encodeURIComponent(d.to || '').replace(/%40/g, '@').replace(/%2C/g, ',')}${p.length ? '?' + p.join('&') : ''}`;
-      }
-    },
-    sms: {
-      name: 'Text message (SMS)',
-      fields: [
-        { k: 'number', label: 'Phone number', type: 'tel' },
-        { k: 'message', label: 'Message', type: 'textarea' }
-      ],
-      encode: d => d.number ? `SMSTO:${d.number.replace(/\s/g, '')}:${d.message || ''}` : ''
-    },
-    phone: {
-      name: 'Phone call',
-      fields: [{ k: 'number', label: 'Phone number', type: 'tel' }],
-      encode: d => d.number ? `tel:${d.number.replace(/[^\d+*#,;]/g, '')}` : ''
-    },
-    geo: {
-      name: 'Location',
-      fields: [
-        { row: [
-          { k: 'lat', label: 'Latitude', type: 'number', ph: '51.5007' },
-          { k: 'lng', label: 'Longitude', type: 'number', ph: '-0.1246' }
-        ] }
-      ],
-      encode: d => (d.lat !== '' && d.lng !== '' && d.lat != null && d.lng != null) ? `geo:${d.lat},${d.lng}` : ''
-    },
-    event: {
-      name: 'Calendar event',
-      fields: [
-        { k: 'summary', label: 'Title' },
-        { k: 'location', label: 'Location' },
-        { k: 'allday', label: 'All-day event', type: 'checkbox' },
-        { row: [
-          { k: 'start', label: 'Starts', type: 'datetime-local' },
-          { k: 'end', label: 'Ends', type: 'datetime-local' }
-        ] },
-        { k: 'desc', label: 'Description', type: 'textarea' }
-      ],
-      encode: d => {
-        if (!d.summary || !d.start) return '';
-        const dt = v => d.allday ? `;VALUE=DATE:${v.slice(0, 10).replace(/-/g, '')}`
-          : `:${v.replace(/[-:]/g, '').slice(0, 13)}00`;
-        return ['BEGIN:VEVENT', `SUMMARY:${icsEsc(d.summary)}`, `DTSTART${dt(d.start)}`,
-          d.end && `DTEND${dt(d.end)}`, d.location && `LOCATION:${icsEsc(d.location)}`,
-          d.desc && `DESCRIPTION:${icsEsc(d.desc)}`, 'END:VEVENT'].filter(Boolean).join('\r\n');
-      }
-    },
-    text: {
-      name: 'Plain text',
-      fields: [{ k: 'text', label: 'Text', type: 'textarea' }],
-      encode: d => d.text || ''
-    }
-  };
-
-  function normUrl(u) {
-    u = String(u).trim();
-    return /^[a-z][a-z\d+.-]*:/i.test(u) ? u : 'https://' + u;
-  }
-  function icsEsc(s) { return String(s).replace(/\\/g, '\\\\').replace(/[;,]/g, '\\$&').replace(/\r?\n/g, '\\n'); }
-
-  function encodeVCard(d) {
-    const v = icsEsc;
-    const name = [d.prefix, d.first, d.middle, d.last, d.suffix].filter(Boolean).join(' ');
-    const fn = name || d.org || '';
-    const any = fn || (d.phones || []).some(p => p.value) || (d.emails || []).some(e => e.value);
-    if (!any) return '';
-    const TEL = { cell: 'CELL', work: 'WORK,VOICE', home: 'HOME,VOICE', main: 'MAIN', fax: 'FAX', pager: 'PAGER', other: 'VOICE' };
-    const L = ['BEGIN:VCARD', 'VERSION:3.0',
-      `N:${[d.last, d.first, d.middle, d.prefix, d.suffix].map(x => v(x || '')).join(';')}`,
-      `FN:${v(fn)}`];
-    if (d.nickname) L.push(`NICKNAME:${v(d.nickname)}`);
-    if (d.org || d.dept) L.push(`ORG:${v(d.org || '')}${d.dept ? ';' + v(d.dept) : ''}`);
-    if (d.title) L.push(`TITLE:${v(d.title)}`);
-    if (d.role) L.push(`ROLE:${v(d.role)}`);
-    for (const p of d.phones || []) if (p.value) L.push(`TEL;TYPE=${TEL[p.type] || 'VOICE'}:${p.value}`);
-    for (const e of d.emails || []) if (e.value) L.push(`EMAIL;TYPE=INTERNET${e.type !== 'other' ? ',' + e.type.toUpperCase() : ''}:${e.value}`);
-    for (const a of d.addresses || []) {
-      const parts = [a.pobox, a.ext, a.street, a.city, a.region, a.postal, a.country];
-      if (parts.some(Boolean)) L.push(`ADR;TYPE=${(a.type || 'other').toUpperCase()}:${parts.map(x => v(x || '')).join(';')}`);
-    }
-    for (const u of d.urls || []) if (u.value) L.push(`URL;TYPE=${(u.type || 'other').toUpperCase()}:${normUrl(u.value)}`);
-    for (const s of d.social || []) if (s.value) L.push(`X-SOCIALPROFILE;TYPE=${s.type || 'other'}:${normUrl(s.value)}`);
-    // Dates are "YYYY-MM-DD", or "--MM-DD" without a year. Apple contacts mark a missing
-    // year with the placeholder year 1604 plus X-APPLE-OMIT-YEAR; Android reads --MM-DD.
-    const apple = (prop, v) => v.startsWith('--') ? `${prop};X-APPLE-OMIT-YEAR=1604:1604${v.slice(1)}` : `${prop}:${v}`;
-    if (d.bday) L.push(apple('BDAY', d.bday));
-    if (d.anniv) L.push(`X-ANNIVERSARY:${d.anniv}`, apple('item1.X-ABDATE', d.anniv), 'item1.X-ABLabel:_$!<Anniversary>!$_');
-    if (d.note) L.push(`NOTE:${v(d.note)}`);
-    L.push('END:VCARD');
-    return L.join('\r\n');
-  }
-
-  const encodeFace = f => (f && TYPES[f.type] ? TYPES[f.type].encode(f.data || {}) : '');
-
-  /* ---- Validation of stored and imported data (a bad backup must not break the app) ---- */
-  const isObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
-  const isHex = v => typeof v === 'string' && /^#[\da-f]{6}$/i.test(v);
-  const str = v => (typeof v === 'string' ? v : '');
-  const num = (v, d, lo, hi) => (Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d);
-  const imgUrl = v => (typeof v === 'string' && /^(data:image\/|https?:)/i.test(v) ? v : '');
-  /** Rebuild form data from a type's field schema: only known fields survive; a select
-   *  always holds one of its options, a checkbox a boolean, everything else a string,
-   *  and each list entry (phone, email…) is rebuilt from its own fields the same way. */
-  function fitToSchema(spec, d) {
-    const out = {};
-    if (!isObj(d)) return out;
-    const walk = list => list.forEach(f => {
-      if (f.row) return walk(f.row);
-      if (f.group) {
-        if (Array.isArray(d[f.group])) out[f.group] = d[f.group].filter(isObj).map(item => fitToSchema(f.fields, item));
-        return;
-      }
-      const v = d[f.k];
-      if (f.type === 'checkbox') out[f.k] = v === true;
-      else if (f.type === 'select') out[f.k] = f.opts.some(([o]) => o === v) ? v : f.opts[0][0];
-      else out[f.k] = typeof v === 'string' ? v : Number.isFinite(v) ? String(v) : '';
-    });
-    walk(spec);
-    return out;
-  }
-  function cleanFace(f) {
-    if (!isObj(f) || !Object.hasOwn(TYPES, f.type)) return null;
-    const L = isObj(f.logo) ? f.logo : {};
-    const logo = { mode: ['none', 'file', 'favicon'].includes(L.mode) ? L.mode : 'none', src: imgUrl(L.src), fav: imgUrl(L.fav), favFor: str(L.favFor) };
-    if (imgUrl(L.orig)) logo.orig = L.orig;
-    if (isObj(L.fit)) {
-      const F = L.fit;
-      logo.fit = { fit: F.fit === 'cover' ? 'cover' : 'contain', zoom: num(F.zoom, 1, 0.3, 4), x: num(F.x, 0, -2, 2), y: num(F.y, 0, -2, 2),
-                   shape: ['square', 'rounded', 'circle'].includes(F.shape) ? F.shape : 'square', bg: F.bg === 'white' ? 'white' : 'none' };
-    }
-    return { type: f.type, label: str(f.label).slice(0, 60), data: fitToSchema(TYPES[f.type].fields, f.data), logo,
-             inkMode: f.inkMode === 'custom' ? 'custom' : 'auto', fg: isHex(f.fg) ? f.fg : '#000000',
-             ecc: ['L', 'M', 'Q', 'H'].includes(f.ecc) ? f.ecc : 'M' };
-  }
-  function cleanLook(l) {
-    l = isObj(l) ? l : {};
-    const material = Object.hasOwn(MATERIALS, l.material) ? l.material : DEFAULT_LOOK.material;
-    return { material, die: isHex(l.die) ? l.die : MATERIALS[material].color, backdrop: isHex(l.backdrop) ? l.backdrop : DEFAULT_LOOK.backdrop };
-  }
-  function cleanState(s) {
-    const faces = Array.isArray(s?.faces) && s.faces.length === 6 ? s.faces.map(cleanFace) : blankState().faces;
-    const q3 = Array.isArray(s?.q3) && s.q3.length === 4 && s.q3.every(Number.isFinite) && s.q3.some(Boolean) ? s.q3 : null;
-    return { faces, look: cleanLook(s?.look), q3 };
-  }
+  const { cleanState } = createStorage({ STORE, MATERIALS, DEFAULT_LOOK, blankState });
   state = cleanState(state);
 
   /* ================================================================
@@ -359,11 +134,16 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   }
 
   /** QR module grid plus the cleared logo square, or null when the data doesn't fit. */
+  const qrCache = new Map();
   function qrModules(text, f) {
     const logo = logoHref(f);
-    let qr;
-    try { qr = qrcode(0, logo ? 'H' : (f.ecc || 'M')); qr.addData(text, 'Byte'); qr.make(); }
-    catch { return null; }
+    const ecc = logo ? 'H' : (f.ecc || 'M'), key = JSON.stringify([text, ecc]);
+    let qr = qrCache.get(key);
+    if (!qr) {
+      try { qr = qrcode(0, ecc); qr.addData(text, 'Byte'); qr.make(); } catch { return null; }
+      if (qrCache.size >= 24) qrCache.delete(qrCache.keys().next().value);
+      qrCache.set(key, qr);
+    }
     const n = qr.getModuleCount();
     // Cleared square in the middle for the logo, aligned to whole modules.
     let lo = 0, hi = -1;
@@ -381,7 +161,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     const q = qrModules(text, f);
     if (!q) return null;
     const { scanFg: fg, scanBg: bg } = sideColors(f);
-    const m = 1, size = q.n + m * 2;   // 1-module quiet zone; the container adds more
+    const m = 4, size = q.n + m * 2;   // explicit quiet zone in the exported SVG
     let d = '';
     for (let r = 0; r < q.n; r++) for (let c = 0; c < q.n; c++) if (q.dark(r, c)) d += `M${c + m},${r + m}h1v1h-1z`;
     let logoEl = '';
@@ -404,15 +184,26 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
 
   const stage = $('#stage');
   const canvas = $('#die');
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  let webgl = true, renderer;
+  try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true }); }
+  catch {
+    webgl = false;
+    renderer = { setPixelRatio() {}, setSize() {}, render() {}, capabilities: { getMaxAnisotropy: () => 1 } };
+    document.body.classList.add('no-webgl');
+    $('#faceAccess').open = true;
+    $('.hint').textContent = 'Choose a side to show or edit its QR code.';
+  }
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.NeutralToneMapping;
   renderer.toneMappingExposure = 1.05;
 
   const scene = new THREE.Scene();
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  if (webgl) {
+    const pmrem = new THREE.PMREMGenerator(renderer), room = new RoomEnvironment();
+    scene.environment = pmrem.fromScene(room, 0.04).texture;
+    room.dispose(); pmrem.dispose();
+  }
   scene.environmentIntensity = 1.0;
   const key = new THREE.DirectionalLight(0xffffff, 1.5);
   key.position.set(-1.5, 2.5, 5);
@@ -421,67 +212,6 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 50);
 
   /* ---- Procedural surfaces (no image downloads) ---- */
-  function rng(seed) {
-    return () => {
-      seed = (seed + 0x6D2B79F5) | 0;
-      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-  }
-  /** Smooth value noise in [0,1] with an fbm() helper. */
-  function makeNoise(seed) {
-    const r = rng(seed), T = new Float32Array(256 * 256).map(() => r());
-    const sm = t => t * t * (3 - 2 * t);
-    const at = (x, y) => T[(x & 255) + ((y & 255) << 8)];
-    const n = (x, y) => {
-      const xi = Math.floor(x), yi = Math.floor(y), u = sm(x - xi), v = sm(y - yi);
-      const a = at(xi, yi), b = at(xi + 1, yi), c = at(xi, yi + 1), d = at(xi + 1, yi + 1);
-      return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
-    };
-    n.fbm = (x, y, oct = 4) => { let s = 0, amp = 0.5, f = 1; for (let i = 0; i < oct; i++) { s += amp * n(x * f, y * f); amp /= 2; f *= 2; } return s; };
-    return n;
-  }
-
-  const SURF = 512;
-  function paintSurface(material, color, seed) {
-    const c = document.createElement('canvas');
-    c.width = c.height = SURF;
-    const x = c.getContext('2d'), img = x.createImageData(SURF, SURF), d = img.data;
-    const n = makeNoise(seed), r = rng(seed * 7 + 1);
-    const base = hexRgb(color), vein = base.map(v => v * 0.45 + 0.12);   // marble veins: darker, greyer
-    for (let v = 0, i = 0; v < SURF; v++) {
-      for (let u = 0; u < SURF; u++, i += 4) {
-        let k = 1, mix = 0;   // brightness factor, share of vein colour
-        switch (material) {
-          case 'metal':   // brushed: fine streaks running across the side
-            k = 0.86 + 0.18 * (0.6 * n(u * 0.01, v * 0.9) + 0.4 * n(u * 0.05, v * 3));
-            break;
-          case 'wood': {  // growth rings bent by low-frequency noise, plus fibre streaks
-            const t = v * 0.01 + n.fbm(u * 0.004, v * 0.012) * 2.4;
-            k = 0.74 + 0.24 * Math.sqrt(Math.abs(Math.sin(t * Math.PI * 2.2))) + 0.1 * (n(u * 0.015, v * 0.5) - 0.5);
-            break;
-          }
-          case 'clay':    // soft mottling with the odd dark speck
-            k = 0.9 + 0.14 * n.fbm(u * 0.012, v * 0.012) + (r() < 0.006 ? -0.18 : (r() - 0.5) * 0.05);
-            break;
-          case 'stone': { // marble: thin turbulent veins over a faint cloud
-            const t = u * 0.006 + v * 0.003 + n.fbm(u * 0.005, v * 0.005, 5) * 3.2;
-            mix = Math.pow(1 - Math.abs(Math.sin(t * Math.PI)), 10) * 0.85;
-            k = 0.96 + 0.07 * n.fbm(u * 0.02, v * 0.02);
-            break;
-          }
-          default:        // plastic: very fine grain
-            k = 1 + (r() - 0.5) * 0.05;
-        }
-        for (let ch = 0; ch < 3; ch++) d[i + ch] = Math.min(255, (base[ch] * (1 - mix) + vein[ch] * mix) * k * 255);
-        d[i + 3] = 255;
-      }
-    }
-    x.putImageData(img, 0, 0);
-    return c;
-  }
-
   // How each material catches the light.
   const FINISH = {
     matte:  { roughness: 0.72, metalness: 0, clearcoat: 0.08, clearcoatRoughness: 0.6,  bumpScale: 0.8 },
@@ -526,9 +256,11 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   scene.add(die);
 
   /** Apply the material finish, backdrop and repaint every side. */
+  let appliedLook = null;
   function applyLook() {
     const { material, backdrop } = state.look;
-    for (const m of materials) {
+    const surfaceChanged = !appliedLook || material !== appliedLook.material || state.look.die !== appliedLook.die;
+    if (webgl && (!appliedLook || material !== appliedLook.material)) for (const m of materials) {
       Object.assign(m, FINISH[material]);
       m.bumpMap = bumpFor(material);
       m.needsUpdate = true;
@@ -540,7 +272,8 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     root.setProperty('--chrome', light ? '#1b1c1f' : '#ececee');
     root.setProperty('--chrome-muted', light ? 'rgba(0,0,0,.55)' : '#8b8d94');
     $('meta[name="theme-color"]').content = backdrop;
-    renderAll();
+    appliedLook = { ...state.look };
+    if (surfaceChanged) renderAll();
   }
 
   let renderQueued = false;
@@ -569,14 +302,24 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   // Logos drawn into WebGL textures must be same-origin or CORS-enabled.
   const logoImages = new Map();
   function logoImage(href, onReady) {
-    if (logoImages.has(href)) return logoImages.get(href);
+    let entry = logoImages.get(href);
+    if (entry) { if (entry.loading) entry.listeners.add(onReady); return entry.image; }
+    entry = { image: null, loading: true, listeners: new Set([onReady]) };
+    logoImages.set(href, entry);
     const img = new Image();
     if (!href.startsWith('data:')) img.crossOrigin = 'anonymous';
-    img.onload = () => { logoImages.set(href, img); onReady(); };
-    img.onerror = () => logoImages.set(href, null);
-    logoImages.set(href, null);
-    img.src = href;
+    const finish = image => {
+      entry.image = image; entry.loading = false;
+      if (logoImages.get(href) === entry) for (const ready of entry.listeners) ready();
+      entry.listeners.clear();
+    };
+    img.onload = () => finish(img); img.onerror = () => finish(null); img.src = href;
     return null;
+  }
+  function pruneLogos() {
+    const used = new Set(state.faces.map(logoHref));
+    if (draft) used.add(logoHref(draft));
+    for (const href of logoImages.keys()) if (!used.has(href)) logoImages.delete(href);
   }
 
   function paintSide(i, withLogo = true) {
@@ -646,6 +389,9 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   }
 
   function renderFace(i) {
+    renderFaceList();
+    pruneLogos();
+    if (!webgl) return;
     paintSide(i);
     sideTextures[i].needsUpdate = true;
     maskTextures[i].needsUpdate = true;
@@ -678,7 +424,10 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   const tmpQ = new THREE.Quaternion(), tmpV = new THREE.Vector3();
 
   const applyQ = requestRender;
-  const saveQ = debounce(() => { state.q3 = die.quaternion.toArray(); save(true); }, 400);
+  const saveQ = debounce(() => {
+    state.q3 = die.quaternion.toArray();
+    try { localStorage.setItem(STORE + '.view', JSON.stringify(state.q3)); } catch {}
+  }, 400);
 
   function turn(axis, ang) {
     die.quaternion.premultiply(tmpQ.setFromAxisAngle(axis, ang)).normalize();
@@ -705,10 +454,11 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     omega = omega.map(w => w * k);
     spinRaf = requestAnimationFrame(spin);
   }
-  function startSpin() { cancelAnimationFrame(spinRaf); spin.t = 0; spinRaf = requestAnimationFrame(spin); }
+  function startSpin() { if (matchMedia('(prefers-reduced-motion: reduce)').matches) { saveQ(); return; } cancelAnimationFrame(spinRaf); spin.t = 0; spinRaf = requestAnimationFrame(spin); }
   function stopSpin() { cancelAnimationFrame(spinRaf); spinRaf = 0; }
 
   function resetView() {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { die.quaternion.copy(HOME_Q); requestRender(); saveQ(); return; }
     stopSpin();
     omega = [0, 0, 0];
     const from = die.quaternion.clone(), t0 = performance.now();
@@ -951,8 +701,8 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   const brightnessPlugin = () => window.Capacitor?.Plugins?.ScreenBrightness;
 
   async function openFull(i) {
-    const f = state.faces[i];
-    const svg = f && encodeFace(f) ? qrSvg(encodeFace(f), f) : null;
+    const f = state.faces[i], text = encodeFace(f);
+    const svg = text ? qrSvg(text, f) : null;
     if (!svg) return;
     $('#fullQr').innerHTML = svg;
     full.style.background = sideColors(f).scanBg;
@@ -998,6 +748,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   }
   // Only a tap that starts on the overlay closes it, so lifting the finger
   // from the long-press that opened it doesn't close it straight away.
+  $('#fullClose').addEventListener('click', closeFull);
   full.addEventListener('pointerdown', () => { fullArmed = true; });
   full.addEventListener('click', () => { if (fullArmed) closeFull(); });
   full.addEventListener('contextmenu', e => e.preventDefault());
@@ -1042,8 +793,10 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
 
   /** Try to embed a remote icon as a data URL (works offline later). Needs CORS. */
   async function toDataUrl(src) {
-    return new Promise(res => {
+    return new Promise(resolve => {
       const img = new Image();
+      const timer = setTimeout(() => { img.src = ''; resolve(null); }, 5000);
+      const res = value => { clearTimeout(timer); resolve(value); };
       img.crossOrigin = 'anonymous';
       img.onload = () => {
         try {
@@ -1061,10 +814,9 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
 
   /** Read <link rel=icon> from the page itself. Only works if the site allows CORS
    *  (or in the native app, where CapacitorHttp bypasses CORS). */
-  async function iconsFromHtml(origin, pageUrl) {
+  async function iconsFromHtml(pageUrl) {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 5000);
     try {
-      const ctl = new AbortController();
-      const t = setTimeout(() => ctl.abort(), 5000);
       const html = await (await fetch(pageUrl, { signal: ctl.signal })).text();
       clearTimeout(t);
       const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -1073,7 +825,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
         .map(l => ({ href: new URL(l.getAttribute('href'), base).href, size: parseInt(l.getAttribute('sizes')) || (/apple/.test(l.rel) ? 180 : /svg/.test(l.type || l.getAttribute('href')) ? 512 : 32) }))
         .sort((a, b) => b.size - a.size)
         .map(x => x.href);
-    } catch { return []; }
+    } catch { return []; } finally { clearTimeout(t); }
   }
 
   /** Website first, Google's favicon service as fallback. → {href, from} | null */
@@ -1081,7 +833,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     let u;
     try { u = new URL(normUrl(rawUrl)); } catch { return null; }
     if (!/^https?:$/.test(u.protocol)) return null;
-    const direct = [...await iconsFromHtml(u.origin, u.href), `${u.origin}/apple-touch-icon.png`, `${u.origin}/favicon.ico`];
+    const direct = [...await iconsFromHtml(u.href), `${u.origin}/apple-touch-icon.png`, `${u.origin}/favicon.ico`];
     for (const src of [...new Set(direct)]) {
       if (await probeImage(src)) return { href: (await toDataUrl(src)) || src, from: 'site' };
     }
@@ -1116,7 +868,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
 
   typeSelect.innerHTML = Object.entries(TYPES).map(([k, t]) => `<option value="${k}">${t.name}</option>`).join('');
 
-  const isOpen = () => $$('.sheet.open, .full.open').length > 0;
+  const isOpen = () => $$('.sheet.open, .full.open, .scanner.open, .cp.open').length > 0;
 
   // Day / month / optional year fields. Stored as "YYYY-MM-DD" or "--MM-DD".
   const MONTHS = Array.from({ length: 12 }, (_, i) => new Intl.DateTimeFormat(undefined, { month: 'short' }).format(new Date(2000, i, 1)));
@@ -1193,7 +945,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
         return;
       }
       const el = inputs.find(x => x.dataset.k === f.k);
-      if (el) out[f.k] = 'dmy' in el.dataset ? readDate(el) : el.type === 'checkbox' ? el.checked : el.value.trim();
+      if (el) out[f.k] = 'dmy' in el.dataset ? readDate(el) : el.type === 'checkbox' ? el.checked : ['pass', 'ssid', 'text', 'body', 'message', 'note', 'desc'].includes(f.k) ? el.value : el.value.trim();
     });
     walk(spec);
     return out;
@@ -1234,16 +986,19 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   }
   const updatePreviewSoon = debounce(updatePreview, 120);
 
-  let favSeq = 0;
+  let favSeq = 0, uploadSeq = 0;
+  const favAttempts = new Map();
   const maybeFetchFavicon = debounce(async (force) => {
     if (draft?.type !== 'url' || draft.logo.mode !== 'favicon') return;
     const url = draft.data.url;
     if (!url) { favStatus.textContent = 'Enter a web address first.'; return; }
-    if (!force && draft.logo.favFor === url && draft.logo.fav) return;
+    if (!force && ((draft.logo.favFor === url && draft.logo.fav) || Date.now() - (favAttempts.get(url) || 0) < 60000)) return;
+    favAttempts.set(url, Date.now());
+    if (favAttempts.size > 32) favAttempts.delete(favAttempts.keys().next().value);
     const seq = ++favSeq, s = session;
     favStatus.textContent = 'Looking for the site icon…';
     const r = await resolveFavicon(url);
-    if (seq !== favSeq || s !== session || !draft) return;
+    if (seq !== favSeq || s !== session || !draft || draft.type !== 'url' || draft.logo.mode !== 'favicon' || draft.data.url !== url) return;
     draft.logo.favFor = url;
     draft.logo.fav = r?.href || '';
     favStatus.textContent = !r ? 'No icon found for this site.'
@@ -1253,6 +1008,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   }, 600);
 
   function openEditor(i) {
+    updatePreviewSoon.cancel(); maybeFetchFavicon.cancel(); commitAdjust.cancel();
     closeMenu();
     session++;
     editing = i;
@@ -1288,8 +1044,11 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     // iOS can leave the page scrolled after its keyboard closes; put it back.
     scrollTo(0, 0);
     resetGesture();
-    session++;
+    session++; favSeq++; uploadSeq++;
+    updatePreviewSoon.cancel(); maybeFetchFavicon.cancel(); commitAdjust.cancel();
+    adjPts.clear(); adjImg = null;
     editing = -1; draft = null;
+    pruneLogos();
   }
 
   typeSelect.addEventListener('change', () => {
@@ -1324,8 +1083,10 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     const act = e.target.closest('[data-act]')?.dataset.act;
     if (act === 'cancel') closeEditor();
     if (act === 'clear' && confirm('Clear this side?')) {
+      const previous = state.faces[editing];
       state.faces[editing] = null;
-      save(); renderFace(editing); closeEditor();
+      if (!save()) { state.faces[editing] = previous; return; }
+      renderFace(editing); closeEditor();
     }
   });
 
@@ -1334,10 +1095,10 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   $('#logoFile').addEventListener('change', async e => {
     const file = e.target.files[0];
     if (!file) return;
-    const s = session;
+    const s = session, operation = ++uploadSeq;
     try {
       const orig = await readLogoFile(file);
-      if (s !== session || !draft) return;   // the editor closed or moved to another side
+      if (s !== session || operation !== uploadSeq || !draft) return;   // the editor closed or moved to another side
       draft.logo.orig = orig;
       draft.logo.fit = { ...LOGO_FIT0 };
       draft.logo.src = draft.logo.orig;
@@ -1450,6 +1211,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   sheet.addEventListener('submit', e => {
     e.preventDefault();
     if (!draft) return;
+    commitAdjust.cancel();
     flushAdjust();   // a logo adjustment made just before Save must not be lost
     readForm();
     const text = encodeFace(draft);
@@ -1485,8 +1247,8 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   const RECENT_KEY = 'qrcube.recentColours';
   let cpInput = null, cpStart = '', cpHsv = [0, 0, 0];
 
-  const hexToRgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
-  const rgbToHex = rgb => '#' + rgb.map(v => Math.round(v).toString(16).padStart(2, '0')).join('');
+  const hexToRgb = h => hexRgb(h).map(v => v * 255);
+  const rgbToHex = rgb => rgbHex(rgb.map(v => v / 255));
   function rgbToHsv([r, g, b]) {
     r /= 255; g /= 255; b /= 255;
     const max = Math.max(r, g, b), d = max - Math.min(r, g, b);
@@ -1502,7 +1264,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     if (/^[\da-f]{3}$/i.test(h)) h = h.replace(/./g, c => c + c);
     return /^[\da-f]{6}$/i.test(h) ? '#' + h.toLowerCase() : null;
   }
-  const recentColours = () => { try { return JSON.parse(localStorage.getItem(RECENT_KEY)) || []; } catch { return []; } };
+  const recentColours = () => { try { const list = JSON.parse(localStorage.getItem(RECENT_KEY)); return Array.isArray(list) ? list.map(normHex).filter(Boolean).slice(0, 8) : []; } catch { return []; } };
 
   /** Show the colour everywhere in the picker and send it to the field (live). */
   function cpShow(hex, { skipHex = false, keepHsv = false } = {}) {
@@ -1744,165 +1506,6 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   }
 
   /* ---- Reading QR payloads back into form data ---- */
-  const safeDecode = s => { try { return decodeURIComponent(s); } catch { return s; } };
-  /** Split on `sep`, honouring backslash escapes (\n becomes a newline). */
-  function splitEsc(s, sep) {
-    const out = [''];
-    for (let i = 0; i < s.length; i++) {
-      const c = s[i];
-      if (c === '\\' && i + 1 < s.length) { const n = s[++i]; out[out.length - 1] += n === 'n' || n === 'N' ? '\n' : n; }
-      else if (c === sep) out.push('');
-      else out[out.length - 1] += c;
-    }
-    return out;
-  }
-  /** "K:v;K:v;;" (Wi-Fi, MECARD, MATMSG) → {K: [v, …]} */
-  function keyFields(body) {
-    const out = {};
-    for (const part of splitEsc(body, ';')) {
-      const i = part.indexOf(':');
-      if (i > 0) (out[part.slice(0, i).toUpperCase()] ||= []).push(part.slice(i + 1));
-    }
-    return out;
-  }
-  function normDate(v, noYear) {
-    let m;
-    if ((m = /^(\d{4})-?(\d{2})-?(\d{2})/.exec(v))) return `${noYear ? '-' : m[1]}-${m[2]}-${m[3]}`;
-    if ((m = /^--(\d{2})-?(\d{2})/.exec(v))) return `--${m[1]}-${m[2]}`;
-    return '';
-  }
-  const pick = (types, list, dflt) => list.find(t => types.includes(t)) || dflt;
-  const SOCIAL = ['linkedin', 'x', 'instagram', 'facebook', 'github', 'tiktok', 'youtube', 'mastodon', 'threads', 'bluesky'];
-  const LINE = /^(?:([\w-]+)\.)?([^:;]+)((?:;[^:]*)?):([\s\S]*)$/;   // [group.]PROP[;params]:value
-  const unfold = t => t.replace(/\r?\n[ \t]/g, '').split(/\r?\n/);
-  // Apple marks "no year" with a placeholder year named in X-APPLE-OMIT-YEAR.
-  const omitsYear = (params, val) => { const y = /x-apple-omit-year=(\d{4})/.exec(params)?.[1]; return !!y && val.startsWith(y); };
-
-  function parseVCard(t) {
-    const d = { phones: [], emails: [], addresses: [], urls: [], social: [] };
-    const lines = unfold(t), labels = {};
-    for (const line of lines) {
-      const m = LINE.exec(line);
-      if (m && m[1] && /^X-ABLABEL$/i.test(m[2])) labels[m[1]] = m[4].toLowerCase();
-    }
-    for (const line of lines) {
-      const m = LINE.exec(line);
-      if (!m) continue;
-      const [, grp, rawProp, rawParams, val] = m;
-      const prop = rawProp.toUpperCase(), params = rawParams.toLowerCase();
-      const types = params.replace(/type=/g, '').split(/[;,="]+/).filter(Boolean);
-      const parts = splitEsc(val, ';');
-      const one = parts.join(';');
-      switch (prop) {
-        case 'N': [d.last, d.first, d.middle, d.prefix, d.suffix] = parts.map(s => s.trim()); break;
-        case 'FN': d.fn = one; break;
-        case 'NICKNAME': d.nickname = one; break;
-        case 'ORG': [d.org = '', d.dept = ''] = parts; break;
-        case 'TITLE': d.title = one; break;
-        case 'ROLE': d.role = one; break;
-        case 'NOTE': d.note = one; break;
-        case 'TEL': d.phones.push({
-          type: types.some(x => /cell|mobile|iphone/.test(x)) ? 'cell' : pick(types, ['fax', 'pager', 'main', 'work', 'home'], 'other'),
-          value: val.replace(/^tel:/i, '') }); break;
-        case 'EMAIL': d.emails.push({ type: pick(types, ['work', 'home'], 'other'), value: one }); break;
-        case 'ADR': {
-          const [pobox, ext, street, city, region, postal, country] = parts;
-          d.addresses.push({ type: pick(types, ['work', 'home'], 'other'), pobox, ext, street, city, region, postal, country });
-          break;
-        }
-        case 'URL': d.urls.push({ type: pick(types, ['work', 'home'], 'other'), value: one }); break;
-        case 'X-SOCIALPROFILE': d.social.push({ type: pick(types, SOCIAL, 'other'), value: one }); break;
-        case 'BDAY': d.bday = normDate(val, omitsYear(params, val)); break;
-        case 'ANNIVERSARY': case 'X-ANNIVERSARY': d.anniv ||= normDate(val); break;
-        case 'X-ABDATE': if (/anniversary/.test(labels[grp] || '')) d.anniv ||= normDate(val, omitsYear(params, val)); break;
-      }
-    }
-    if (!d.first && !d.last && d.fn) { const w = d.fn.split(/\s+/); d.last = w.length > 1 ? w.pop() : ''; d.first = w.join(' '); }
-    delete d.fn;
-    if (!d.phones.length) d.phones.push({ type: 'cell', value: '' });
-    if (!d.emails.length) d.emails.push({ type: 'work', value: '' });
-    return d;
-  }
-
-  function parseMeCard(t) {
-    const f = keyFields(t.replace(/^MECARD:/i, ''));
-    const [last = '', first = ''] = (f.N?.[0] || '').split(',');
-    return {
-      last: last.trim(), first: first.trim(), nickname: f.NICKNAME?.[0] || '', org: f.ORG?.[0] || '', title: f.TITLE?.[0] || '',
-      note: f.NOTE?.[0] || '', bday: normDate(f.BDAY?.[0] || ''),
-      phones: (f.TEL || ['']).map(value => ({ type: 'cell', value })),
-      emails: (f.EMAIL || ['']).map(value => ({ type: 'other', value })),
-      urls: (f.URL || []).map(value => ({ type: 'other', value })),
-      addresses: (f.ADR || []).map(a => {
-        const [pobox, ext, street, city, region, postal, country] = a.split(',').map(s => s.trim());
-        return { type: 'other', pobox, ext, street, city, region, postal, country };
-      }),
-      social: []
-    };
-  }
-
-  function parseEvent(t) {
-    const d = { summary: '', location: '', desc: '', allday: false, start: '', end: '' };
-    const p2 = n => String(n).padStart(2, '0');
-    const when = (val, params) => {
-      const m = /^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?(Z)?)?/.exec(val);
-      if (!m) return '';
-      if (!m[4]) { d.allday = true; return `${m[1]}-${m[2]}-${m[3]}T00:00`; }
-      const dt = m[7] ? new Date(Date.UTC(+m[1], m[2] - 1, +m[3], +m[4], +m[5])) : new Date(+m[1], m[2] - 1, +m[3], +m[4], +m[5]);
-      return `${dt.getFullYear()}-${p2(dt.getMonth() + 1)}-${p2(dt.getDate())}T${p2(dt.getHours())}:${p2(dt.getMinutes())}`;
-    };
-    for (const line of unfold(t)) {
-      const m = LINE.exec(line);
-      if (!m) continue;
-      const [, , prop, params, val] = m;
-      const text = splitEsc(val, '\u0000')[0];
-      switch (prop.toUpperCase()) {
-        case 'SUMMARY': d.summary = text; break;
-        case 'LOCATION': d.location = text; break;
-        case 'DESCRIPTION': d.desc = text; break;
-        case 'DTSTART': d.start = when(val, params); break;
-        case 'DTEND': d.end = when(val, params); break;
-      }
-    }
-    return d;
-  }
-
-  function parseMailto(t) {
-    const [addr, query = ''] = t.slice(7).split('?');
-    const d = { to: safeDecode(addr), cc: '', bcc: '', subject: '', body: '' };
-    for (const kv of query.split('&')) {
-      const [k, v = ''] = kv.split('=');
-      const key = k.toLowerCase();
-      if (key in d && key !== 'to') d[key] = safeDecode(v);
-    }
-    return d;
-  }
-
-  /** Recognise any payload this app can make (and common variants) → {type, data}. */
-  function parseQr(raw) {
-    const t = raw.trim();
-    let m;
-    if (/^WIFI:/i.test(t)) {
-      const f = keyFields(t.slice(5));
-      const T = (f.T?.[0] || '').toUpperCase();
-      return { type: 'wifi', data: { ssid: f.S?.[0] || '', auth: T === 'WEP' ? 'WEP' : !T || T === 'NOPASS' ? 'nopass' : 'WPA', pass: f.P?.[0] || '', hidden: /^true$/i.test(f.H?.[0] || '') } };
-    }
-    if (/^BEGIN:VCARD/i.test(t)) return { type: 'vcard', data: parseVCard(t) };
-    if (/^MECARD:/i.test(t)) return { type: 'vcard', data: parseMeCard(t) };
-    if (/BEGIN:VEVENT/i.test(t)) return { type: 'event', data: parseEvent(t) };
-    if (/^mailto:/i.test(t)) return { type: 'email', data: parseMailto(t) };
-    if (/^MATMSG:/i.test(t)) {
-      const f = keyFields(t.slice(7));
-      return { type: 'email', data: { to: f.TO?.[0] || '', cc: '', bcc: '', subject: f.SUB?.[0] || '', body: f.BODY?.[0] || '' } };
-    }
-    if ((m = /^SMSTO:([^:]*):?([\s\S]*)$/i.exec(t))) return { type: 'sms', data: { number: m[1], message: m[2] } };
-    if ((m = /^sms:([^?&]*)(?:[?&]body=([\s\S]*))?$/i.exec(t))) return { type: 'sms', data: { number: safeDecode(m[1]), message: safeDecode(m[2] || '') } };
-    if ((m = /^tel:(.+)$/i.exec(t))) return { type: 'phone', data: { number: m[1] } };
-    if ((m = /^geo:(-?[\d.]+),(-?[\d.]+)/i.exec(t))) return { type: 'geo', data: { lat: m[1], lng: m[2] } };
-    if (/^(https?:\/\/|www\.)\S+$/i.test(t)) return { type: 'url', data: { url: t } };
-    return { type: 'text', data: { text: raw } };
-  }
-
   // Exposed for testing the payload round-trip (encoder → parser) in the console.
   if (DEBUG) window.qrcubeDebug = { parseQr, encode: (type, data) => TYPES[type].encode(data) };
 
@@ -1962,6 +1565,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   }
   function closeLook() {
     if (!lookSheet.classList.contains('open')) return;
+    applyLookSoon.flush();
     lookSheet.classList.remove('open');
     backdrop.classList.remove('open', 'clear');
     document.body.classList.remove('looking');
@@ -2032,7 +1636,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     if (!file) return;
     try {
       const data = JSON.parse(await file.text());
-      if (!isObj(data) || !Array.isArray(data.faces) || data.faces.length !== 6) throw new Error();
+      if (!data || typeof data !== 'object' || !Array.isArray(data.faces) || data.faces.length !== 6) throw new Error();
       if (!confirm('Replace all six sides with this backup?')) return;
       const prev = state;
       // Anything malformed in the file is dropped or reset rather than stored.
@@ -2044,9 +1648,67 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     }
   });
 
+  function renderFaceList() {
+    const list = $('#faceList');
+    if (!list) return;
+    // Keep controls stable so repainting a face never removes keyboard focus.
+    if (!list.children.length) list.innerHTML = state.faces.map((_, i) =>
+      '<div class="face-row"><span></span><button type="button" data-face="' + i + '" data-action="scan">Show QR</button><button type="button" data-face="' + i + '" data-action="edit">Edit</button></div>').join('');
+    [...list.children].forEach((row, i) => {
+      const f = state.faces[i];
+      row.querySelector('span').textContent = (i + 1) + '. ' + (f?.label || (f ? TYPES[f.type].name : 'Empty side'));
+      row.querySelector('[data-action="scan"]').disabled = !encodeFace(f);
+      for (const button of row.querySelectorAll('button')) button.setAttribute('aria-label', button.textContent + ' — side ' + (i + 1));
+    });
+  }
+  $('#faceList').addEventListener('click', e => {
+    const button = e.target.closest('[data-face]');
+    if (!button) return;
+    const i = +button.dataset.face;
+    if (button.dataset.action === 'edit') openEditor(i); else openFull(i);
+  });
+  // Modal focus and hidden-control handling are shared by every overlay.
+  const overlays = ['menu', 'sheet', 'installSheet', 'lookSheet', 'full', 'scanner', 'cp'].map(id => $('#' + id));
+  const modalOrder = ['cp', 'scanner', 'full', 'sheet', 'lookSheet', 'installSheet'];
+  const returnFocus = new Map();
+  let activeOverlay = null;
+  const focusables = el => [...el.querySelectorAll('button, input, select, textarea, [tabindex="0"]')].filter(el => !el.disabled && !el.closest('[hidden]') && el.getClientRects().length);
+  function syncOverlays() {
+    const top = modalOrder.map(id => $('#' + id)).find(el => el.classList.contains('open')) || (menu.classList.contains('open') ? menu : null);
+    for (const el of overlays) {
+      const open = el.classList.contains('open');
+      el.inert = !open || (!!top && top !== el);
+      el.setAttribute('aria-hidden', String(!open || top !== el));
+      if (el !== menu) { el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', String(top === el)); }
+      if (!el.hasAttribute('aria-label') && !el.hasAttribute('aria-labelledby')) el.setAttribute('aria-label', el === sheet ? 'Edit side' : el === lookSheet ? 'Die and backdrop' : el === full ? 'QR code' : 'App menu');
+    }
+    for (const el of [$('.bar'), stage, $('#faceAccess')]) el.inert = !!top && top !== menu;
+    if (top === activeOverlay) return;
+    const previous = activeOverlay;
+    if (top && !returnFocus.has(top)) returnFocus.set(top, document.activeElement);
+    activeOverlay = top;
+    if (previous && !previous.classList.contains('open')) {
+      const target = returnFocus.get(previous); returnFocus.delete(previous);
+      if (target?.isConnected && !target.closest('[inert]')) target.focus();
+    }
+    if (top && !top.contains(document.activeElement)) (focusables(top)[0] || top).focus();
+  }
+  const overlayObserver = new MutationObserver(syncOverlays);
+  for (const el of overlays) { el.tabIndex = -1; overlayObserver.observe(el, { attributes: true, attributeFilter: ['class'] }); }
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Tab' || !activeOverlay) return;
+    const controls = focusables(activeOverlay), first = controls[0], last = controls.at(-1);
+    if (!first) { e.preventDefault(); activeOverlay.focus(); return; }
+    if (e.shiftKey && (document.activeElement === first || !activeOverlay.contains(document.activeElement))) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && (document.activeElement === last || !activeOverlay.contains(document.activeElement))) { e.preventDefault(); first.focus(); }
+  });
+  syncOverlays();
+  addEventListener('pagehide', () => { saveQ.flush(); applyLookSoon.flush(); stopCamera(); });
+
   /* ================================================================
    * Boot
    * ================================================================ */
+  $('#appVersion').textContent = 'Version ' + globalThis.QRCUBE_VERSION;
   applyQ();
   applyLook();
   refreshFavicons();

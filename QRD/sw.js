@@ -1,8 +1,9 @@
 // Offline cache for the app shell. Bump VERSION when files change.
+importScripts('./version.js');
 const PREFIX = 'qrcube-';
-const VERSION = PREFIX + 'v10';
+const VERSION = PREFIX + globalThis.QRCUBE_VERSION;
 const SHELL = [
-  './', 'index.html', 'styles.css', 'app.js', 'vendor/qrcode.js', 'vendor/jsQR.js',
+  './', 'index.html', 'styles.css', 'app.js', 'version.js', 'utils.js', 'formats.js', 'storage.js', 'surfaces.js', 'vendor/qrcode.js', 'vendor/jsQR.js',
   'vendor/three/three.module.js', 'vendor/three/three.core.js',
   'vendor/three/RoundedBoxGeometry.js', 'vendor/three/RoomEnvironment.js',
   'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-32.png', 'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png'
