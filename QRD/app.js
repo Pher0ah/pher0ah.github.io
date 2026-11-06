@@ -44,7 +44,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   }
   /** Persist the state; false (after telling the user, unless quiet) when storage is full. */
   function save(quiet = false) {
-    try { localStorage.setItem(STORE, JSON.stringify({ ...state, q3: null })); return true; }
+    try { localStorage.setItem(STORE, JSON.stringify({ ...state, q3: null }, function(key, value) { return key === 'orig' && this.src === value ? undefined : value; })); return true; }
     catch {
       if (!quiet) alert('Could not save: storage is full. Try a smaller logo, or clear a side you no longer need.');
       return false;
@@ -304,6 +304,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   const RELAY = 'https://images.weserv.nl/';
   const corsRelay = src => `${RELAY}?url=${encodeURIComponent(src)}&output=png`;
   const logoImages = new Map();
+  const faceLogoReady = Array.from({ length: 6 }, (_, i) => () => renderFace(i));
   function logoImage(href, onReady) {
     let entry = logoImages.get(href);
     if (entry) { if (entry.loading) entry.listeners.add(onReady); return entry.image; }
@@ -386,7 +387,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     if (q?.logo) {
       const u = size / q.n;
       const lx = ox + q.lo * u, ly = oy + q.lo * u, lw = q.w * u, pad = u * 0.4;
-      const img = withLogo ? logoImage(q.logo, () => renderFace(i)) : null;
+      const img = withLogo ? logoImage(q.logo, faceLogoReady[i]) : null;
       if (img) {
         const k = Math.min((lw - pad * 2) / img.naturalWidth, (lw - pad * 2) / img.naturalHeight);
         const iw = img.naturalWidth * k, ih = img.naturalHeight * k;
@@ -466,10 +467,19 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     omega = omega.map(w => w * k);
     spinRaf = requestAnimationFrame(spin);
   }
-  function startSpin() { if (matchMedia('(prefers-reduced-motion: reduce)').matches) { saveQ(); return; } cancelAnimationFrame(spinRaf); spin.t = 0; spinRaf = requestAnimationFrame(spin); }
+  function startSpin() {
+    cancelAnimationFrame(spinRaf); spinRaf = 0;
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const speed = Math.hypot(...omega);
+      if (speed) turn(tmpV.set(...omega).divideScalar(speed), speed * 16);
+      saveQ(); return;
+    }
+    spin.t = 0; spinRaf = requestAnimationFrame(spin);
+  }
   function stopSpin() { cancelAnimationFrame(spinRaf); spinRaf = 0; }
 
   function resetView() {
+    stopSpin();
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) { die.quaternion.copy(HOME_Q); requestRender(); saveQ(); return; }
     stopSpin();
     omega = [0, 0, 0];
@@ -817,10 +827,10 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
       img.crossOrigin = 'anonymous';
       img.onload = () => {
         try {
-          const s = Math.min(256, img.naturalWidth || 128);
+          const scale = Math.min(1, 256 / Math.max(img.naturalWidth, img.naturalHeight));
           const c = document.createElement('canvas');
-          c.width = c.height = s;
-          c.getContext('2d').drawImage(img, 0, 0, s, s);
+          c.width = Math.max(1, Math.round(img.naturalWidth * scale)); c.height = Math.max(1, Math.round(img.naturalHeight * scale));
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
           res(c.toDataURL('image/png'));
         } catch { res(null); }
       };
@@ -885,7 +895,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
 
   typeSelect.innerHTML = Object.entries(TYPES).map(([k, t]) => `<option value="${k}">${t.name}</option>`).join('');
 
-  const isOpen = () => $$('.sheet.open, .full.open, .scanner.open, .cp.open').length > 0;
+  const isOpen = () => $$('.sheet.open, .full.open, .scanner.open, .cp.open, .menu.open').length > 0;
 
   // Day / month / optional year fields. Stored as "YYYY-MM-DD" or "--MM-DD".
   const MONTHS = Array.from({ length: 12 }, (_, i) => new Intl.DateTimeFormat(undefined, { month: 'short' }).format(new Date(2000, i, 1)));
@@ -1116,6 +1126,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   $('#logoFile').addEventListener('change', async e => {
     const file = e.target.files[0];
     if (!file) return;
+    if (file.size > 10 * 1024 * 1024 || (/svg/i.test(file.type) && file.size > 512 * 1024)) { alert('Please choose a smaller image (up to 10 MB, or 512 KB for SVG).'); return; }
     const s = session, operation = ++uploadSeq;
     try {
       const orig = await readLogoFile(file);
@@ -1126,6 +1137,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
       loadAdjust();
       updatePreview();
     } catch {
+      if (s !== session || operation !== uploadSeq || !draft) return;
       alert('That image could not be read. Please use an SVG, PNG, JPG or ICO file.');
     }
   });
@@ -1174,7 +1186,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   // The edited picture becomes the logo; untouched, the original (crisp SVG) is kept.
   /** Make the adjusted picture the logo. Called (debounced) while adjusting, and directly by Save. */
   function flushAdjust() {
-    if (!draft || !adjImg) return;
+    if (!draft || !adjImg || draft.logo.mode !== 'file' || !draft.logo.fit) return;
     const f = draft.logo.fit;
     const plain = Object.keys(LOGO_FIT0).every(k => f[k] === LOGO_FIT0[k]);
     draft.logo.src = plain ? draft.logo.orig : adjCanvas.toDataURL('image/png');
@@ -1241,12 +1253,13 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
       return;
     }
     if (!text && !confirm('This side has no QR data yet. Save it anyway?')) return;
-    // Drop logo data the chosen mode doesn't use.
-    if (draft.logo.mode !== 'file') { draft.logo.src = ''; delete draft.logo.orig; delete draft.logo.fit; }
-    if (draft.logo.mode !== 'favicon') { draft.logo.fav = ''; draft.logo.favFor = ''; }
+    // Build the persisted face separately so a failed save leaves the draft intact.
+    const next = clone(draft);
+    if (next.logo.mode !== 'file') { next.logo.src = ''; delete next.logo.orig; delete next.logo.fit; }
+    if (next.logo.mode !== 'favicon') { next.logo.fav = ''; next.logo.favFor = ''; }
     const prev = state.faces[editing];
-    state.faces[editing] = draft;
-    if (!save()) { state.faces[editing] = prev; return; }   // keep the editor open
+    state.faces[editing] = next;
+    if (!save()) { state.faces[editing] = prev; return; }
     renderFace(editing);
     closeEditor();
   });
@@ -1624,6 +1637,15 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   const menu = $('#menu');
   const menuBtn = $('#menuBtn');
   function closeMenu() { menu.classList.remove('open'); menuBtn.setAttribute('aria-expanded', 'false'); }
+  menu.addEventListener('keydown', e => {
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return;
+    const items = [...menu.querySelectorAll('button')].filter(el => !el.hidden);
+    if (!items.length) return;
+    e.preventDefault();
+    const current = items.indexOf(document.activeElement);
+    const index = e.key === 'Home' ? 0 : e.key === 'End' ? items.length - 1 : (current + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+    items[index].focus();
+  });
   menuBtn.addEventListener('click', e => {
     e.stopPropagation();
     const open = menu.classList.toggle('open');
@@ -1711,6 +1733,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     if (previous && !previous.classList.contains('open')) {
       const target = returnFocus.get(previous); returnFocus.delete(previous);
       if (target?.isConnected && !target.closest('[inert]')) target.focus();
+      else if (!top) menuBtn.focus();
     }
     if (top && !top.contains(document.activeElement)) (focusables(top)[0] || top).focus();
   }
@@ -1724,7 +1747,8 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     else if (!e.shiftKey && (document.activeElement === last || !activeOverlay.contains(document.activeElement))) { e.preventDefault(); first.focus(); }
   });
   syncOverlays();
-  addEventListener('pagehide', () => { saveQ.flush(); applyLookSoon.flush(); stopCamera(); });
+  addEventListener('pagehide', () => { saveQ.flush(); applyLookSoon.flush(); closeFull(); closeScanner(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { closeFull(); closeScanner(); } });
 
   /* ================================================================
    * Boot
