@@ -12,7 +12,7 @@
    Bump CACHE when you change shell files to force an update.
    ========================================================================= */
 
-const CACHE = "bigtalk-v1.0.2";
+const CACHE = "bigtalk-v1.0.3";
 
 const SHELL = [
   "./",
@@ -39,7 +39,7 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k.startsWith("bigtalk-") && k !== CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
