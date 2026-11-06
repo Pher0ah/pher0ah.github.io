@@ -1,6 +1,6 @@
 import './version.js';
 import { clone, debounce, hexRgb, rgbHex } from './utils.js';
-import { TYPES, encodeFace, parseQr } from './formats.js';
+import { TYPES, encodeFace, parseQr, normUrl } from './formats.js';
 import { createStorage } from './storage.js';
 import { paintSurface } from './surfaces.js';
 /* QR Cube — a die of QR codes.
@@ -55,7 +55,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   const defaultFace = () => ({
     type: 'url', label: '', data: {},
     logo: { mode: 'none', src: '', fav: '', favFor: '' },
-    inkMode: 'auto', fg: '#000000', ecc: 'M'
+    inkMode: 'auto', fg: '#000000', ecc: 'M', rot: 0
   });
 
   /* ================================================================
@@ -300,6 +300,9 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   new ResizeObserver(resize).observe(stage);
 
   // Logos drawn into WebGL textures must be same-origin or CORS-enabled.
+  // A public image relay that adds CORS, for site icons that don't allow it themselves.
+  const RELAY = 'https://images.weserv.nl/';
+  const corsRelay = src => `${RELAY}?url=${encodeURIComponent(src)}&output=png`;
   const logoImages = new Map();
   function logoImage(href, onReady) {
     let entry = logoImages.get(href);
@@ -313,7 +316,10 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
       if (logoImages.get(href) === entry) for (const ready of entry.listeners) ready();
       entry.listeners.clear();
     };
-    img.onload = () => finish(img); img.onerror = () => finish(null); img.src = href;
+    img.onload = () => finish(img);
+    // An older saved icon may be a plain link to a site without CORS: try the relay once.
+    img.onerror = () => { if (/^https?:/.test(href) && !img.src.startsWith(RELAY)) img.src = corsRelay(href); else finish(null); };
+    img.src = href;
     return null;
   }
   function pruneLogos() {
@@ -370,8 +376,13 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
         ctx.fillText(f.label, S / 2 * k, (oy + size + S * 0.075) * k, S * 0.66 * k);
       }
     };
+    // Turn the printed side (code, label, logo) but not the surface grain underneath.
+    const rot = (f.rot || 0) * Math.PI / 180;
+    const turn = (ctx, s) => { ctx.save(); ctx.translate(s / 2, s / 2); ctx.rotate(rot); ctx.translate(-s / 2, -s / 2); };
+    turn(x, S); turn(mask, MASK);
     marks(x, ink);
     marks(mask, '#000', MASK / S);
+    mask.restore();
     if (q?.logo) {
       const u = size / q.n;
       const lx = ox + q.lo * u, ly = oy + q.lo * u, lw = q.w * u, pad = u * 0.4;
@@ -382,6 +393,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
         x.drawImage(img, lx + (lw - iw) / 2, ly + (lw - ih) / 2, iw, ih);
       }
     }
+    x.restore();
     // A logo without CORS taints the canvas, and WebGL refuses tainted canvases.
     if (withLogo && q?.logo) {
       try { x.getImageData(0, 0, 1, 1); } catch { paintSide(i, false); }
@@ -791,7 +803,12 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     });
   }
 
-  /** Try to embed a remote icon as a data URL (works offline later). Needs CORS. */
+  /** Try to embed a remote icon as a data URL (works offline later). Needs CORS; most
+   *  sites don't send it, so the icon is then fetched through a public image relay that
+   *  does (the die's WebGL texture can only use a CORS-enabled or embedded image). */
+  async function embedIcon(src) {
+    return (await toDataUrl(src)) || (src.startsWith(RELAY) ? null : await toDataUrl(corsRelay(src)));
+  }
   async function toDataUrl(src) {
     return new Promise(resolve => {
       const img = new Image();
@@ -835,10 +852,10 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     if (!/^https?:$/.test(u.protocol)) return null;
     const direct = [...await iconsFromHtml(u.href), `${u.origin}/apple-touch-icon.png`, `${u.origin}/favicon.ico`];
     for (const src of [...new Set(direct)]) {
-      if (await probeImage(src)) return { href: (await toDataUrl(src)) || src, from: 'site' };
+      if (await probeImage(src)) return { href: (await embedIcon(src)) || src, from: 'site' };
     }
     const g = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(u.hostname)}&sz=128`;
-    if (await probeImage(g)) return { href: (await toDataUrl(g)) || g, from: 'google' };
+    if (await probeImage(g)) return { href: (await embedIcon(g)) || g, from: 'google' };
     return null;
   }
 
@@ -970,6 +987,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     draft.inkMode = el.inkMode.value;
     draft.fg = el.fg.value;
     if (!eccSel.disabled) draft.ecc = eccSel.value;
+    draft.rot = +el.rot.value || 0;
   }
 
   function updatePreview() {
@@ -981,6 +999,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     const text = encodeFace(draft);
     const svg = text ? qrSvg(text, draft) : null;
     preview.style.background = sideColors(draft).scanBg;
+    preview.style.setProperty('--rot', (draft.rot || 0) + 'deg');
     preview.innerHTML = svg || `<div class="empty-msg">${text ? 'Too much data. Remove some fields or the logo.' : 'Fill in the details to see a preview'}</div>`;
     maybeFetchFavicon();
   }
@@ -1023,6 +1042,8 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     // A custom colour starts from the automatic one.
     el.fg.value = draft.inkMode === 'custom' ? draft.fg : sideColors(draft).ink;
     eccSel.value = draft.ecc;
+    draft.rot = [0, 90, 180, 270].includes(draft.rot) ? draft.rot : 0;
+    el.rot.value = String(draft.rot);
     $$('input[name="logoMode"]', sheet).forEach(r => { r.checked = r.value === draft.logo.mode; });
     $('#logoFile').value = '';
     loadAdjust();
@@ -1063,7 +1084,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   });
 
   sheet.addEventListener('input', e => { if (e.target !== typeSelect && e.target.id !== 'logoFile') updatePreviewSoon(); });
-  sheet.addEventListener('change', e => { if (e.target.name === 'logoMode' || e.target.name === 'inkMode') updatePreview(); });
+  sheet.addEventListener('change', e => { if (e.target.name === 'logoMode' || e.target.name === 'inkMode' || e.target.name === 'rot') updatePreview(); });
 
   sheet.addEventListener('click', e => {
     const add = e.target.closest('[data-add]');

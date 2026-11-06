@@ -38,7 +38,7 @@ export function createStorage({ STORE, MATERIALS, DEFAULT_LOOK, blankState }) {
     }
     return { type: f.type, label: str(f.label).slice(0, 60), data: fitToSchema(TYPES[f.type].fields, f.data), logo,
              inkMode: f.inkMode === 'custom' ? 'custom' : 'auto', fg: isHex(f.fg) ? f.fg : '#000000',
-             ecc: ['L', 'M', 'Q', 'H'].includes(f.ecc) ? f.ecc : 'M' };
+             ecc: ['L', 'M', 'Q', 'H'].includes(f.ecc) ? f.ecc : 'M', rot: [0, 90, 180, 270].includes(f.rot) ? f.rot : 0 };
   }
   function cleanLook(l) {
     l = isObj(l) ? l : {};

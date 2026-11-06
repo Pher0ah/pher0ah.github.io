@@ -348,4 +348,4 @@
   }
 
 
-export { TYPES, encodeFace, parseQr };
+export { TYPES, encodeFace, parseQr, normUrl };

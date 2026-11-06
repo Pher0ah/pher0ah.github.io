@@ -229,7 +229,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
   display: grid;
   place-items: center;
 }
-.preview svg { width: 100%; height: 100%; display: block; }
+.preview svg { width: 100%; height: 100%; display: block; transform: rotate(var(--rot, 0deg)); transition: transform .25s var(--ease); }
+.seg-label { display: block; margin: 12px 0 6px; font-size: 13px; color: var(--muted, #9aa0a8); }
 .preview .empty-msg { color: #9aa0a8; font-size: 12px; padding: 12px; text-align: center; }
 
 .field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
