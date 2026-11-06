@@ -10,9 +10,10 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
 
   const STORE = 'qrcube.v1';
   const HOLD_MS = 550;        // long-press duration
-  const DOUBLE_TAP_MS = 450;  // max gap from the first tap's release to the second touch-down
-  const DOUBLE_TAP_PX = 40;   // max distance between the two taps
-  const MOVE_TOL = { mouse: 6, pen: 10, touch: 14 };  // px of wobble before a press becomes a drag
+  const DOUBLE_TAP_MS = 500;  // max gap from the first tap's release to the second touch-down
+  const DOUBLE_TAP_PX = 60;   // max distance between the two taps
+  const MOVE_TOL = { mouse: 6, pen: 10, touch: 16 };  // px of wobble before a press becomes a drag
+  const DEBUG = new URLSearchParams(location.search).has('debug');
   const FRICTION_MS = 650;    // inertia decay time-constant
   const LOGO_FRACTION = 0.22; // logo width as a share of the QR width
 
@@ -680,9 +681,32 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   }
   const hidePress = () => press.classList.remove('on');
 
+  // Debug log (open the app with ?debug): shows what the device actually reports.
+  const dbg = DEBUG ? document.body.appendChild(Object.assign(document.createElement('pre'), { className: 'dbg' })) : null;
+  const log = DEBUG ? (...a) => {
+    dbg.textContent = (performance.now() / 1000).toFixed(2) + ' ' + a.join(' ') + '\n' + dbg.textContent.slice(0, 1500);
+  } : () => {};
+
+  // Mobile browsers run their own double-tap recogniser (zoom / smart scroll) on touches.
+  // When it claims a tap, the page's second tap gets delayed or cancelled. Cancelling the
+  // raw touch events on the die takes the touches away from the browser entirely; pointer
+  // events still arrive, and the browser's synthetic click is suppressed.
+  const ownTouch = e => { if (e.cancelable) e.preventDefault(); };
+  stage.addEventListener('touchstart', ownTouch, { passive: false });
+  stage.addEventListener('touchend', ownTouch, { passive: false });
+  stage.addEventListener('dblclick', e => e.preventDefault());
+
   stage.addEventListener('pointerdown', e => {
     lastPointerType = e.pointerType;
-    if (g || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    log('down', e.pointerType, e.pointerId, e.isPrimary ? 'P' : '', g ? 'busy' : '');
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (g) {
+      // A second finger during a gesture is ignored. A new primary touch means the
+      // previous one ended even if its pointerup never arrived: never stay stuck.
+      if (!e.isPrimary && e.pointerId !== g.id) return;
+      cancelHold();
+      g = null;
+    }
     stopSpin();
     omega = [0, 0, 0];
     const now = performance.now();
@@ -690,9 +714,17 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     // first tap (not by side, so a tap near an edge still counts for the first tap's side).
     const second = lastTap && now - lastTap.t < DOUBLE_TAP_MS &&
       Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < DOUBLE_TAP_PX;
-    const face = second ? lastTap.face : pickSide(e.clientX, e.clientY);
+    const face = second && lastTap.face >= 0 ? lastTap.face : pickSide(e.clientX, e.clientY);
     lastTap = null;
-    g = { id: e.pointerId, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, t: now, moved: false, done: false, face, second,
+    if (second && face >= 0) {
+      // Open straight away, like native double-tap; nothing waits for the finger to lift.
+      log('double-tap → edit', face);
+      g = { id: e.pointerId, done: true };
+      navigator.vibrate?.(8);
+      openEditor(face);
+      return;
+    }
+    g = { id: e.pointerId, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, t: now, moved: false, done: false, face,
           tol: MOVE_TOL[e.pointerType] ?? MOVE_TOL.touch };
     try { stage.setPointerCapture(e.pointerId); } catch { /* pointer already gone */ }
     if (face >= 0) {
@@ -730,15 +762,16 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     stage.classList.remove('dragging');
     const gest = g;
     g = null;
+    log(cancelled ? 'cancel' : 'up', e.pointerId, gest.done ? 'done' : gest.moved ? 'drag' : 'tap ' + gest.face);
     if (gest.done) return;
     if (gest.moved) {
       if (!cancelled && performance.now() - gest.t < 80) startSpin();
       else saveQ();
       return;
     }
-    if (cancelled || gest.face < 0) return;
-    if (gest.second) openEditor(gest.face);
-    else lastTap = { face: gest.face, t: performance.now(), x: gest.x0, y: gest.y0 };
+    // An unmoved touch counts as a tap even if the browser cancelled it, and even off
+    // the die's outline (the second tap may still land on a side).
+    lastTap = { face: gest.face, t: performance.now(), x: gest.x0, y: gest.y0 };
   }
   function cancelHold() {
     if (!g) return;

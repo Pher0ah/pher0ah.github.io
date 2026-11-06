@@ -1,5 +1,5 @@
 // Offline cache for the app shell. Bump VERSION when files change.
-const VERSION = 'qrcube-v5';
+const VERSION = 'qrcube-v6';
 const SHELL = [
   './', 'index.html', 'styles.css', 'app.js', 'vendor/qrcode.js',
   'vendor/three/three.module.js', 'vendor/three/three.core.js',
@@ -19,12 +19,15 @@ self.addEventListener('activate', e => {
   );
 });
 
-// Same-origin: network first (so updates show up), cache as offline fallback.
+// Same-origin: network first, always revalidated (so updates show up), cache as offline fallback.
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET' || url.origin !== location.origin) return;
   e.respondWith(
-    fetch(e.request)
+    // Revalidate with the server (skip the HTTP cache). Navigations can't be copied with
+    // options, so rebuild those from the URL.
+    fetch(e.request.mode === 'navigate' ? new Request(url.href, { cache: 'no-cache', credentials: 'same-origin' })
+                                        : new Request(e.request, { cache: 'no-cache' }))
       .then(res => {
         const copy = res.clone();
         caches.open(VERSION).then(c => c.put(e.request, copy));
