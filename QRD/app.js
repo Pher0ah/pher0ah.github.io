@@ -10,8 +10,9 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
 
   const STORE = 'qrcube.v1';
   const HOLD_MS = 550;        // long-press duration
-  const DOUBLE_TAP_MS = 320;  // max gap between taps
-  const MOVE_TOL = 8;         // px of movement before a press becomes a drag
+  const DOUBLE_TAP_MS = 450;  // max gap from the first tap's release to the second touch-down
+  const DOUBLE_TAP_PX = 40;   // max distance between the two taps
+  const MOVE_TOL = { mouse: 6, pen: 10, touch: 14 };  // px of wobble before a press becomes a drag
   const FRICTION_MS = 650;    // inertia decay time-constant
   const LOGO_FRACTION = 0.22; // logo width as a share of the QR width
 
@@ -164,10 +165,8 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
           { k: 'type', label: 'Service', type: 'select', opts: opt(['linkedin', 'x', 'instagram', 'facebook', 'github', 'tiktok', 'youtube', 'mastodon', 'threads', 'bluesky', 'other']) },
           { k: 'value', label: 'Profile URL', type: 'url', ph: 'https://' }
         ] },
-        { row: [
-          { k: 'bday', label: 'Birthday', type: 'date' },
-          { k: 'anniv', label: 'Anniversary', type: 'date' }
-        ] },
+        { k: 'bday', label: 'Birthday', type: 'dmy' },
+        { k: 'anniv', label: 'Anniversary', type: 'dmy' },
         { k: 'note', label: 'Note', type: 'textarea' }
       ],
       encode: encodeVCard
@@ -280,8 +279,11 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     }
     for (const u of d.urls || []) if (u.value) L.push(`URL;TYPE=${(u.type || 'other').toUpperCase()}:${normUrl(u.value)}`);
     for (const s of d.social || []) if (s.value) L.push(`X-SOCIALPROFILE;TYPE=${s.type || 'other'}:${normUrl(s.value)}`);
-    if (d.bday) L.push(`BDAY:${d.bday}`);
-    if (d.anniv) L.push(`X-ANNIVERSARY:${d.anniv}`);
+    // Dates are "YYYY-MM-DD", or "--MM-DD" without a year. Apple contacts mark a missing
+    // year with the placeholder year 1604 plus X-APPLE-OMIT-YEAR; Android reads --MM-DD.
+    const apple = (prop, v) => v.startsWith('--') ? `${prop};X-APPLE-OMIT-YEAR=1604:1604${v.slice(1)}` : `${prop}:${v}`;
+    if (d.bday) L.push(apple('BDAY', d.bday));
+    if (d.anniv) L.push(`X-ANNIVERSARY:${d.anniv}`, apple('item1.X-ABDATE', d.anniv), 'item1.X-ABLabel:_$!<Anniversary>!$_');
     if (d.note) L.push(`NOTE:${v(d.note)}`);
     L.push('END:VCARD');
     return L.join('\r\n');
@@ -665,7 +667,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
    * ================================================================ */
   const press = $('#press');
   let g = null;        // current gesture
-  let lastTap = null;  // {face, t}
+  let lastTap = null;  // {face, t, x, y} of the last completed tap
   let lastPointerType = 'mouse';
 
   function showPress(x, y) {
@@ -683,8 +685,15 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     if (g || (e.pointerType === 'mouse' && e.button !== 0)) return;
     stopSpin();
     omega = [0, 0, 0];
-    const face = pickSide(e.clientX, e.clientY);
-    g = { id: e.pointerId, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, t: performance.now(), moved: false, done: false, face };
+    const now = performance.now();
+    // The second tap of a double-tap: judged at touch-down, by time and distance from the
+    // first tap (not by side, so a tap near an edge still counts for the first tap's side).
+    const second = lastTap && now - lastTap.t < DOUBLE_TAP_MS &&
+      Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < DOUBLE_TAP_PX;
+    const face = second ? lastTap.face : pickSide(e.clientX, e.clientY);
+    lastTap = null;
+    g = { id: e.pointerId, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, t: now, moved: false, done: false, face, second,
+          tol: MOVE_TOL[e.pointerType] ?? MOVE_TOL.touch };
     try { stage.setPointerCapture(e.pointerId); } catch { /* pointer already gone */ }
     if (face >= 0) {
       showPress(e.clientX, e.clientY);
@@ -702,7 +711,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   stage.addEventListener('pointermove', e => {
     if (!g || e.pointerId !== g.id || g.done) return;
     if (!g.moved) {
-      if (Math.hypot(e.clientX - g.x0, e.clientY - g.y0) < MOVE_TOL) return;
+      if (Math.hypot(e.clientX - g.x0, e.clientY - g.y0) < g.tol) return;
       g.moved = true;
       cancelHold();
       stage.classList.add('dragging');
@@ -728,13 +737,8 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
       return;
     }
     if (cancelled || gest.face < 0) return;
-    const now = performance.now();
-    if (lastTap && lastTap.face === gest.face && now - lastTap.t < DOUBLE_TAP_MS) {
-      lastTap = null;
-      openEditor(gest.face);
-    } else {
-      lastTap = { face: gest.face, t: now };
-    }
+    if (gest.second) openEditor(gest.face);
+    else lastTap = { face: gest.face, t: performance.now(), x: gest.x0, y: gest.y0 };
   }
   function cancelHold() {
     if (!g) return;
@@ -761,7 +765,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   }, { passive: false });
 
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeFull(); closeEditor(); closeLook(); closeMenu(); return; }
+    if (e.key === 'Escape') { closeFull(); closeEditor(); closeLook(); closeInstall(); closeMenu(); return; }
     if (isOpen() || /input|select|textarea/i.test(e.target.tagName)) return;
     const k = { ArrowLeft: [0, -1], ArrowRight: [0, 1], ArrowUp: [-1, 0], ArrowDown: [1, 0] }[e.key];
     if (!k) return;
@@ -929,6 +933,25 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
 
   const isOpen = () => $$('.sheet.open, .full.open').length > 0;
 
+  // Day / month / optional year fields. Stored as "YYYY-MM-DD" or "--MM-DD".
+  const MONTHS = Array.from({ length: 12 }, (_, i) => new Intl.DateTimeFormat(undefined, { month: 'short' }).format(new Date(2000, i, 1)));
+  const pad2 = n => String(n).padStart(2, '0');
+  function splitDate(v) {
+    const m = /^(\d{4}|-)-(\d{2})-(\d{2})$/.exec(v || '');
+    return m ? [m[1] === '-' ? '' : m[1], +m[2], +m[3]] : ['', 0, ''];
+  }
+  /** Compose the stored date from the three controls; '' (and a red outline) if incomplete or impossible. */
+  function readDate(box) {
+    const part = p => $(`[data-part="${p}"]`, box);
+    const d = parseInt(part('d').value, 10), m = parseInt(part('m').value, 10), yStr = part('y').value.trim();
+    const blank = !part('d').value.trim() && !m && !yStr;
+    const yearOk = !yStr || /^\d{4}$/.test(yStr);
+    // Without a year, allow 29 February.
+    const ok = d >= 1 && m >= 1 && yearOk && d <= new Date(yStr ? +yStr : 2000, m, 0).getDate();
+    box.toggleAttribute('data-invalid', !blank && !ok);
+    return ok ? `${yStr || '-'}-${pad2(m)}-${pad2(d)}` : '';
+  }
+
   function fieldHtml(f, val) {
     const id = `f${Math.random().toString(36).slice(2, 8)}`;
     const ph = f.ph ? ` placeholder="${esc(f.ph)}"` : '';
@@ -939,6 +962,16 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
       case 'select': input = `<select id="${id}" data-k="${f.k}">${f.opts.map(([o, l]) => `<option value="${o}"${o === val ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>`; break;
       case 'checkbox':
         return `<label class="field check"><input type="checkbox" data-k="${f.k}"${val ? ' checked' : ''}><span>${esc(f.label)}</span></label>`;
+      case 'dmy': {   // typed day, month list, optional typed year
+        const [y, m, d] = splitDate(val);
+        const L = esc(f.label);
+        return `<div class="field"><span>${L}</span><div class="dmy" data-k="${f.k}" data-dmy>` +
+          `<input type="text" inputmode="numeric" maxlength="2" placeholder="Day" aria-label="${L} day" data-part="d" value="${d}">` +
+          `<select aria-label="${L} month" data-part="m"><option value="">Month</option>` +
+          MONTHS.map((n, i) => `<option value="${i + 1}"${m === i + 1 ? ' selected' : ''}>${n}</option>`).join('') + '</select>' +
+          `<input type="text" inputmode="numeric" maxlength="4" placeholder="Year (optional)" aria-label="${L} year" data-part="y" value="${y}">` +
+          '</div></div>';
+      }
       default: {
         const t = f.type || 'text';
         const extra = t === 'number' ? ' step="any" inputmode="decimal"' : t === 'url' ? ' autocapitalize="off" spellcheck="false"' : t === 'email' ? ' autocapitalize="off"' : '';
@@ -975,7 +1008,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
         return;
       }
       const el = inputs.find(x => x.dataset.k === f.k);
-      if (el) out[f.k] = el.type === 'checkbox' ? el.checked : el.value.trim();
+      if (el) out[f.k] = 'dmy' in el.dataset ? readDate(el) : el.type === 'checkbox' ? el.checked : el.value.trim();
     });
     walk(spec);
     return out;
@@ -1126,7 +1159,40 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     closeEditor();
   });
 
-  backdrop.addEventListener('click', () => { closeEditor(); closeLook(); });
+  backdrop.addEventListener('click', () => { closeEditor(); closeLook(); closeInstall(); });
+
+  /* ================================================================
+   * Install: the browser's own prompt where there is one, otherwise steps
+   * ================================================================ */
+  const installItem = $('#installItem');
+  const installSheet = $('#installSheet');
+  let installPrompt = null;
+  const installed = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true ||
+    !!window.Capacitor?.isNativePlatform?.();
+  installItem.hidden = installed();
+  addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; });
+  addEventListener('appinstalled', () => { installItem.hidden = true; installPrompt = null; });
+
+  async function install() {
+    closeMenu();
+    if (installPrompt) {
+      installPrompt.prompt();
+      await installPrompt.userChoice.catch(() => {});
+      installPrompt = null;
+      return;
+    }
+    const ua = navigator.userAgent;
+    const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    installSheet.dataset.device = ios ? 'ios' : /Android/.test(ua) ? 'android' : 'desktop';
+    installSheet.classList.add('open');
+    backdrop.classList.add('open');
+  }
+  function closeInstall() {
+    if (!installSheet.classList.contains('open')) return;
+    installSheet.classList.remove('open');
+    backdrop.classList.remove('open');
+  }
+  installSheet.addEventListener('click', e => { if (e.target.closest('[data-act="install-close"]')) closeInstall(); });
 
   /* ================================================================
    * Die & backdrop sheet (changes apply live)
@@ -1195,6 +1261,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   menu.addEventListener('click', async e => {
     const act = e.target.dataset.act;
     closeMenu();
+    if (act === 'install') install();
     if (act === 'look') openLook();
     if (act === 'reset') resetView();
     if (act === 'import') $('#importFile').click();

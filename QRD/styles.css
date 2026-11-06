@@ -327,6 +327,21 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .group:has(input[value="favicon"]:checked) .logo-fav { display: flex; }
 .sheet:not([data-type="url"]) [data-only="url"] { display: none; }
 
+/* install help: show the steps for this device only */
+.install-app { display: flex; align-items: center; gap: 14px; }
+.install-app img { border-radius: 14px; flex: none; }
+.install-app p { margin: 0; }
+.steps { margin: 0; padding-left: 22px; display: none; flex-direction: column; gap: 10px; line-height: 1.5; }
+#installSheet[data-device="ios"] [data-for="ios"],
+#installSheet[data-device="android"] [data-for="android"],
+#installSheet[data-device="desktop"] [data-for="desktop"] { display: flex; }
+.glyph { width: 1.2em; height: 1.2em; vertical-align: -0.25em; color: var(--accent); }
+.menu button[hidden] { display: none; }
+
+/* day / month / optional year */
+.dmy { display: grid; grid-template-columns: 4.2em 1fr 1.2fr; gap: 6px; }
+.dmy[data-invalid] input, .dmy[data-invalid] select { border-color: var(--danger); }
+
 /* QR colour: show the picker only for a custom colour */
 .group:has(input[name="inkMode"][value="auto"]:checked) .ink-custom,
 .group:has(input[name="inkMode"][value="custom"]:checked) .ink-auto-note { display: none; }

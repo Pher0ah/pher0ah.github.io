@@ -10,8 +10,10 @@
   <meta name="apple-mobile-web-app-title" content="QR Cube">
   <title>QR Cube</title>
   <link rel="manifest" href="manifest.webmanifest">
+  <!-- App's own icons (PNG first: Safari can't use SVG favicons and would fall back to the site's) -->
+  <link rel="icon" href="icons/icon-32.png" type="image/png" sizes="32x32">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="apple-touch-icon" href="icons/icon-180.png" sizes="180x180">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -19,6 +21,7 @@
     <h1>QR Cube</h1>
     <button class="icon-btn" id="menuBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false">⋯</button>
     <nav class="menu" id="menu" role="menu">
+      <button role="menuitem" data-act="install" id="installItem">Install app…</button>
       <button role="menuitem" data-act="look">Die &amp; backdrop…</button>
       <button role="menuitem" data-act="export">Export backup</button>
       <button role="menuitem" data-act="import">Import backup</button>
@@ -103,6 +106,36 @@
       <button type="button" class="danger-btn" data-act="clear">Clear this side</button>
     </div>
   </form>
+
+  <!-- Install help, for browsers without an install prompt (iPhone/iPad, Firefox…) -->
+  <div class="sheet" id="installSheet" role="dialog" aria-labelledby="installTitle">
+    <div class="sheet-head">
+      <span></span>
+      <strong id="installTitle">Install QR Cube</strong>
+      <button type="button" class="text-btn primary" data-act="install-close">Done</button>
+    </div>
+    <div class="sheet-body">
+      <div class="install-app">
+        <img src="icons/icon-180.png" alt="" width="64" height="64">
+        <p>Install QR Cube to open it from your home screen, full screen and offline.</p>
+      </div>
+      <ol class="steps" data-for="ios">
+        <li>In Safari, tap the <b>Share</b> button
+          <svg class="glyph" viewBox="0 0 24 24" aria-label="Share"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5M6 11H5v10h14V11h-1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          (on newer iPhones it's under the <b>⋯</b> button next to the address bar).</li>
+        <li>Scroll down and tap <b>Add to Home Screen</b>.</li>
+        <li>Tap <b>Add</b>.</li>
+      </ol>
+      <ol class="steps" data-for="android">
+        <li>Open the browser menu <b>⋮</b>.</li>
+        <li>Tap <b>Install app</b> or <b>Add to Home screen</b>.</li>
+      </ol>
+      <ol class="steps" data-for="desktop">
+        <li>Click the install icon at the right of the address bar, or open the browser menu.</li>
+        <li>Choose <b>Install QR Cube</b> (or <b>Apps → Install this site as an app</b>).</li>
+      </ol>
+    </div>
+  </div>
 
   <!-- Die & backdrop settings (changes apply live) -->
   <form class="sheet" id="lookSheet" autocomplete="off" novalidate>

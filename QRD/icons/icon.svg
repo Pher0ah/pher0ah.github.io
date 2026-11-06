@@ -1,13 +1,51 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="112" fill="#111214"/>
-  <path d="M256 92 398 174 256 256 114 174Z" fill="#f3f4f6"/>
-  <path d="M114 174 256 256V420L114 338Z" fill="#c9ccd2"/>
-  <path d="M398 174 256 256V420L398 338Z" fill="#5b8cff"/>
-  <g fill="#111214" transform="matrix(.71 .41 0 .82 134 214)">
-    <rect x="12" y="12" width="44" height="44"/><rect x="24" y="24" width="20" height="20" fill="#c9ccd2"/>
-    <rect x="30" y="30" width="8" height="8"/>
-    <rect x="72" y="16" width="16" height="16"/><rect x="72" y="56" width="16" height="16"/>
-    <rect x="16" y="72" width="16" height="16"/><rect x="48" y="84" width="16" height="16"/>
-    <rect x="96" y="96" width="24" height="24"/><rect x="104" y="40" width="16" height="16"/>
+  <!-- Full-bleed so iOS/Android can apply their own corner mask. The die stays
+       inside the central 80% circle, so the same art works as a maskable icon. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#26335c"/>
+      <stop offset="1" stop-color="#0e1222"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#000" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <ellipse cx="256" cy="452" rx="150" ry="26" fill="url(#shadow)"/>
+
+  <g stroke-linejoin="round" stroke-width="14">
+    <!-- top, left (QR side), right -->
+    <path d="M104 184 256 96 408 184 256 272Z" fill="#fbf8f1" stroke="#fbf8f1"/>
+    <path d="M104 184 256 272V448L104 360Z" fill="#ebe6db" stroke="#ebe6db"/>
+    <path d="M408 184 256 272V448L408 360Z" fill="#cdc6b7" stroke="#cdc6b7"/>
+  </g>
+
+  <!-- top: one pip -->
+  <g transform="matrix(1.52 -.88 1.52 .88 104 184)">
+    <circle cx="50" cy="50" r="11" fill="#1f2a4d"/>
+  </g>
+
+  <!-- left: a QR code -->
+  <g transform="matrix(1.52 .88 0 1.76 104 184)" fill="#1f2a4d">
+    <path d="M12 12h28v28H12zM16 16v20h20V16z" fill-rule="evenodd"/>
+    <rect x="21" y="21" width="10" height="10"/>
+    <path d="M60 12h28v28H60zM64 16v20h20V16z" fill-rule="evenodd"/>
+    <rect x="69" y="21" width="10" height="10"/>
+    <path d="M12 60h28v28H12zM16 64v20h20V64z" fill-rule="evenodd"/>
+    <rect x="21" y="69" width="10" height="10"/>
+    <rect x="46" y="12" width="7" height="7"/><rect x="46" y="26" width="7" height="7"/>
+    <rect x="46" y="46" width="7" height="7"/><rect x="60" y="46" width="7" height="7"/>
+    <rect x="74" y="46" width="14" height="7"/><rect x="12" y="46" width="14" height="7"/>
+    <rect x="32" y="46" width="7" height="7"/><rect x="53" y="53" width="7" height="7"/>
+    <rect x="46" y="67" width="14" height="7"/><rect x="67" y="60" width="7" height="14"/>
+    <rect x="81" y="67" width="7" height="7"/><rect x="46" y="81" width="7" height="7"/>
+    <rect x="60" y="81" width="14" height="7"/><rect x="81" y="81" width="7" height="7"/>
+  </g>
+
+  <!-- right: two pips -->
+  <g transform="matrix(1.52 -.88 0 1.76 256 272)" fill="#1f2a4d">
+    <circle cx="28" cy="30" r="10"/>
+    <circle cx="72" cy="70" r="10"/>
   </g>
 </svg>
