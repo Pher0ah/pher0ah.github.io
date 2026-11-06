@@ -1610,6 +1610,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   const scanner = $('#scanner'), scanVideo = $('#scanVideo'), scanMsg = $('#scanMsg');
   const scanCanvas = document.createElement('canvas');
   let scanStream = null, scanTimer = 0, detector, jsqrReady = null;
+  let scanSession = 0;   // bumped when the scanner opens or closes; late results from an older one are dropped
 
   // The bundled decoder (works everywhere) loads only when first needed.
   const loadJsQR = () => jsqrReady ||= new Promise((res, rej) => {
@@ -1648,6 +1649,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   }
 
   async function openScanner() {
+    const s = ++scanSession;
     scanner.classList.remove('found');
     scanner.classList.add('open');
     scanner.setAttribute('aria-hidden', 'false');
@@ -1657,22 +1659,24 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: false, video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
       });
-      if (!scanner.classList.contains('open')) return stream.getTracks().forEach(t => t.stop());
+      if (s !== scanSession) return stream.getTracks().forEach(t => t.stop());   // closed (or reopened) meanwhile
       scanStream = stream;
       scanVideo.srcObject = stream;
       await scanVideo.play();
-      scanLoop();
+      if (s === scanSession) scanLoop(s);
     } catch {
+      if (s !== scanSession) return;
       scanMsg.textContent = 'The camera isn’t available (or permission was refused). You can choose a photo of the code instead.';
     }
   }
-  async function scanLoop() {
-    if (!scanStream) return;
+  async function scanLoop(s) {
+    if (s !== scanSession || !scanStream) return;
     if (scanVideo.readyState >= 2 && scanVideo.videoWidth) {
       const text = await decodeQr(scanVideo, scanVideo.videoWidth, scanVideo.videoHeight).catch(() => null);
-      if (text && scanStream) return scanned(text);
+      if (s !== scanSession || !scanStream) return;
+      if (text) return scanned(text);
     }
-    if (scanStream) scanTimer = setTimeout(scanLoop, 100);
+    scanTimer = setTimeout(() => scanLoop(s), 100);
   }
   function stopCamera() {
     clearTimeout(scanTimer);
@@ -1681,6 +1685,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     scanVideo.srcObject = null;
   }
   function closeScanner() {
+    scanSession++;
     stopCamera();
     scanner.classList.remove('open');
     scanner.setAttribute('aria-hidden', 'true');
@@ -1690,7 +1695,8 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     scanner.classList.add('found');
     navigator.vibrate?.(15);
     applyScanned(text);
-    setTimeout(closeScanner, 350);
+    const s = scanSession;
+    setTimeout(() => { if (s === scanSession) closeScanner(); }, 350);
   }
 
   $('#scanBtn').addEventListener('click', openScanner);
@@ -1700,18 +1706,21 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     const file = e.target.files[0];
     e.target.value = '';
     if (!file) return;
+    // The result belongs to this scanner and this editor session only: if either has
+    // been closed (or reopened) by the time the photo is decoded, it is dropped.
+    const s = scanSession, es = session, current = () => s === scanSession && es === session;
     scanMsg.textContent = 'Reading the photo…';
-    const s = session;
+    const url = URL.createObjectURL(file);
     try {
-      const url = URL.createObjectURL(file);
       const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
       const text = await decodeQr(img, img.naturalWidth, img.naturalHeight);
-      URL.revokeObjectURL(url);
-      if (s !== session) return;
+      if (!current()) return;
       if (text) return scanned(text);
       scanMsg.textContent = 'No QR code found in that photo. Try a sharper, closer one.';
     } catch {
-      scanMsg.textContent = 'That photo could not be read.';
+      if (current()) scanMsg.textContent = 'That photo could not be read.';
+    } finally {
+      URL.revokeObjectURL(url);
     }
   });
 
