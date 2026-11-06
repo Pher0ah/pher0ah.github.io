@@ -26,7 +26,7 @@
       <button role="menuitem" data-act="export">Export backup</button>
       <button role="menuitem" data-act="import">Import backup</button>
       <button role="menuitem" data-act="reset">Reset view</button>
-      <small class="ver">Version 6</small>
+      <small class="ver">Version 7</small>
     </nav>
     <input type="file" id="importFile" accept="application/json,.json" hidden>
   </header>
@@ -54,6 +54,7 @@
     </div>
     <div class="sheet-body">
       <div class="preview" id="preview"></div>
+      <button type="button" class="small-btn scan-btn" id="scanBtn">Scan an existing QR code…</button>
 
       <label class="field">
         <span>QR type</span>
@@ -75,7 +76,26 @@
         </div>
         <div class="logo-file" data-show="file">
           <input type="file" id="logoFile" accept=".svg,.png,.ico,.jpg,.jpeg,.webp,image/*">
-          <small>SVG, PNG or ICO. Raster images are scaled down to 256 px.</small>
+          <small>SVG, PNG, JPG or ICO.</small>
+          <div class="logo-adjust" id="logoAdjust" hidden>
+            <canvas id="logoCanvas" width="384" height="384" aria-label="Logo: drag to position it"></canvas>
+            <small class="muted center">Drag the picture to position it in the square.</small>
+            <label class="field"><span>Size</span><input type="range" id="logoZoom" min="0.3" max="4" step="0.01" value="1"></label>
+            <div class="seg">
+              <label><input type="radio" name="logoFit" value="contain"><span>Fit</span></label>
+              <label><input type="radio" name="logoFit" value="cover"><span>Fill</span></label>
+            </div>
+            <div class="seg">
+              <label><input type="radio" name="logoShape" value="square"><span>Square</span></label>
+              <label><input type="radio" name="logoShape" value="rounded"><span>Rounded</span></label>
+              <label><input type="radio" name="logoShape" value="circle"><span>Circle</span></label>
+            </div>
+            <div class="seg">
+              <label><input type="radio" name="logoBg" value="none"><span>No background</span></label>
+              <label><input type="radio" name="logoBg" value="white"><span>White</span></label>
+            </div>
+            <button type="button" class="small-btn" id="logoReset">Reset picture</button>
+          </div>
         </div>
         <div class="logo-fav" data-show="favicon">
           <small id="favStatus">The icon is fetched from the website. If the site blocks this, Google's favicon service is used instead.</small>
@@ -107,6 +127,18 @@
       <button type="button" class="danger-btn" data-act="clear">Clear this side</button>
     </div>
   </form>
+
+  <!-- Camera scanner: fills the editor from an existing QR code -->
+  <div class="scanner" id="scanner" role="dialog" aria-label="Scan a QR code" aria-hidden="true">
+    <video id="scanVideo" playsinline muted></video>
+    <div class="scan-frame"></div>
+    <p class="scan-msg" id="scanMsg">Point the camera at a QR code</p>
+    <div class="scan-actions">
+      <button type="button" class="small-btn" id="scanPhoto">From a photo…</button>
+      <button type="button" class="small-btn" id="scanCancel">Cancel</button>
+    </div>
+    <input type="file" id="scanFile" accept="image/*" hidden>
+  </div>
 
   <!-- Install help, for browsers without an install prompt (iPhone/iPad, Firefox…) -->
   <div class="sheet" id="installSheet" role="dialog" aria-labelledby="installTitle">

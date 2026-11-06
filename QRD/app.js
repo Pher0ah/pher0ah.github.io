@@ -667,12 +667,50 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   }
 
   /* ================================================================
-   * Gestures: drag / long-press (show) / double-tap (edit)
+   * Gestures: drag / long-press (show) / double-tap (edit) / two-finger twist & pinch
    * ================================================================ */
   const press = $('#press');
   let g = null;        // current gesture
   let lastTap = null;  // {face, t, x, y} of the last completed tap
   let lastPointerType = 'mouse';
+  const pts = new Map();  // touches currently on the die: id → {x, y}
+  let pinch = null;       // two-finger gesture: {a: angle, d: distance, z0: zoom at start}
+  let multi = false;      // a two-finger gesture ran; ignore the rest until every finger lifts
+
+  // Zoom (pinch) is temporary: it eases back to 1 when the fingers let go.
+  const Z_AXIS = new THREE.Vector3(0, 0, 1);
+  let zoom = 1, zoomRaf = 0, wheelZoomT = 0;
+  function setZoom(z) {
+    zoom = Math.min(3, Math.max(0.5, z));
+    die.scale.setScalar(zoom);
+    stage.style.setProperty('--zoom', zoom.toFixed(3));
+    requestRender();
+  }
+  function zoomBack() {
+    cancelAnimationFrame(zoomRaf);
+    if (zoom === 1) return;
+    const from = zoom, t0 = performance.now();
+    const step = now => {
+      const t = Math.min((now - t0) / 380, 1);
+      setZoom(from + (1 - from) * (1 - Math.pow(1 - t, 3)));
+      zoomRaf = t < 1 ? requestAnimationFrame(step) : 0;
+    };
+    zoomRaf = requestAnimationFrame(step);
+  }
+  const pair = () => {
+    const [p, q] = pts.values();
+    return { a: Math.atan2(q.y - p.y, q.x - p.x), d: Math.max(Math.hypot(q.x - p.x, q.y - p.y), 1) };
+  }
+  function startPinch() {
+    cancelHold();
+    if (g?.moved) saveQ();
+    g = null; lastTap = null; multi = true;
+    stage.classList.remove('dragging');
+    stopSpin(); omega = [0, 0, 0];
+    cancelAnimationFrame(zoomRaf);
+    pinch = { ...pair(), z0: zoom };
+    log('pinch start');
+  }
 
   function showPress(x, y) {
     press.style.setProperty('--hold', HOLD_MS + 'ms');
@@ -703,13 +741,16 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     lastPointerType = e.pointerType;
     log('down', e.pointerType, e.pointerId, e.isPrimary ? 'P' : '', g ? 'busy' : '');
     if (e.pointerType === 'mouse' && e.button !== 0) return;
-    if (g) {
-      // A second finger during a gesture is ignored. A new primary touch means the
-      // previous one ended even if its pointerup never arrived: never stay stuck.
-      if (!e.isPrimary && e.pointerId !== g.id) return;
-      cancelHold();
-      g = null;
+    if (e.pointerType === 'touch') {
+      // A primary touch means no other finger is down, even if a finger-lift was
+      // never reported: start clean so nothing can stay stuck.
+      if (e.isPrimary) { pts.clear(); pinch = null; multi = false; }
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      try { stage.setPointerCapture(e.pointerId); } catch { /* pointer already gone */ }
+      if (pts.size === 2) return startPinch();
+      if (multi || pts.size > 2) return;
     }
+    if (g) { cancelHold(); g = null; }
     stopSpin();
     omega = [0, 0, 0];
     const now = performance.now();
@@ -744,7 +785,19 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   });
 
   stage.addEventListener('pointermove', e => {
-    if (!g || e.pointerId !== g.id || g.done) return;
+    const p = pts.get(e.pointerId);
+    if (p) { p.x = e.clientX; p.y = e.clientY; }
+    if (pinch && p && pts.size >= 2) {
+      // Twist turns the die about the line of sight; spread / pinch zooms.
+      const { a, d } = pair();
+      let da = a - pinch.a;
+      if (da > Math.PI) da -= 2 * Math.PI; else if (da < -Math.PI) da += 2 * Math.PI;
+      pinch.a = a;
+      turn(Z_AXIS, -da);   // screen y points down, so a clockwise twist is a negative turn
+      setZoom(pinch.z0 * d / pinch.d);
+      return;
+    }
+    if (multi || !g || e.pointerId !== g.id || g.done) return;
     if (!g.moved) {
       if (Math.hypot(e.clientX - g.x0, e.clientY - g.y0) < g.tol) return;
       g.moved = true;
@@ -760,6 +813,9 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   });
 
   function endGesture(e, cancelled) {
+    pts.delete(e.pointerId);
+    if (pinch && pts.size < 2) { pinch = null; zoomBack(); saveQ(); log('pinch end'); }
+    if (multi) { if (!pts.size) multi = false; return; }
     if (!g || e.pointerId !== g.id) return;
     cancelHold();
     stage.classList.remove('dragging');
@@ -788,6 +844,8 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     cancelHold();
     stage.classList.remove('dragging');
     g = null; lastTap = null;
+    pts.clear(); multi = false;
+    if (pinch) { pinch = null; zoomBack(); }
   }
   addEventListener('blur', resetGesture);
   document.addEventListener('visibilitychange', resetGesture);
@@ -805,12 +863,21 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   // Trackpad / mouse wheel and keyboard also spin the die.
   stage.addEventListener('wheel', e => {
     e.preventDefault();
+    if (e.ctrlKey) {
+      // Trackpad pinch (browsers report it as ctrl + wheel): zoom, then ease back.
+      cancelAnimationFrame(zoomRaf);
+      setZoom(zoom * Math.exp(-e.deltaY * 0.01));
+      clearTimeout(wheelZoomT);
+      wheelZoomT = setTimeout(zoomBack, 250);
+      return;
+    }
     stopSpin();
     rotateBy(-e.deltaX * 0.5, -e.deltaY * 0.5);
     saveQ();
   }, { passive: false });
 
   document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && scanner.classList.contains('open')) return closeScanner();
     if (e.key === 'Escape') { closeFull(); closeEditor(); closeLook(); closeInstall(); closeMenu(); return; }
     if (isOpen() || /input|select|textarea/i.test(e.target.tagName)) return;
     const k = { ArrowLeft: [0, -1], ArrowRight: [0, 1], ArrowUp: [-1, 0], ArrowDown: [1, 0] }[e.key];
@@ -879,7 +946,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
         // Rasterise (also converts .ico) and cap the size to keep storage small.
         const img = new Image();
         img.onload = () => {
-          const s = Math.min(256, Math.max(img.naturalWidth, img.naturalHeight) || 256);
+          const s = Math.min(512, Math.max(img.naturalWidth, img.naturalHeight) || 512);
           const k = s / Math.max(img.naturalWidth, img.naturalHeight);
           const c = document.createElement('canvas');
           c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
@@ -1126,6 +1193,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     eccSel.value = draft.ecc;
     $$('input[name="logoMode"]', sheet).forEach(r => { r.checked = r.value === draft.logo.mode; });
     $('#logoFile').value = '';
+    loadAdjust();
     favStatus.textContent = draft.logo.fav ? 'Using the saved site icon.' : 'The icon is fetched from the website. If the site blocks this, Google’s favicon service is used instead.';
     $('[data-act="clear"]', sheet).hidden = !state.faces[i];
     renderTypeFields();
@@ -1137,6 +1205,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
 
   function closeEditor() {
     if (!sheet.classList.contains('open')) return;
+    closeScanner();
     sheet.classList.remove('open');
     backdrop.classList.remove('open');
     document.activeElement?.blur?.();
@@ -1189,19 +1258,121 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     const file = e.target.files[0];
     if (!file) return;
     try {
-      draft.logo.src = await readLogoFile(file);
+      draft.logo.orig = await readLogoFile(file);
+      draft.logo.fit = { ...LOGO_FIT0 };
+      draft.logo.src = draft.logo.orig;
+      loadAdjust();
       updatePreview();
     } catch {
-      alert('That image could not be read. Please use an SVG, PNG or ICO file.');
+      alert('That image could not be read. Please use an SVG, PNG, JPG or ICO file.');
     }
   });
 
+  /* ---- Logo adjuster: position (drag), size, fit / fill, shape, background ---- */
+  const LOGO_FIT0 = { fit: 'contain', zoom: 1, x: 0, y: 0, shape: 'square', bg: 'none' };
+  const adjust = $('#logoAdjust'), adjCanvas = $('#logoCanvas'), adjZoom = $('#logoZoom');
+  let adjImg = null;
+
+  function drawLogo(ctx, img, S, f) {
+    ctx.clearRect(0, 0, S, S);
+    ctx.save();
+    ctx.beginPath();
+    if (f.shape === 'circle') ctx.arc(S / 2, S / 2, S / 2, 0, Math.PI * 2);
+    else if (f.shape === 'rounded' && ctx.roundRect) ctx.roundRect(0, 0, S, S, S * 0.22);
+    else ctx.rect(0, 0, S, S);
+    ctx.clip();
+    if (f.bg === 'white') { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, S, S); }
+    const w = img.naturalWidth || S, h = img.naturalHeight || S;
+    const k = (f.fit === 'cover' ? Math.max : Math.min)(S / w, S / h) * f.zoom;
+    ctx.drawImage(img, S / 2 - w * k / 2 + f.x * S, S / 2 - h * k / 2 + f.y * S, w * k, h * k);
+    ctx.restore();
+  }
+
+  /** Show the adjuster for the draft's uploaded picture (older saves have only `src`). */
+  function loadAdjust() {
+    const L = draft?.logo;
+    adjImg = null;
+    adjust.hidden = !(L && (L.orig || L.src));
+    if (adjust.hidden) return;
+    L.orig ||= L.src;
+    L.fit = { ...LOGO_FIT0, ...L.fit };
+    syncAdjustControls();
+    const img = new Image();
+    img.onload = () => { if (draft?.logo === L) { adjImg = img; drawAdjust(); } };
+    img.src = L.orig;
+  }
+  function syncAdjustControls() {
+    const f = draft.logo.fit, el = sheet.elements;
+    adjZoom.value = f.zoom;
+    el.logoFit.value = f.fit; el.logoShape.value = f.shape; el.logoBg.value = f.bg;
+  }
+  function drawAdjust() {
+    if (adjImg) drawLogo(adjCanvas.getContext('2d'), adjImg, adjCanvas.width, draft.logo.fit);
+  }
+  // The edited picture becomes the logo; untouched, the original (crisp SVG) is kept.
+  const commitAdjust = debounce(() => {
+    if (!draft || !adjImg) return;
+    const f = draft.logo.fit;
+    const plain = Object.keys(LOGO_FIT0).every(k => f[k] === LOGO_FIT0[k]);
+    draft.logo.src = plain ? draft.logo.orig : adjCanvas.toDataURL('image/png');
+    updatePreview();
+  }, 150);
+  function changeFit(patch) {
+    Object.assign(draft.logo.fit, patch);
+    drawAdjust();
+    commitAdjust();
+  }
+
+  adjust.addEventListener('input', e => {
+    e.stopPropagation();   // the editor's own input handler isn't needed here
+    const t = e.target;
+    if (t === adjZoom) changeFit({ zoom: +adjZoom.value });
+    else if (t.name === 'logoFit') changeFit({ fit: t.value, zoom: 1, x: 0, y: 0 });
+    else if (t.name === 'logoShape') changeFit({ shape: t.value });
+    else if (t.name === 'logoBg') changeFit({ bg: t.value });
+    if (t.name === 'logoFit') syncAdjustControls();
+  });
+  $('#logoReset').addEventListener('click', () => { draft.logo.fit = { ...LOGO_FIT0 }; syncAdjustControls(); drawAdjust(); commitAdjust(); });
+
+  // Drag to move; wheel or a two-finger pinch on the picture resizes it.
+  const adjPts = new Map();
+  let adjPinch = 0;
+  adjCanvas.addEventListener('pointerdown', e => {
+    adjPts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    try { adjCanvas.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+    if (adjPts.size === 2) { const [a, b] = adjPts.values(); adjPinch = Math.hypot(a.x - b.x, a.y - b.y) || 1; }
+  });
+  adjCanvas.addEventListener('pointermove', e => {
+    const p = adjPts.get(e.pointerId);
+    if (!p || !draft) return;
+    const f = draft.logo.fit;
+    if (adjPts.size === 1) {
+      const scale = adjCanvas.getBoundingClientRect().width;
+      changeFit({ x: f.x + (e.clientX - p.x) / scale, y: f.y + (e.clientY - p.y) / scale });
+    }
+    p.x = e.clientX; p.y = e.clientY;
+    if (adjPts.size === 2) {
+      const [a, b] = adjPts.values(), d = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+      changeFit({ zoom: Math.min(4, Math.max(0.3, f.zoom * d / adjPinch)) });
+      adjPinch = d; adjZoom.value = draft.logo.fit.zoom;
+    }
+  });
+  const adjEnd = e => adjPts.delete(e.pointerId);
+  adjCanvas.addEventListener('pointerup', adjEnd);
+  adjCanvas.addEventListener('pointercancel', adjEnd);
+  adjCanvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    changeFit({ zoom: Math.min(4, Math.max(0.3, draft.logo.fit.zoom * Math.exp(-e.deltaY * 0.002))) });
+    adjZoom.value = draft.logo.fit.zoom;
+  }, { passive: false });
+
   sheet.addEventListener('submit', e => {
     e.preventDefault();
+    if (!draft) return;
     readForm();
     if (!encodeFace(draft) && !confirm('This side has no QR data yet. Save it anyway?')) return;
     // Drop logo data the chosen mode doesn't use.
-    if (draft.logo.mode !== 'file') draft.logo.src = '';
+    if (draft.logo.mode !== 'file') { draft.logo.src = ''; delete draft.logo.orig; delete draft.logo.fit; }
     if (draft.logo.mode !== 'favicon') { draft.logo.fav = ''; draft.logo.favFor = ''; }
     state.faces[editing] = draft;
     save();
@@ -1210,6 +1381,291 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   });
 
   backdrop.addEventListener('click', () => { closeEditor(); closeLook(); closeInstall(); });
+
+  /* ================================================================
+   * Scan an existing QR code (camera or photo) into the editor
+   * ================================================================ */
+  const scanner = $('#scanner'), scanVideo = $('#scanVideo'), scanMsg = $('#scanMsg');
+  const scanCanvas = document.createElement('canvas');
+  let scanStream = null, scanTimer = 0, detector, jsqrReady = null;
+
+  // The bundled decoder (works everywhere) loads only when first needed.
+  const loadJsQR = () => jsqrReady ||= new Promise((res, rej) => {
+    if (window.jsQR) return res(window.jsQR);
+    const s = Object.assign(document.createElement('script'), { src: 'vendor/jsQR.js' });
+    s.onload = () => res(window.jsQR);
+    s.onerror = () => { jsqrReady = null; rej(new Error('decoder')); };
+    document.head.appendChild(s);
+  });
+  // The browser's built-in reader (Android Chrome), when there is one.
+  async function builtInDetector() {
+    if (detector !== undefined) return detector;
+    detector = null;
+    try {
+      if ((await BarcodeDetector.getSupportedFormats()).includes('qr_code')) detector = new BarcodeDetector({ formats: ['qr_code'] });
+    } catch { /* not supported */ }
+    return detector;
+  }
+
+  /** Decoded text of a QR code in an image / video frame, or null. */
+  async function decodeQr(source, w, h) {
+    const det = await builtInDetector();
+    if (det) {
+      try { const r = await det.detect(source); if (r[0]?.rawValue) return r[0].rawValue; } catch { /* fall through */ }
+    }
+    const jsQR = await loadJsQR();
+    const k = Math.min(1, 720 / Math.max(w, h));
+    scanCanvas.width = Math.round(w * k); scanCanvas.height = Math.round(h * k);
+    const ctx = scanCanvas.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(source, 0, 0, scanCanvas.width, scanCanvas.height);
+    const px = ctx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
+    // attemptBoth also reads light-on-dark codes (like the ones on a dark die).
+    const r = jsQR(px.data, px.width, px.height, { inversionAttempts: 'attemptBoth' });
+    if (!r) return null;
+    try { return new TextDecoder('utf-8', { fatal: true }).decode(new Uint8Array(r.binaryData)); } catch { return r.data; }
+  }
+
+  async function openScanner() {
+    scanner.classList.remove('found');
+    scanner.classList.add('open');
+    scanner.setAttribute('aria-hidden', 'false');
+    scanMsg.textContent = 'Point the camera at a QR code';
+    loadJsQR().catch(() => {});
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: false, video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+      });
+      if (!scanner.classList.contains('open')) return stream.getTracks().forEach(t => t.stop());
+      scanStream = stream;
+      scanVideo.srcObject = stream;
+      await scanVideo.play();
+      scanLoop();
+    } catch {
+      scanMsg.textContent = 'The camera isn’t available (or permission was refused). You can choose a photo of the code instead.';
+    }
+  }
+  async function scanLoop() {
+    if (!scanStream) return;
+    if (scanVideo.readyState >= 2 && scanVideo.videoWidth) {
+      const text = await decodeQr(scanVideo, scanVideo.videoWidth, scanVideo.videoHeight).catch(() => null);
+      if (text && scanStream) return scanned(text);
+    }
+    if (scanStream) scanTimer = setTimeout(scanLoop, 100);
+  }
+  function stopCamera() {
+    clearTimeout(scanTimer);
+    scanStream?.getTracks().forEach(t => t.stop());
+    scanStream = null;
+    scanVideo.srcObject = null;
+  }
+  function closeScanner() {
+    stopCamera();
+    scanner.classList.remove('open');
+    scanner.setAttribute('aria-hidden', 'true');
+  }
+  function scanned(text) {
+    stopCamera();
+    scanner.classList.add('found');
+    navigator.vibrate?.(15);
+    applyScanned(text);
+    setTimeout(closeScanner, 350);
+  }
+
+  $('#scanBtn').addEventListener('click', openScanner);
+  $('#scanCancel').addEventListener('click', closeScanner);
+  $('#scanPhoto').addEventListener('click', () => $('#scanFile').click());
+  $('#scanFile').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    scanMsg.textContent = 'Reading the photo…';
+    try {
+      const url = URL.createObjectURL(file);
+      const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+      const text = await decodeQr(img, img.naturalWidth, img.naturalHeight);
+      URL.revokeObjectURL(url);
+      if (text) return scanned(text);
+      scanMsg.textContent = 'No QR code found in that photo. Try a sharper, closer one.';
+    } catch {
+      scanMsg.textContent = 'That photo could not be read.';
+    }
+  });
+
+  /** Put a scanned code into the editor (nothing is saved until Save). */
+  function applyScanned(text) {
+    if (!draft) return;
+    const { type, data } = parseQr(text);
+    draft.type = type;
+    typeSelect.value = type;
+    dataCache[type] = data;
+    if (type !== 'url' && draft.logo.mode === 'favicon') { draft.logo.mode = 'none'; sheet.elements.logoMode.value = 'none'; }
+    renderTypeFields();
+    updatePreview();
+  }
+
+  /* ---- Reading QR payloads back into form data ---- */
+  const safeDecode = s => { try { return decodeURIComponent(s); } catch { return s; } };
+  /** Split on `sep`, honouring backslash escapes (\n becomes a newline). */
+  function splitEsc(s, sep) {
+    const out = [''];
+    for (let i = 0; i < s.length; i++) {
+      const c = s[i];
+      if (c === '\\' && i + 1 < s.length) { const n = s[++i]; out[out.length - 1] += n === 'n' || n === 'N' ? '\n' : n; }
+      else if (c === sep) out.push('');
+      else out[out.length - 1] += c;
+    }
+    return out;
+  }
+  /** "K:v;K:v;;" (Wi-Fi, MECARD, MATMSG) → {K: [v, …]} */
+  function keyFields(body) {
+    const out = {};
+    for (const part of splitEsc(body, ';')) {
+      const i = part.indexOf(':');
+      if (i > 0) (out[part.slice(0, i).toUpperCase()] ||= []).push(part.slice(i + 1));
+    }
+    return out;
+  }
+  function normDate(v, noYear) {
+    let m;
+    if ((m = /^(\d{4})-?(\d{2})-?(\d{2})/.exec(v))) return `${noYear ? '-' : m[1]}-${m[2]}-${m[3]}`;
+    if ((m = /^--(\d{2})-?(\d{2})/.exec(v))) return `--${m[1]}-${m[2]}`;
+    return '';
+  }
+  const pick = (types, list, dflt) => list.find(t => types.includes(t)) || dflt;
+  const SOCIAL = ['linkedin', 'x', 'instagram', 'facebook', 'github', 'tiktok', 'youtube', 'mastodon', 'threads', 'bluesky'];
+  const LINE = /^(?:([\w-]+)\.)?([^:;]+)((?:;[^:]*)?):([\s\S]*)$/;   // [group.]PROP[;params]:value
+  const unfold = t => t.replace(/\r?\n[ \t]/g, '').split(/\r?\n/);
+  // Apple marks "no year" with a placeholder year named in X-APPLE-OMIT-YEAR.
+  const omitsYear = (params, val) => { const y = /x-apple-omit-year=(\d{4})/.exec(params)?.[1]; return !!y && val.startsWith(y); };
+
+  function parseVCard(t) {
+    const d = { phones: [], emails: [], addresses: [], urls: [], social: [] };
+    const lines = unfold(t), labels = {};
+    for (const line of lines) {
+      const m = LINE.exec(line);
+      if (m && m[1] && /^X-ABLABEL$/i.test(m[2])) labels[m[1]] = m[4].toLowerCase();
+    }
+    for (const line of lines) {
+      const m = LINE.exec(line);
+      if (!m) continue;
+      const [, grp, rawProp, rawParams, val] = m;
+      const prop = rawProp.toUpperCase(), params = rawParams.toLowerCase();
+      const types = params.replace(/type=/g, '').split(/[;,="]+/).filter(Boolean);
+      const parts = splitEsc(val, ';');
+      const one = parts.join(';');
+      switch (prop) {
+        case 'N': [d.last, d.first, d.middle, d.prefix, d.suffix] = parts.map(s => s.trim()); break;
+        case 'FN': d.fn = one; break;
+        case 'NICKNAME': d.nickname = one; break;
+        case 'ORG': [d.org = '', d.dept = ''] = parts; break;
+        case 'TITLE': d.title = one; break;
+        case 'ROLE': d.role = one; break;
+        case 'NOTE': d.note = one; break;
+        case 'TEL': d.phones.push({
+          type: types.some(x => /cell|mobile|iphone/.test(x)) ? 'cell' : pick(types, ['fax', 'pager', 'main', 'work', 'home'], 'other'),
+          value: val.replace(/^tel:/i, '') }); break;
+        case 'EMAIL': d.emails.push({ type: pick(types, ['work', 'home'], 'other'), value: one }); break;
+        case 'ADR': {
+          const [pobox, ext, street, city, region, postal, country] = parts;
+          d.addresses.push({ type: pick(types, ['work', 'home'], 'other'), pobox, ext, street, city, region, postal, country });
+          break;
+        }
+        case 'URL': d.urls.push({ type: pick(types, ['work', 'home'], 'other'), value: one }); break;
+        case 'X-SOCIALPROFILE': d.social.push({ type: pick(types, SOCIAL, 'other'), value: one }); break;
+        case 'BDAY': d.bday = normDate(val, omitsYear(params, val)); break;
+        case 'ANNIVERSARY': case 'X-ANNIVERSARY': d.anniv ||= normDate(val); break;
+        case 'X-ABDATE': if (/anniversary/.test(labels[grp] || '')) d.anniv ||= normDate(val, omitsYear(params, val)); break;
+      }
+    }
+    if (!d.first && !d.last && d.fn) { const w = d.fn.split(/\s+/); d.last = w.length > 1 ? w.pop() : ''; d.first = w.join(' '); }
+    delete d.fn;
+    if (!d.phones.length) d.phones.push({ type: 'cell', value: '' });
+    if (!d.emails.length) d.emails.push({ type: 'work', value: '' });
+    return d;
+  }
+
+  function parseMeCard(t) {
+    const f = keyFields(t.replace(/^MECARD:/i, ''));
+    const [last = '', first = ''] = (f.N?.[0] || '').split(',');
+    return {
+      last: last.trim(), first: first.trim(), nickname: f.NICKNAME?.[0] || '', org: f.ORG?.[0] || '', title: f.TITLE?.[0] || '',
+      note: f.NOTE?.[0] || '', bday: normDate(f.BDAY?.[0] || ''),
+      phones: (f.TEL || ['']).map(value => ({ type: 'cell', value })),
+      emails: (f.EMAIL || ['']).map(value => ({ type: 'other', value })),
+      urls: (f.URL || []).map(value => ({ type: 'other', value })),
+      addresses: (f.ADR || []).map(a => {
+        const [pobox, ext, street, city, region, postal, country] = a.split(',').map(s => s.trim());
+        return { type: 'other', pobox, ext, street, city, region, postal, country };
+      }),
+      social: []
+    };
+  }
+
+  function parseEvent(t) {
+    const d = { summary: '', location: '', desc: '', allday: false, start: '', end: '' };
+    const p2 = n => String(n).padStart(2, '0');
+    const when = (val, params) => {
+      const m = /^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?(Z)?)?/.exec(val);
+      if (!m) return '';
+      if (!m[4]) { d.allday = true; return `${m[1]}-${m[2]}-${m[3]}T00:00`; }
+      const dt = m[7] ? new Date(Date.UTC(+m[1], m[2] - 1, +m[3], +m[4], +m[5])) : new Date(+m[1], m[2] - 1, +m[3], +m[4], +m[5]);
+      return `${dt.getFullYear()}-${p2(dt.getMonth() + 1)}-${p2(dt.getDate())}T${p2(dt.getHours())}:${p2(dt.getMinutes())}`;
+    };
+    for (const line of unfold(t)) {
+      const m = LINE.exec(line);
+      if (!m) continue;
+      const [, , prop, params, val] = m;
+      const text = splitEsc(val, '\u0000')[0];
+      switch (prop.toUpperCase()) {
+        case 'SUMMARY': d.summary = text; break;
+        case 'LOCATION': d.location = text; break;
+        case 'DESCRIPTION': d.desc = text; break;
+        case 'DTSTART': d.start = when(val, params); break;
+        case 'DTEND': d.end = when(val, params); break;
+      }
+    }
+    return d;
+  }
+
+  function parseMailto(t) {
+    const [addr, query = ''] = t.slice(7).split('?');
+    const d = { to: safeDecode(addr), cc: '', bcc: '', subject: '', body: '' };
+    for (const kv of query.split('&')) {
+      const [k, v = ''] = kv.split('=');
+      const key = k.toLowerCase();
+      if (key in d && key !== 'to') d[key] = safeDecode(v);
+    }
+    return d;
+  }
+
+  /** Recognise any payload this app can make (and common variants) → {type, data}. */
+  function parseQr(raw) {
+    const t = raw.trim();
+    let m;
+    if (/^WIFI:/i.test(t)) {
+      const f = keyFields(t.slice(5));
+      const T = (f.T?.[0] || '').toUpperCase();
+      return { type: 'wifi', data: { ssid: f.S?.[0] || '', auth: T === 'WEP' ? 'WEP' : !T || T === 'NOPASS' ? 'nopass' : 'WPA', pass: f.P?.[0] || '', hidden: /^true$/i.test(f.H?.[0] || '') } };
+    }
+    if (/^BEGIN:VCARD/i.test(t)) return { type: 'vcard', data: parseVCard(t) };
+    if (/^MECARD:/i.test(t)) return { type: 'vcard', data: parseMeCard(t) };
+    if (/BEGIN:VEVENT/i.test(t)) return { type: 'event', data: parseEvent(t) };
+    if (/^mailto:/i.test(t)) return { type: 'email', data: parseMailto(t) };
+    if (/^MATMSG:/i.test(t)) {
+      const f = keyFields(t.slice(7));
+      return { type: 'email', data: { to: f.TO?.[0] || '', cc: '', bcc: '', subject: f.SUB?.[0] || '', body: f.BODY?.[0] || '' } };
+    }
+    if ((m = /^SMSTO:([^:]*):?([\s\S]*)$/i.exec(t))) return { type: 'sms', data: { number: m[1], message: m[2] } };
+    if ((m = /^sms:([^?&]*)(?:[?&]body=([\s\S]*))?$/i.exec(t))) return { type: 'sms', data: { number: safeDecode(m[1]), message: safeDecode(m[2] || '') } };
+    if ((m = /^tel:(.+)$/i.exec(t))) return { type: 'phone', data: { number: m[1] } };
+    if ((m = /^geo:(-?[\d.]+),(-?[\d.]+)/i.exec(t))) return { type: 'geo', data: { lat: m[1], lng: m[2] } };
+    if (/^(https?:\/\/|www\.)\S+$/i.test(t)) return { type: 'url', data: { url: t } };
+    return { type: 'text', data: { text: raw } };
+  }
+
+  // Exposed for testing the payload round-trip (encoder → parser) in the console.
+  if (DEBUG) window.qrcubeDebug = { parseQr, encode: (type, data) => TYPES[type].encode(data) };
+
 
   /* ================================================================
    * Install: the browser's own prompt where there is one, otherwise steps
