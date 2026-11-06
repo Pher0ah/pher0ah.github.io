@@ -602,6 +602,9 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   const raycaster = new THREE.Raycaster();
   function pickSide(clientX, clientY) {
     const r = canvas.getBoundingClientRect();
+    // The matrices normally refresh on render; a resize (e.g. the iPhone keyboard
+    // closing) can move the camera before the next frame, so refresh them here.
+    camera.updateMatrixWorld(); die.updateMatrixWorld();
     raycaster.setFromCamera(new THREE.Vector2(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1), camera);
     const hit = raycaster.intersectObject(die)[0];
     return hit ? MAT_TO_SIDE[hit.face.materialIndex] : -1;
@@ -778,6 +781,16 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     clearTimeout(g.hold);
     hidePress();
   }
+  // Forget any half-finished touch. Called whenever an overlay closes: Safari can drop
+  // the finger-lift of a touch that opened the editor or full-screen view, and the die
+  // must never wait on it.
+  function resetGesture() {
+    cancelHold();
+    stage.classList.remove('dragging');
+    g = null; lastTap = null;
+  }
+  addEventListener('blur', resetGesture);
+  document.addEventListener('visibilitychange', resetGesture);
   stage.addEventListener('pointerup', e => endGesture(e, false));
   stage.addEventListener('pointercancel', e => endGesture(e, true));
   stage.addEventListener('contextmenu', e => {
@@ -835,6 +848,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     if (!full.classList.contains('open')) return;
     full.classList.remove('open');
     full.setAttribute('aria-hidden', 'true');
+    resetGesture();
     if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
     wakeLock?.release?.().catch(() => {});
     wakeLock = null;
@@ -1126,6 +1140,9 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     sheet.classList.remove('open');
     backdrop.classList.remove('open');
     document.activeElement?.blur?.();
+    // iOS can leave the page scrolled after its keyboard closes; put it back.
+    scrollTo(0, 0);
+    resetGesture();
     editing = -1; draft = null;
   }
 
@@ -1253,6 +1270,8 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     backdrop.classList.remove('open', 'clear');
     document.body.classList.remove('looking');
     document.activeElement?.blur?.();
+    scrollTo(0, 0);
+    resetGesture();
   }
 
   const applyLookSoon = debounce(() => { applyLook(); save(); }, 120);
