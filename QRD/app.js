@@ -877,6 +877,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   }, { passive: false });
 
   document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && cpInput) return closePicker(false);
     if (e.key === 'Escape' && scanner.classList.contains('open')) return closeScanner();
     if (e.key === 'Escape') { closeFull(); closeEditor(); closeLook(); closeInstall(); closeMenu(); return; }
     if (isOpen() || /input|select|textarea/i.test(e.target.tagName)) return;
@@ -1381,6 +1382,147 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   });
 
   backdrop.addEventListener('click', () => { closeEditor(); closeLook(); closeInstall(); });
+
+  /* ================================================================
+   * Colour picker: colour area, hue and RGB sliders, hex entry, swatches.
+   * Replaces the browser's own picker everywhere except iPhone / iPad,
+   * whose native picker already has all of this.
+   * ================================================================ */
+  const NATIVE_PICKER = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const cp = $('#cp'), cpBackdrop = $('#cpBackdrop'), cpSv = $('#cpSv'), cpThumb = $('#cpThumb');
+  const cpHue = $('#cpHue'), cpHex = $('#cpHex'), cpChip = $('#cpChip'), cpSwatches = $('#cpSwatches');
+  const cpRgb = $$('.cp-rgb input[type=range]', cp), cpNum = $$('.cp-rgb input[type=number]', cp);
+  const PRESETS = ['#000000', '#ffffff', '#1f2937', '#6b7280', '#d1d5db', '#7c2d12', '#b45309', '#f5e6c8',
+                   '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#06b6d4', '#3b82f6', '#6366f1',
+                   '#8b5cf6', '#ec4899', '#0f172a', '#14532d', '#1e3a8a', '#4c1d95', '#831843', '#c0c0c0'];
+  const RECENT_KEY = 'qrcube.recentColours';
+  let cpInput = null, cpStart = '', cpHsv = [0, 0, 0];
+
+  const hexToRgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const rgbToHex = rgb => '#' + rgb.map(v => Math.round(v).toString(16).padStart(2, '0')).join('');
+  function rgbToHsv([r, g, b]) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), d = max - Math.min(r, g, b);
+    const h = !d ? 0 : max === r ? ((g - b) / d + 6) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return [h * 60, max ? d / max : 0, max];
+  }
+  function hsvToRgb([h, s, v]) {
+    const f = n => { const k = (n + h / 60) % 6; return (v - v * s * Math.max(0, Math.min(k, 4 - k, 1))) * 255; };
+    return [f(5), f(3), f(1)];
+  }
+  function normHex(v) {
+    let h = String(v).trim().replace(/^#/, '');
+    if (/^[\da-f]{3}$/i.test(h)) h = h.replace(/./g, c => c + c);
+    return /^[\da-f]{6}$/i.test(h) ? '#' + h.toLowerCase() : null;
+  }
+  const recentColours = () => { try { return JSON.parse(localStorage.getItem(RECENT_KEY)) || []; } catch { return []; } };
+
+  /** Show the colour everywhere in the picker and send it to the field (live). */
+  function cpShow(hex, { skipHex = false, keepHsv = false } = {}) {
+    const rgb = hexToRgb(hex);
+    if (!keepHsv) {
+      const hsv = rgbToHsv(rgb);
+      // Keep the hue when the colour is grey/black, so the sliders don't jump.
+      if (hsv[1] === 0 || hsv[2] === 0) hsv[0] = cpHsv[0];
+      cpHsv = hsv;
+    }
+    const [h, s, v] = cpHsv;
+    cpSv.style.setProperty('--h', h.toFixed(1));
+    cpThumb.style.left = s * 100 + '%';
+    cpThumb.style.top = (1 - v) * 100 + '%';
+    cpThumb.style.background = hex;
+    cpHue.value = Math.round(h);
+    cpRgb.forEach((el, i) => {
+      el.value = rgb[i];
+      const lo = rgb.slice(), hi = rgb.slice(); lo[i] = 0; hi[i] = 255;
+      el.style.setProperty('--track', `linear-gradient(to right, ${rgbToHex(lo)}, ${rgbToHex(hi)})`);
+    });
+    cpNum.forEach((el, i) => { if (document.activeElement !== el) el.value = rgb[i]; });
+    if (!skipHex) { cpHex.value = hex.toUpperCase(); cpHex.removeAttribute('data-invalid'); }
+    cpChip.style.background = hex;
+    $$('button', cpSwatches).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.hex === hex)));
+    if (cpInput && cpInput.value !== hex) {
+      cpInput.value = hex;
+      cpInput.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }
+  const cpFromHsv = () => cpShow(rgbToHex(hsvToRgb(cpHsv)), { keepHsv: true });
+
+  function openPicker(input) {
+    cpInput = input;
+    cpStart = normHex(input.value) || '#000000';
+    const list = [...new Set([...recentColours(), ...PRESETS])].slice(0, 16);
+    cpSwatches.innerHTML = list.map(h => `<button type="button" data-hex="${h}" style="background:${h}" aria-label="${h}"></button>`).join('');
+    cpShow(cpStart);
+    cp.classList.add('open'); cpBackdrop.classList.add('open');
+    cp.setAttribute('aria-hidden', 'false');
+  }
+  function closePicker(keep) {
+    if (!cpInput) return;
+    const input = cpInput;
+    if (!keep) cpShow(cpStart);
+    cpInput = null;
+    cp.classList.remove('open'); cpBackdrop.classList.remove('open');
+    cp.setAttribute('aria-hidden', 'true');
+    document.activeElement?.blur?.();
+    if (keep && input.value !== cpStart) {
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      try { localStorage.setItem(RECENT_KEY, JSON.stringify([input.value, ...recentColours().filter(h => h !== input.value)].slice(0, 8))); } catch { /* storage off */ }
+    }
+  }
+
+  if (!NATIVE_PICKER) {
+    // Swap the browser's picker for this one on every colour field.
+    document.addEventListener('click', e => {
+      const input = e.target.closest?.('input[type=color]');
+      if (!input) return;
+      e.preventDefault();
+      openPicker(input);
+    }, true);
+  }
+
+  // Colour area: drag to set saturation (across) and brightness (up/down).
+  let svDrag = false;
+  const svAt = e => {
+    const r = cpSv.getBoundingClientRect();
+    cpHsv[1] = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+    cpHsv[2] = 1 - Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
+    cpFromHsv();
+  };
+  cpSv.addEventListener('pointerdown', e => { svDrag = true; try { cpSv.setPointerCapture(e.pointerId); } catch { /* ignore */ } svAt(e); });
+  cpSv.addEventListener('pointermove', e => { if (svDrag) svAt(e); });
+  cpSv.addEventListener('pointerup', () => { svDrag = false; });
+  cpSv.addEventListener('pointercancel', () => { svDrag = false; });
+
+  cpHue.addEventListener('input', () => { cpHsv[0] = +cpHue.value; cpFromHsv(); });
+  cpRgb.forEach((el, i) => el.addEventListener('input', () => {
+    const rgb = cpRgb.map(x => +x.value); rgb[i] = +el.value; cpShow(rgbToHex(rgb));
+  }));
+  cpNum.forEach((el, i) => el.addEventListener('input', () => {
+    const v = parseInt(el.value, 10);
+    if (!(v >= 0 && v <= 255)) return;
+    const rgb = cpRgb.map(x => +x.value); rgb[i] = v; cpShow(rgbToHex(rgb));
+  }));
+  cpHex.addEventListener('input', () => {
+    const hex = normHex(cpHex.value);
+    cpHex.toggleAttribute('data-invalid', !hex && cpHex.value.replace('#', '').length > 0);
+    if (hex) cpShow(hex, { skipHex: true });
+  });
+  cpHex.addEventListener('blur', () => { if (cpInput) cpShow(cpInput.value); });
+  cpHex.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); cpHex.blur(); } });
+  cpSwatches.addEventListener('click', e => { const b = e.target.closest('[data-hex]'); if (b) cpShow(b.dataset.hex); });
+  $('#cpDone').addEventListener('click', () => closePicker(true));
+  $('#cpCancel').addEventListener('click', () => closePicker(false));
+  cpBackdrop.addEventListener('click', () => closePicker(true));
+
+  // Eyedropper where the browser has one (desktop Chrome / Edge).
+  if ('EyeDropper' in window) {
+    const eye = $('#cpEye');
+    eye.hidden = false;
+    eye.addEventListener('click', async () => {
+      try { const { sRGBHex } = await new EyeDropper().open(); const hex = normHex(sRGBHex); if (hex) cpShow(hex); } catch { /* cancelled */ }
+    });
+  }
 
   /* ================================================================
    * Scan an existing QR code (camera or photo) into the editor

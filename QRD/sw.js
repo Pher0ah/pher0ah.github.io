@@ -1,5 +1,5 @@
 // Offline cache for the app shell. Bump VERSION when files change.
-const VERSION = 'qrcube-v7';
+const VERSION = 'qrcube-v8';
 const SHELL = [
   './', 'index.html', 'styles.css', 'app.js', 'vendor/qrcode.js', 'vendor/jsQR.js',
   'vendor/three/three.module.js', 'vendor/three/three.core.js',

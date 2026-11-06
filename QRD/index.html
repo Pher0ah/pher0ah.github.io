@@ -26,7 +26,7 @@
       <button role="menuitem" data-act="export">Export backup</button>
       <button role="menuitem" data-act="import">Import backup</button>
       <button role="menuitem" data-act="reset">Reset view</button>
-      <small class="ver">Version 7</small>
+      <small class="ver">Version 8</small>
     </nav>
     <input type="file" id="importFile" accept="application/json,.json" hidden>
   </header>
@@ -192,6 +192,29 @@
       </fieldset>
     </div>
   </form>
+
+  <!-- Colour picker (used everywhere except iPhone/iPad, whose own picker is already complete) -->
+  <div class="cp-backdrop" id="cpBackdrop"></div>
+  <div class="cp" id="cp" role="dialog" aria-label="Choose a colour" aria-hidden="true">
+    <div class="cp-actions">
+      <button type="button" class="text-btn" id="cpCancel">Cancel</button>
+      <strong>Colour</strong>
+      <button type="button" class="text-btn primary" id="cpDone">Done</button>
+    </div>
+    <div class="cp-sv" id="cpSv" aria-label="Saturation and brightness"><div class="cp-thumb" id="cpThumb"></div></div>
+    <input type="range" class="cp-slider cp-hue" id="cpHue" min="0" max="359" step="1" aria-label="Hue">
+    <div class="cp-rgb">
+      <label><span>R</span><input type="range" class="cp-slider" data-c="0" min="0" max="255" aria-label="Red"><input type="number" data-n="0" min="0" max="255" inputmode="numeric" aria-label="Red value"></label>
+      <label><span>G</span><input type="range" class="cp-slider" data-c="1" min="0" max="255" aria-label="Green"><input type="number" data-n="1" min="0" max="255" inputmode="numeric" aria-label="Green value"></label>
+      <label><span>B</span><input type="range" class="cp-slider" data-c="2" min="0" max="255" aria-label="Blue"><input type="number" data-n="2" min="0" max="255" inputmode="numeric" aria-label="Blue value"></label>
+    </div>
+    <div class="cp-row">
+      <span class="cp-chip" id="cpChip"></span>
+      <label class="cp-hex"><span>Hex</span><input id="cpHex" maxlength="7" spellcheck="false" autocapitalize="off" autocomplete="off"></label>
+      <button type="button" class="small-btn" id="cpEye" hidden aria-label="Pick a colour from the screen">Eyedropper</button>
+    </div>
+    <div class="cp-swatches" id="cpSwatches"></div>
+  </div>
 
   <script type="importmap">
     { "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/" } }
