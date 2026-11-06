@@ -26,7 +26,7 @@
       <button role="menuitem" data-act="export">Export backup</button>
       <button role="menuitem" data-act="import">Import backup</button>
       <button role="menuitem" data-act="reset">Reset view</button>
-      <small class="ver">Version 8</small>
+      <small class="ver">Version 9</small>
     </nav>
     <input type="file" id="importFile" accept="application/json,.json" hidden>
   </header>
@@ -49,7 +49,7 @@
   <form class="sheet" id="sheet" autocomplete="off" novalidate>
     <div class="sheet-head">
       <button type="button" class="text-btn" data-act="cancel">Cancel</button>
-      <strong id="sheetTitle">Edit side</strong>
+      <strong>Edit side</strong>
       <button type="submit" class="text-btn primary">Save</button>
     </div>
     <div class="sheet-body">
@@ -69,7 +69,7 @@
 
       <fieldset class="group">
         <legend>Centre logo</legend>
-        <div class="seg" id="logoSeg">
+        <div class="seg">
           <label><input type="radio" name="logoMode" value="none" checked><span>None</span></label>
           <label><input type="radio" name="logoMode" value="file"><span>Upload</span></label>
           <label data-only="url"><input type="radio" name="logoMode" value="favicon"><span>Site icon</span></label>
@@ -121,7 +121,7 @@
             </select>
           </label>
         </div>
-        <small class="muted" id="eccNote">With a logo, error correction is set to H automatically.</small>
+        <small class="muted">With a logo, error correction is set to H automatically.</small>
       </fieldset>
 
       <button type="button" class="danger-btn" data-act="clear">Clear this side</button>

@@ -1,5 +1,6 @@
 // Offline cache for the app shell. Bump VERSION when files change.
-const VERSION = 'qrcube-v8';
+const PREFIX = 'qrcube-';
+const VERSION = PREFIX + 'v9';
 const SHELL = [
   './', 'index.html', 'styles.css', 'app.js', 'vendor/qrcode.js', 'vendor/jsQR.js',
   'vendor/three/three.module.js', 'vendor/three/three.core.js',
@@ -8,13 +9,17 @@ const SHELL = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  // cache: 'reload' skips the browser's HTTP cache, so a new version never stores stale copies.
+  e.waitUntil(caches.open(VERSION)
+    .then(c => c.addAll(SHELL.map(u => new Request(u, { cache: 'reload' }))))
+    .then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {
+  // Other apps on this site keep their own caches: delete only QR Cube's old versions.
   e.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== VERSION).map(k => caches.delete(k))))
+      .then(keys => Promise.all(keys.filter(k => k.startsWith(PREFIX) && k !== VERSION).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -29,8 +34,11 @@ self.addEventListener('fetch', e => {
     fetch(e.request.mode === 'navigate' ? new Request(url.href, { cache: 'no-cache', credentials: 'same-origin' })
                                         : new Request(e.request, { cache: 'no-cache' }))
       .then(res => {
-        const copy = res.clone();
-        caches.open(VERSION).then(c => c.put(e.request, copy));
+        // Only complete, successful answers are kept for offline use (no errors or partial ranges).
+        if (res.status === 200 && res.type === 'basic') {
+          const copy = res.clone();
+          caches.open(VERSION).then(c => c.put(e.request, copy)).catch(() => {});
+        }
         return res;
       })
       .catch(() => caches.match(e.request, { ignoreSearch: true }))

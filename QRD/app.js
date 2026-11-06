@@ -28,7 +28,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   /* ================================================================
    * State
    * ================================================================ */
-  const blankState = () => ({ faces: [null, null, null, null, null, null], q: null });
+  const blankState = () => ({ faces: [null, null, null, null, null, null], q3: null });
 
   function load() {
     try {
@@ -37,9 +37,13 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     } catch { /* ignore */ }
     return blankState();
   }
-  function save() {
-    try { localStorage.setItem(STORE, JSON.stringify(state)); }
-    catch { alert('Could not save. Storage may be full. Try a smaller logo.'); }
+  /** Persist the state; false (after telling the user, unless quiet) when storage is full. */
+  function save(quiet = false) {
+    try { localStorage.setItem(STORE, JSON.stringify(state)); return true; }
+    catch {
+      if (!quiet) alert('Could not save: storage is full. Try a smaller logo, or clear a side you no longer need.');
+      return false;
+    }
   }
   let state = load();
 
@@ -292,6 +296,53 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
 
   const encodeFace = f => (f && TYPES[f.type] ? TYPES[f.type].encode(f.data || {}) : '');
 
+  /* ---- Validation of stored and imported data (a bad backup must not break the app) ---- */
+  const isObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
+  const isHex = v => typeof v === 'string' && /^#[\da-f]{6}$/i.test(v);
+  const str = v => (typeof v === 'string' ? v : '');
+  const num = (v, d, lo, hi) => (Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d);
+  const imgUrl = v => (typeof v === 'string' && /^(data:image\/|https?:)/i.test(v) ? v : '');
+  /** Form data: strings and booleans, plus lists of such objects (phones, emails…). */
+  function cleanData(d) {
+    const out = {};
+    if (!isObj(d)) return out;
+    for (const [k, v] of Object.entries(d)) {
+      if (Array.isArray(v)) out[k] = v.filter(isObj).map(cleanData);
+      else if (typeof v === 'string' || typeof v === 'boolean') out[k] = v;
+      else if (Number.isFinite(v)) out[k] = String(v);
+    }
+    return out;
+  }
+  function cleanFace(f) {
+    if (!isObj(f) || !Object.hasOwn(TYPES, f.type)) return null;
+    const L = isObj(f.logo) ? f.logo : {};
+    const logo = { mode: ['none', 'file', 'favicon'].includes(L.mode) ? L.mode : 'none', src: imgUrl(L.src), fav: imgUrl(L.fav), favFor: str(L.favFor) };
+    if (imgUrl(L.orig)) logo.orig = L.orig;
+    if (isObj(L.fit)) {
+      const F = L.fit;
+      logo.fit = { fit: F.fit === 'cover' ? 'cover' : 'contain', zoom: num(F.zoom, 1, 0.3, 4), x: num(F.x, 0, -2, 2), y: num(F.y, 0, -2, 2),
+                   shape: ['square', 'rounded', 'circle'].includes(F.shape) ? F.shape : 'square', bg: F.bg === 'white' ? 'white' : 'none' };
+    }
+    // Fields the form shows as lists (phones, emails…) must be lists of entries.
+    const data = cleanData(f.data);
+    const lists = spec => spec.flatMap(x => (x.row ? lists(x.row) : x.group ? [x.group] : []));
+    for (const g of lists(TYPES[f.type].fields)) if (g in data && !Array.isArray(data[g])) delete data[g];
+    return { type: f.type, label: str(f.label).slice(0, 60), data, logo,
+             inkMode: f.inkMode === 'custom' ? 'custom' : 'auto', fg: isHex(f.fg) ? f.fg : '#000000',
+             ecc: ['L', 'M', 'Q', 'H'].includes(f.ecc) ? f.ecc : 'M' };
+  }
+  function cleanLook(l) {
+    l = isObj(l) ? l : {};
+    const material = Object.hasOwn(MATERIALS, l.material) ? l.material : DEFAULT_LOOK.material;
+    return { material, die: isHex(l.die) ? l.die : MATERIALS[material].color, backdrop: isHex(l.backdrop) ? l.backdrop : DEFAULT_LOOK.backdrop };
+  }
+  function cleanState(s) {
+    const faces = Array.isArray(s?.faces) && s.faces.length === 6 ? s.faces.map(cleanFace) : blankState().faces;
+    const q3 = Array.isArray(s?.q3) && s.q3.length === 4 && s.q3.every(Number.isFinite) && s.q3.some(Boolean) ? s.q3 : null;
+    return { faces, look: cleanLook(s?.look), q3 };
+  }
+  state = cleanState(state);
+
   /* ================================================================
    * QR modules → SVG (full screen, preview) and canvas (die textures)
    * ================================================================ */
@@ -345,7 +396,6 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   const RADIUS = 0.12;         // edge rounding (the die is 1 unit wide)
   // BoxGeometry material order is +x, -x, +y, -y, +z, -z; our sides are front, right, back, left, top, bottom.
   const MAT_TO_SIDE = [1, 3, 4, 5, 0, 2];
-  const SIDE_TO_MAT = MAT_TO_SIDE.map((_, s) => MAT_TO_SIDE.indexOf(s));
 
   const stage = $('#stage');
   const canvas = $('#die');
@@ -623,7 +673,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   const tmpQ = new THREE.Quaternion(), tmpV = new THREE.Vector3();
 
   const applyQ = requestRender;
-  const saveQ = debounce(() => { state.q3 = die.quaternion.toArray(); save(); }, 400);
+  const saveQ = debounce(() => { state.q3 = die.quaternion.toArray(); save(true); }, 400);
 
   function turn(axis, ang) {
     die.quaternion.premultiply(tmpQ.setFromAxisAngle(axis, ang)).normalize();
@@ -892,7 +942,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
    * Full-screen view: just the code, like a sticker, for scanning
    * ================================================================ */
   const full = $('#full');
-  let wakeLock = null, prevBrightness = null, fullArmed = false;
+  let wakeLock = null, prevBrightness = null, fullArmed = false, fullSession = 0;
   const brightnessPlugin = () => window.Capacitor?.Plugins?.ScreenBrightness;
 
   async function openFull(i) {
@@ -904,11 +954,24 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     full.classList.add('open');
     full.setAttribute('aria-hidden', 'false');
     fullArmed = false;
+    // Each await below can finish after the view was closed; undo anything acquired late.
+    const s = ++fullSession, closed = () => s !== fullSession;
     try { await document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }); } catch { /* not allowed / unsupported (iPhone) */ }
-    try { wakeLock = await navigator.wakeLock?.request('screen'); } catch { /* ignore */ }
+    if (closed()) { if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {}); return; }
+    try {
+      const lock = await navigator.wakeLock?.request('screen');
+      if (closed()) { lock?.release?.().catch(() => {}); return; }
+      wakeLock = lock;
+    } catch { /* ignore */ }
     const bp = brightnessPlugin();
     if (bp) {
-      try { prevBrightness = (await bp.getBrightness()).brightness; await bp.setBrightness({ brightness: 1 }); } catch { /* ignore */ }
+      try {
+        const before = (await bp.getBrightness()).brightness;
+        if (closed()) return;
+        prevBrightness = before;
+        await bp.setBrightness({ brightness: 1 });
+        if (closed()) await bp.setBrightness({ brightness: before });
+      } catch { /* ignore */ }
     }
   }
 
@@ -916,6 +979,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     if (!full.classList.contains('open')) return;
     full.classList.remove('open');
     full.setAttribute('aria-hidden', 'true');
+    fullSession++;
     resetGesture();
     if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
     wakeLock?.release?.().catch(() => {});
@@ -1043,6 +1107,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   const favStatus = $('#favStatus');
   const eccSel = sheet.elements.ecc;
   let editing = -1, draft = null, dataCache = {};
+  let session = 0;   // bumped when the editor opens or closes; late async results check it
 
   typeSelect.innerHTML = Object.entries(TYPES).map(([k, t]) => `<option value="${k}">${t.name}</option>`).join('');
 
@@ -1137,10 +1202,13 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
 
   function readForm() {
     const el = sheet.elements;
+    // Collect the fields on screen under the type they were drawn for. (When the type
+    // has just been changed, the select already shows the new one.)
+    const shown = sheet.dataset.type;
+    if (Object.hasOwn(TYPES, shown)) dataCache[shown] = collect(TYPES[shown].fields, typeFields);
     draft.type = typeSelect.value;
+    draft.data = dataCache[draft.type] || {};
     draft.label = el.label.value.trim();
-    draft.data = collect(TYPES[draft.type].fields, typeFields);
-    dataCache[draft.type] = draft.data;
     draft.logo.mode = el.logoMode.value;
     draft.inkMode = el.inkMode.value;
     draft.fg = el.fg.value;
@@ -1148,6 +1216,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   }
 
   function updatePreview() {
+    if (!draft) return;   // a debounced update can fire after the editor closed
     readForm();
     const hasLogo = !!logoHref(draft);
     eccSel.disabled = hasLogo;
@@ -1166,10 +1235,10 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     const url = draft.data.url;
     if (!url) { favStatus.textContent = 'Enter a web address first.'; return; }
     if (!force && draft.logo.favFor === url && draft.logo.fav) return;
-    const seq = ++favSeq;
+    const seq = ++favSeq, s = session;
     favStatus.textContent = 'Looking for the site icon…';
     const r = await resolveFavicon(url);
-    if (seq !== favSeq || !draft) return;
+    if (seq !== favSeq || s !== session || !draft) return;
     draft.logo.favFor = url;
     draft.logo.fav = r?.href || '';
     favStatus.textContent = !r ? 'No icon found for this site.'
@@ -1180,6 +1249,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
 
   function openEditor(i) {
     closeMenu();
+    session++;
     editing = i;
     draft = clone(state.faces[i] || defaultFace());
     draft.logo = { ...defaultFace().logo, ...draft.logo };
@@ -1213,6 +1283,7 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     // iOS can leave the page scrolled after its keyboard closes; put it back.
     scrollTo(0, 0);
     resetGesture();
+    session++;
     editing = -1; draft = null;
   }
 
@@ -1258,8 +1329,11 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
   $('#logoFile').addEventListener('change', async e => {
     const file = e.target.files[0];
     if (!file) return;
+    const s = session;
     try {
-      draft.logo.orig = await readLogoFile(file);
+      const orig = await readLogoFile(file);
+      if (s !== session || !draft) return;   // the editor closed or moved to another side
+      draft.logo.orig = orig;
       draft.logo.fit = { ...LOGO_FIT0 };
       draft.logo.src = draft.logo.orig;
       loadAdjust();
@@ -1371,12 +1445,18 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     e.preventDefault();
     if (!draft) return;
     readForm();
-    if (!encodeFace(draft) && !confirm('This side has no QR data yet. Save it anyway?')) return;
+    const text = encodeFace(draft);
+    if (text && !qrModules(text, draft)) {
+      alert('This is too much data for one QR code. Remove some fields (or the logo) and try again.');
+      return;
+    }
+    if (!text && !confirm('This side has no QR data yet. Save it anyway?')) return;
     // Drop logo data the chosen mode doesn't use.
     if (draft.logo.mode !== 'file') { draft.logo.src = ''; delete draft.logo.orig; delete draft.logo.fit; }
     if (draft.logo.mode !== 'favicon') { draft.logo.fav = ''; draft.logo.favFor = ''; }
+    const prev = state.faces[editing];
     state.faces[editing] = draft;
-    save();
+    if (!save()) { state.faces[editing] = prev; return; }   // keep the editor open
     renderFace(editing);
     closeEditor();
   });
@@ -1621,11 +1701,13 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     e.target.value = '';
     if (!file) return;
     scanMsg.textContent = 'Reading the photo…';
+    const s = session;
     try {
       const url = URL.createObjectURL(file);
       const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
       const text = await decodeQr(img, img.naturalWidth, img.naturalHeight);
       URL.revokeObjectURL(url);
+      if (s !== session) return;
       if (text) return scanned(text);
       scanMsg.textContent = 'No QR code found in that photo. Try a sharper, closer one.';
     } catch {
@@ -1934,11 +2016,13 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
     if (!file) return;
     try {
       const data = JSON.parse(await file.text());
-      if (!Array.isArray(data.faces) || data.faces.length !== 6) throw new Error();
+      if (!isObj(data) || !Array.isArray(data.faces) || data.faces.length !== 6) throw new Error();
       if (!confirm('Replace all six sides with this backup?')) return;
-      state.faces = data.faces.map(f => (f && TYPES[f.type] ? { ...defaultFace(), ...f } : null));
-      if (data.look && MATERIALS[data.look.material]) state.look = { ...DEFAULT_LOOK, ...data.look };
-      save(); applyLook();
+      const prev = state;
+      // Anything malformed in the file is dropped or reset rather than stored.
+      state = { ...cleanState({ ...data, look: data.look || state.look }), q3: state.q3 };
+      if (!save()) { state = prev; return; }
+      applyLook();
     } catch {
       alert('That file is not a valid QR Cube backup.');
     }
