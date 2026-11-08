@@ -1664,6 +1664,23 @@ import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
       const json = JSON.stringify({ app: 'qr-cube', version: 1, faces: state.faces, look: state.look }, null, 2);
       const name = `qr-cube-backup-${new Date().toISOString().slice(0, 10)}.json`;
       const file = new File([json], name, { type: 'application/json' });
+      // Ask where to save, where the browser can (Chrome and Edge). Cancelling saves nothing.
+      if (window.showSaveFilePicker) {
+        try {
+          const handle = await showSaveFilePicker({
+            suggestedName: name, id: 'qrcube-backup', startIn: 'documents',
+            types: [{ description: 'QR Cube backup', accept: { 'application/json': ['.json'] } }]
+          });
+          const out = await handle.createWritable();
+          await out.write(file);
+          await out.close();
+          return;
+        } catch (err) {
+          if (err?.name === 'AbortError') return;
+          /* the picker isn't allowed here: fall through */
+        }
+      }
+      // Phones: the share sheet offers "Save to Files", Drive and so on.
       if (matchMedia('(pointer: coarse)').matches && navigator.canShare?.({ files: [file] })) {
         try { await navigator.share({ files: [file], title: 'QR Cube backup' }); return; } catch { /* fall through */ }
       }
