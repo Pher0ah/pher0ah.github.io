@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111214">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="QR Cards">
+  <title>QR Cards</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <!-- App's own icons (PNG first: Safari can't use SVG favicons and would fall back to the site's) -->
+  <link rel="icon" href="icons/icon-32.png" type="image/png" sizes="32x32">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-180.png" sizes="180x180">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="bar">
+    <h1>QR Cards</h1>
+    <span class="bar-btns">
+    <button class="icon-btn" id="addBtn" aria-label="Add a card">+</button>
+    <button class="icon-btn" id="menuBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false">⋯</button>
+    </span>
+    <nav class="menu" id="menu" role="menu">
+      <button role="menuitem" data-act="install" id="installItem">Install app…</button>
+      <button role="menuitem" data-act="look">Backdrop…</button>
+      <button role="menuitem" data-act="export">Export backup</button>
+      <button role="menuitem" data-act="import">Import backup</button>
+      <small class="ver" id="appVersion"></small>
+    </nav>
+    <input type="file" id="importFile" accept="application/json,.json" hidden>
+  </header>
+
+  <main class="stage" id="stage">
+    <div class="stack" id="stack"></div>
+    <!-- Shown under the card that has been pulled out of the stack -->
+    <div class="actions" id="actions" role="group" aria-label="Card actions" inert>
+      <div class="actions-row">
+        <button type="button" class="small-btn" data-act="full">Full screen</button>
+        <button type="button" class="small-btn" data-act="edit">Edit</button>
+        <button type="button" class="small-btn" data-act="back" aria-label="Move this card back in the stack">↑ Back</button>
+        <button type="button" class="small-btn" data-act="forward" aria-label="Move this card forward in the stack">↓ Forward</button>
+        <button type="button" class="small-btn" data-act="done">Done</button>
+      </div>
+      <small id="cardPos" aria-live="polite"></small>
+    </div>
+    <button type="button" class="empty" id="empty" hidden><b>+</b>Add your first card</button>
+    <p class="hint" id="hint">Tap a card to open it · Hold and drag to reorder</p>
+  </main>
+
+  <!-- Full-screen QR -->
+  <div class="full" id="full" aria-hidden="true">
+    <div class="full-qr" id="fullQr"></div>
+    <button type="button" class="small-btn" id="fullClose">Close QR code</button>
+  </div>
+
+  <!-- Editor sheet -->
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <form class="sheet" id="sheet" autocomplete="off" novalidate>
+    <div class="sheet-head">
+      <button type="button" class="text-btn" data-act="cancel">Cancel</button>
+      <strong id="sheetTitle">Edit card</strong>
+      <button type="submit" class="text-btn primary">Save</button>
+    </div>
+    <div class="sheet-body">
+      <div class="card preview" id="preview" aria-hidden="true"><canvas class="card-tex"></canvas><div class="card-head"><span class="card-title"></span><span class="card-type"></span></div><div class="card-qr"></div></div>
+      <button type="button" class="small-btn scan-btn" id="scanBtn">Scan an existing QR code…</button>
+
+      <label class="field">
+        <span>QR type</span>
+        <select name="type" id="typeSelect"></select>
+      </label>
+      <label class="field">
+        <span>Label (the card’s title)</span>
+        <input name="label" maxlength="60" placeholder="Optional">
+      </label>
+
+      <div id="typeFields"></div>
+
+      <fieldset class="group">
+        <legend>Centre logo</legend>
+        <div class="seg">
+          <label><input type="radio" name="logoMode" value="none" checked><span>None</span></label>
+          <label><input type="radio" name="logoMode" value="file"><span>Upload</span></label>
+          <label data-only="url"><input type="radio" name="logoMode" value="favicon"><span>Site icon</span></label>
+        </div>
+        <div class="logo-file" data-show="file">
+          <input type="file" id="logoFile" accept=".svg,.png,.ico,.jpg,.jpeg,.webp,image/*">
+          <small>SVG, PNG, JPG or ICO.</small>
+          <div class="logo-adjust" id="logoAdjust" hidden>
+            <canvas id="logoCanvas" width="384" height="384" aria-label="Logo: drag to position it"></canvas>
+            <small class="muted center">Drag the picture to position it in the square.</small>
+            <label class="field"><span>Size</span><input type="range" id="logoZoom" min="0.3" max="4" step="0.01" value="1"></label>
+            <div class="seg">
+              <label><input type="radio" name="logoFit" value="contain"><span>Fit</span></label>
+              <label><input type="radio" name="logoFit" value="cover"><span>Fill</span></label>
+            </div>
+            <div class="seg">
+              <label><input type="radio" name="logoShape" value="square"><span>Square</span></label>
+              <label><input type="radio" name="logoShape" value="rounded"><span>Rounded</span></label>
+              <label><input type="radio" name="logoShape" value="circle"><span>Circle</span></label>
+            </div>
+            <div class="seg">
+              <label><input type="radio" name="logoBg" value="none"><span>No background</span></label>
+              <label><input type="radio" name="logoBg" value="white"><span>White</span></label>
+            </div>
+            <button type="button" class="small-btn" id="logoReset">Reset picture</button>
+          </div>
+        </div>
+        <div class="logo-fav" data-show="favicon">
+          <small id="favStatus">The icon is fetched from the website. If the site blocks this, Google's favicon service is used instead.</small>
+          <button type="button" class="small-btn" id="favRefresh">Refresh icon</button>
+        </div>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>Card</legend>
+        <span class="seg-label first">Texture</span>
+        <div class="swatches" id="materialList"></div>
+        <label class="field"><span>Background colour</span><input type="color" name="color" value="#f4f1ea"></label>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>QR code</legend>
+        <div class="seg">
+          <label><input type="radio" name="inkMode" value="auto" checked><span>Auto colour</span></label>
+          <label><input type="radio" name="inkMode" value="custom"><span>Custom colour</span></label>
+        </div>
+        <small class="muted ink-auto-note">The code is printed in a colour that complements the card.</small>
+        <div class="row">
+          <label class="field ink-custom"><span>QR colour</span><input type="color" name="fg" value="#000000"></label>
+          <label class="field"><span>Error correction</span>
+            <select name="ecc">
+              <option value="L">L · 7%</option>
+              <option value="M" selected>M · 15%</option>
+              <option value="Q">Q · 25%</option>
+              <option value="H">H · 30%</option>
+            </select>
+          </label>
+        </div>
+        <small class="muted">With a logo, error correction is set to H automatically.</small>
+      </fieldset>
+
+      <button type="button" class="danger-btn" data-act="clear">Delete this card</button>
+    </div>
+  </form>
+
+  <!-- Camera scanner: fills the editor from an existing QR code -->
+  <div class="scanner" id="scanner" role="dialog" aria-label="Scan a QR code" aria-hidden="true">
+    <video id="scanVideo" playsinline muted></video>
+    <div class="scan-frame"></div>
+    <p class="scan-msg" id="scanMsg">Point the camera at a QR code</p>
+    <div class="scan-actions">
+      <button type="button" class="small-btn" id="scanPhoto">From a photo…</button>
+      <button type="button" class="small-btn" id="scanCancel">Cancel</button>
+    </div>
+    <input type="file" id="scanFile" accept="image/*" hidden>
+  </div>
+
+  <!-- Install help, for browsers without an install prompt (iPhone/iPad, Firefox…) -->
+  <div class="sheet" id="installSheet" role="dialog" aria-labelledby="installTitle">
+    <div class="sheet-head">
+      <span></span>
+      <strong id="installTitle">Install QR Cards</strong>
+      <button type="button" class="text-btn primary" data-act="install-close">Done</button>
+    </div>
+    <div class="sheet-body">
+      <div class="install-app">
+        <img src="icons/icon-180.png" alt="" width="64" height="64">
+        <p>Install QR Cards to open it from your home screen, full screen and offline.</p>
+      </div>
+      <ol class="steps" data-for="ios">
+        <li>In Safari, tap the <b>Share</b> button
+          <svg class="glyph" viewBox="0 0 24 24" aria-label="Share"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5M6 11H5v10h14V11h-1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          (on newer iPhones it's under the <b>⋯</b> button next to the address bar).</li>
+        <li>Scroll down and tap <b>Add to Home Screen</b>.</li>
+        <li>Tap <b>Add</b>.</li>
+      </ol>
+      <ol class="steps" data-for="android">
+        <li>Open the browser menu <b>⋮</b>.</li>
+        <li>Tap <b>Install app</b> or <b>Add to Home screen</b>.</li>
+      </ol>
+      <ol class="steps" data-for="desktop">
+        <li>Click the install icon at the right of the address bar, or open the browser menu.</li>
+        <li>Choose <b>Install QR Cards</b> (or <b>Apps → Install this site as an app</b>).</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- Backdrop setting (changes apply live) -->
+  <form class="sheet" id="lookSheet" autocomplete="off" novalidate>
+    <div class="sheet-head">
+      <button type="button" class="text-btn" data-act="look-reset">Reset</button>
+      <strong>Backdrop</strong>
+      <button type="submit" class="text-btn primary">Done</button>
+    </div>
+    <div class="sheet-body">
+      <label class="field"><span>Backdrop colour</span><input type="color" name="backdrop"></label>
+      <small class="muted">The colour behind the stack. Each card’s own texture and colour are set when you edit the card.</small>
+    </div>
+  </form>
+
+  <!-- Colour picker (used everywhere except iPhone/iPad, whose own picker is already complete) -->
+  <div class="cp-backdrop" id="cpBackdrop"></div>
+  <div class="cp" id="cp" role="dialog" aria-label="Choose a colour" aria-hidden="true">
+    <div class="cp-actions">
+      <button type="button" class="text-btn" id="cpCancel">Cancel</button>
+      <strong>Colour</strong>
+      <button type="button" class="text-btn primary" id="cpDone">Done</button>
+    </div>
+    <div class="cp-sv" id="cpSv" aria-label="Saturation and brightness"><div class="cp-thumb" id="cpThumb"></div></div>
+    <input type="range" class="cp-slider cp-hue" id="cpHue" min="0" max="359" step="1" aria-label="Hue">
+    <div class="cp-rgb">
+      <label><span>R</span><input type="range" class="cp-slider" data-c="0" min="0" max="255" aria-label="Red"><input type="number" data-n="0" min="0" max="255" inputmode="numeric" aria-label="Red value"></label>
+      <label><span>G</span><input type="range" class="cp-slider" data-c="1" min="0" max="255" aria-label="Green"><input type="number" data-n="1" min="0" max="255" inputmode="numeric" aria-label="Green value"></label>
+      <label><span>B</span><input type="range" class="cp-slider" data-c="2" min="0" max="255" aria-label="Blue"><input type="number" data-n="2" min="0" max="255" inputmode="numeric" aria-label="Blue value"></label>
+    </div>
+    <div class="cp-row">
+      <span class="cp-chip" id="cpChip"></span>
+      <label class="cp-hex"><span>Hex</span><input id="cpHex" maxlength="7" spellcheck="false" autocapitalize="off" autocomplete="off"></label>
+      <button type="button" class="small-btn" id="cpEye" hidden aria-label="Pick a colour from the screen">Eyedropper</button>
+    </div>
+    <div class="cp-swatches" id="cpSwatches"></div>
+  </div>
+
+  <script src="vendor/qrcode.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
