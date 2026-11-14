@@ -90,7 +90,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   -webkit-touch-callout: none;
 }
 .stage::-webkit-scrollbar { display: none; }
-.stage.presenting { overflow: hidden; }
+.stage.presenting { overflow: hidden; touch-action: none; }   /* the open card takes the swipe */
 .stack { position: relative; flex: none; width: var(--cw, 300px); }
 
 /* A card. Every size inside it follows --cw (the card's width), so the same
@@ -154,6 +154,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
   transition: scale .2s var(--ease), box-shadow .2s;
 }
 .stage.reordering { cursor: grabbing; }
+/* the open card being flicked back down into the stack */
+.card.pulling { transition: box-shadow .2s; }
 
 /* actions for the card that is out of the stack */
 .actions {

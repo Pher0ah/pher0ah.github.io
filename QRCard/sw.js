@@ -1,7 +1,7 @@
 // Offline cache for the app shell. Bump VERSION when files change.
 importScripts('./version.js');
 const PREFIX = 'qrcards-';
-const VERSION = PREFIX + globalThis.QRCUBE_VERSION;
+const VERSION = PREFIX + globalThis.QRCARDS_VERSION;
 const SHELL = [
   './', 'index.html', 'styles.css', 'app.js', 'version.js', 'utils.js', 'formats.js', 'storage.js', 'surfaces.js', 'vendor/qrcode.js', 'vendor/jsQR.js',
   'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-32.png', 'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png'

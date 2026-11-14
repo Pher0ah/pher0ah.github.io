@@ -176,7 +176,7 @@
     return L.join('\r\n');
   }
 
-  const encodeFace = f => (f && TYPES[f.type] ? TYPES[f.type].encode(f.data || {}) : '');
+  const encodeCard = f => (f && TYPES[f.type] ? TYPES[f.type].encode(f.data || {}) : '');
 
   const safeDecode = s => { try { return decodeURIComponent(s); } catch { return s; } };
   /** Split on `sep`, honouring backslash escapes (\n becomes a newline). */
@@ -348,4 +348,4 @@
   }
 
 
-export { TYPES, encodeFace, parseQr, normUrl };
+export { TYPES, encodeCard, parseQr, normUrl };

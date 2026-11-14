@@ -1,6 +1,6 @@
 import './version.js';
 import { clone, debounce, hexRgb, rgbHex } from './utils.js';
-import { TYPES, encodeFace, parseQr, normUrl } from './formats.js';
+import { TYPES, encodeCard, parseQr, normUrl } from './formats.js';
 import { createStorage } from './storage.js';
 import { paintSurface } from './surfaces.js';
 /* QR Cards — a wallet-style stack of QR code cards.
@@ -10,10 +10,11 @@ import { paintSurface } from './surfaces.js';
 (() => {
 
   const STORE = 'qrcards.v1';
-  const LEGACY_STORE = 'qrcube.v1';   // the die version's data, carried over on first launch
+  const LEGACY_STORE = 'qrcube.v1';   // QR Cube's saved sides, carried over on first launch
   const HOLD_MS = 380;        // hold this long to pick a card up for reordering
+  const DOUBLE_TAP_MS = 350;  // max gap between the two taps of a double-tap
+  const DOUBLE_TAP_PX = 60;   // max distance between them
   const MOVE_TOL = { mouse: 6, pen: 10, touch: 12 };  // px of wobble before a press becomes a scroll
-  const DEBUG = new URLSearchParams(location.search).has('debug');
   const LOGO_FRACTION = 0.22; // logo width as a share of the QR width
   const CARD_RATIO = 1.28;    // card height / width
   const MAX_CARD_W = 400;
@@ -92,18 +93,18 @@ import { paintSurface } from './surfaces.js';
     return rgbHex([r + m, g + m, b + m]);
   }
 
-  /** The die colour's complementary hue, at the most colourful lightness that still
-   *  contrasts strongly enough to scan (dark ink on light dice, light ink on dark). */
-  function complementInk(die) {
-    const [h, s] = toHsl(die);
-    // Near-neutral dice (white, grey, silver) have no real hue to complement: use navy.
+  /** The card colour's complementary hue, at the most colourful lightness that still
+   *  contrasts strongly enough to scan (dark ink on light cards, light ink on dark). */
+  function complementInk(base) {
+    const [h, s] = toHsl(base);
+    // Near-neutral cards (white, grey, silver) have no real hue to complement: use navy.
     const hue = s < 0.12 ? 220 : (h + 180) % 360, sat = Math.min(0.8, Math.max(0.45, s));
-    const dark = luminance(die) > 0.18;
+    const dark = luminance(base) > 0.18;
     let best = fromHsl(hue, sat, dark ? 0.04 : 0.97);
     for (let i = 0; i <= 40; i++) {
       const l = dark ? 0.45 - i * 0.01 : 0.55 + i * 0.01;
       const c = fromHsl(hue, sat, l);
-      if (contrast(c, die) >= 7) { best = c; break; }
+      if (contrast(c, base) >= 7) { best = c; break; }
     }
     return best;
   }
@@ -119,7 +120,7 @@ import { paintSurface } from './surfaces.js';
   }
 
   /* ================================================================
-   * QR modules → SVG (card face, full screen)
+   * QR modules → SVG (on the card, full screen)
    * ================================================================ */
   function logoHref(f) {
     if (!f || !f.logo) return '';
@@ -215,7 +216,7 @@ import { paintSurface } from './surfaces.js';
     el.style.setProperty('--ink', cardColors(f).ink);
     $('.card-title', el).textContent = cardTitle(f);
     $('.card-type', el).textContent = f.label ? TYPES[f.type].name : '';
-    const text = encodeFace(f), svg = text ? qrCardSvg(text, f) : null;
+    const text = encodeCard(f), svg = text ? qrCardSvg(text, f) : null;
     $('.card-qr', el).innerHTML = svg || `<span class="card-msg">${text ? 'Too much data. Remove some fields or the logo.' : 'No details yet'}</span>`;
   }
 
@@ -259,10 +260,10 @@ import { paintSurface } from './surfaces.js';
     for (const [id, el] of els) el.classList.toggle('selected', id === selected);
     actions.inert = !on;
     if (!on) return;
-    $('[data-act="full"]', actions).disabled = !encodeFace(state.cards[i]);
+    $('[data-act="full"]', actions).disabled = !encodeCard(state.cards[i]);
     $('[data-act="back"]', actions).disabled = i === 0;
     $('[data-act="forward"]', actions).disabled = i === n - 1;
-    $('#cardPos').textContent = `Card ${i + 1} of ${n}`;
+    $('#cardPos').textContent = `Card ${i + 1} of ${n} · Flick down to put it back`;
   }
 
   /** Position every card: a fanned stack, or one card pulled out with the rest tucked below. */
@@ -296,6 +297,7 @@ import { paintSurface } from './surfaces.js';
   /** Pull a card out of the stack (or, with no id, put it back). */
   function present(id) {
     const next = id && cardById(id) ? id : null;
+    clearTimeout(fullTimer);
     if (next === selected) return;
     selected = next;
     if (selected) stage.scrollTop = 0;
@@ -309,7 +311,7 @@ import { paintSurface } from './surfaces.js';
     if (!selected) { if (id) present(id); return; }
     if (id !== selected) return present(null);
     const f = cardById(id);
-    if (encodeFace(f)) openFull(f); else openEditor(id);
+    if (encodeCard(f)) openFull(f); else openEditor(id);
   }
 
   function moveCard(id, to) {
@@ -337,6 +339,15 @@ import { paintSurface } from './surfaces.js';
       if (e.target.closest('button').disabled) $(`[data-act="${act === 'back' ? 'forward' : 'back'}"]`, actions).focus();
     }
   });
+  /** Put the stack in alphabetical order of the cards' titles (A at the back, top of the screen). */
+  function sortCards() {
+    const prev = state.cards;
+    const sorted = prev.slice().sort((a, b) => cardTitle(a).localeCompare(cardTitle(b), undefined, { sensitivity: 'base', numeric: true }));
+    if (sorted.every((c, i) => c === prev[i])) return;
+    state.cards = sorted;
+    if (!save()) { state.cards = prev; return; }
+    renderCards();
+  }
   const addCard = () => { if (state.cards.length >= 60) alert('That is the most cards the stack can hold.'); else openEditor(null); };
   $('#addBtn').addEventListener('click', addCard);
   emptyEl.addEventListener('click', addCard);
@@ -345,7 +356,9 @@ import { paintSurface } from './surfaces.js';
    * Gestures: tap (open) / hold then drag (reorder) / scroll
    * ================================================================ */
   let g = null;               // current press: {pid, id, el, x0, y0, y, mode: 'pending' | 'scroll' | 'drag'}
-  let suppressClick = false;  // the press that just ended was a scroll or a reorder, not a tap
+  let suppressClick = false;  // the press that just ended was a scroll, a reorder or a flick, not a tap
+  let lastTap = null;         // {id, t, x, y} of the last tap on a card, for double-tap
+  let fullTimer = 0;          // a tap on the open card waits this out, in case it is a double-tap
   let lastPointerType = 'mouse';
   const cardAt = e => { const el = e.target.closest?.('.card'); return el && stack.contains(el) ? el : null; };
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -356,7 +369,15 @@ import { paintSurface } from './surfaces.js';
     resetGesture();
     suppressClick = false;
     const el = cardAt(e);
-    if (!e.isPrimary || !el || selected) return;
+    if (!e.isPrimary) return;
+    const now = performance.now();
+    if (selected) {
+      // A card is out of the stack: it can be flicked down to put it back.
+      if (!e.target.closest('.actions')) g = { pid: e.pointerId, el: els.get(selected), x0: e.clientX, y0: e.clientY, y: e.clientY, py: e.clientY, t: now, pt: now,
+                                               mode: 'pull0', tol: MOVE_TOL[e.pointerType] ?? MOVE_TOL.touch };
+      return;
+    }
+    if (!el) return;
     g = { pid: e.pointerId, id: el.dataset.id, el, x0: e.clientX, y0: e.clientY, y: e.clientY, mode: 'pending',
           tol: MOVE_TOL[e.pointerType] ?? MOVE_TOL.touch };
     g.hold = setTimeout(startDrag, HOLD_MS);
@@ -401,7 +422,18 @@ import { paintSurface } from './surfaces.js';
 
   stage.addEventListener('pointermove', e => {
     if (!g || e.pointerId !== g.pid) return;
-    g.y = e.clientY;
+    g.py = g.y; g.pt = g.t;
+    g.y = e.clientY; g.t = performance.now();
+    if (g.mode === 'pull0' && Math.hypot(e.clientX - g.x0, e.clientY - g.y0) > g.tol) {
+      g.mode = 'pull';
+      try { stage.setPointerCapture(g.pid); } catch { /* pointer already gone */ }
+      g.el?.classList.add('pulling');
+    }
+    if (g.mode === 'pull' && g.el) {
+      // The open card follows the finger down (and resists being pushed up).
+      const dy = g.y - g.y0;
+      g.el.style.transform = `translate3d(0, ${(M.pad + (dy > 0 ? dy : dy * 0.2)).toFixed(1)}px, 0)`;
+    }
     if (g.mode === 'pending' && Math.hypot(e.clientX - g.x0, e.clientY - g.y0) > g.tol) { clearTimeout(g.hold); g.mode = 'scroll'; }
     if (g.mode === 'drag') { placeDrag(); autoScroll(); }
   });
@@ -424,14 +456,24 @@ import { paintSurface } from './surfaces.js';
     const was = g;
     g = null;
     if (was.mode === 'drag') finishDrag(true);
-    if (was.mode !== 'pending' || cancelled) suppressClick = true;
+    if (was.mode === 'pull') endPull(was, !cancelled);
+    if (!['pending', 'pull0'].includes(was.mode) || cancelled) suppressClick = true;
+  }
+  /** Let go of the open card: far or fast enough downwards puts it back in the stack. */
+  function endPull(was, commit) {
+    was.el?.classList.remove('pulling');
+    const dy = was.y - was.y0, v = (was.y - was.py) / Math.max(was.t - was.pt, 1);   // px/ms at release
+    if (commit && (dy > 90 || (dy > 16 && v > 0.4))) present(null);
+    else layout();
   }
   // Forget any half-finished press. Called whenever an overlay closes, and when the
   // page loses focus: a card must never stay stuck to a finger that has gone.
   function resetGesture() {
     if (!g) return;
     clearTimeout(g.hold);
+    const was = g;
     g = null;
+    if (was.mode === 'pull') endPull(was, false);
     finishDrag(false);
   }
   addEventListener('blur', resetGesture);
@@ -440,9 +482,24 @@ import { paintSurface } from './surfaces.js';
   stage.addEventListener('pointercancel', e => endGesture(e, true));
 
   stage.addEventListener('click', e => {
-    if (suppressClick) { suppressClick = false; return; }
+    if (suppressClick) { suppressClick = false; lastTap = null; return; }
     if (e.target.closest('.actions, .empty')) return;
-    activate(cardAt(e)?.dataset.id);
+    const id = cardAt(e)?.dataset.id, now = performance.now();
+    clearTimeout(fullTimer);
+    // The second tap of a double-tap edits the card the first tap landed on. It is judged
+    // by time and distance, not by what is under it: the first tap has already moved the card.
+    if (lastTap && now - lastTap.t < DOUBLE_TAP_MS && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < DOUBLE_TAP_PX) {
+      const target = lastTap.id;
+      lastTap = null;
+      if (cardById(target)) { navigator.vibrate?.(8); present(target); openEditor(target); return; }
+    }
+    lastTap = id && (!selected || id === selected) ? { id, t: now, x: e.clientX, y: e.clientY } : null;
+    if (id && id === selected && encodeCard(cardById(id))) {
+      // On the open card a single tap shows the code full screen, once it is clear no second tap is coming.
+      fullTimer = setTimeout(() => { if (selected === id && !isOpen()) openFull(cardById(id)); }, DOUBLE_TAP_MS);
+      return;
+    }
+    activate(id);
   });
   stage.addEventListener('contextmenu', e => {
     e.preventDefault();
@@ -491,7 +548,7 @@ import { paintSurface } from './surfaces.js';
   const brightnessPlugin = () => window.Capacitor?.Plugins?.ScreenBrightness;
 
   async function openFull(f) {
-    const text = f ? encodeFace(f) : '';
+    const text = f ? encodeCard(f) : '';
     const svg = text ? qrSvg(text, f) : null;
     if (!svg) return;
     $('#fullQr').innerHTML = svg;
@@ -802,6 +859,7 @@ import { paintSurface } from './surfaces.js';
   /** Edit the card with this id, or (with no id) start a new card. */
   function openEditor(id) {
     updatePreviewSoon.cancel(); maybeFetchFavicon.cancel(); commitAdjust.cancel();
+    clearTimeout(fullTimer);
     closeMenu();
     session++;
     const existing = cardById(id);
@@ -1017,7 +1075,7 @@ import { paintSurface } from './surfaces.js';
     commitAdjust.cancel();
     flushAdjust();   // a logo adjustment made just before Save must not be lost
     readForm();
-    const text = encodeFace(draft);
+    const text = encodeCard(draft);
     if (text && !qrModules(text, draft)) {
       alert('This is too much data for one QR code. Remove some fields (or the logo) and try again.');
       return;
@@ -1048,7 +1106,7 @@ import { paintSurface } from './surfaces.js';
   const PRESETS = ['#000000', '#ffffff', '#1f2937', '#6b7280', '#d1d5db', '#7c2d12', '#b45309', '#f5e6c8',
                    '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#06b6d4', '#3b82f6', '#6366f1',
                    '#8b5cf6', '#ec4899', '#0f172a', '#14532d', '#1e3a8a', '#4c1d95', '#831843', '#c0c0c0'];
-  const RECENT_KEY = 'qrcube.recentColours';
+  const RECENT_KEY = 'qrcards.recentColours';
   let cpInput = null, cpStart = '', cpHsv = [0, 0, 0];
 
   const hexToRgb = h => hexRgb(h).map(v => v * 255);
@@ -1309,10 +1367,6 @@ import { paintSurface } from './surfaces.js';
     updatePreview();
   }
 
-  /* ---- Reading QR payloads back into form data ---- */
-  // Exposed for testing the payload round-trip (encoder → parser) in the console.
-  if (DEBUG) window.qrcubeDebug = { parseQr, encode: (type, data) => TYPES[type].encode(data) };
-
 
   /* ================================================================
    * Install: the browser's own prompt where there is one, otherwise steps
@@ -1412,8 +1466,10 @@ import { paintSurface } from './surfaces.js';
     closeMenu();
     if (act === 'install') install();
     if (act === 'look') openLook();
+    if (act === 'sort') sortCards();
     if (act === 'import') $('#importFile').click();
     if (act === 'export') {
+      // Cards are written in the order they appear in the stack, and restored in that order.
       const json = JSON.stringify({ app: 'qr-cards', version: 2, cards: state.cards, look: state.look }, null, 2);
       const name = `qr-cards-backup-${new Date().toISOString().slice(0, 10)}.json`;
       const file = new File([json], name, { type: 'application/json' });
@@ -1507,7 +1563,7 @@ import { paintSurface } from './surfaces.js';
   /* ================================================================
    * Boot
    * ================================================================ */
-  $('#appVersion').textContent = 'Version ' + globalThis.QRCUBE_VERSION;
+  $('#appVersion').textContent = 'Version ' + globalThis.QRCARDS_VERSION;
   applyLook();
   renderCards();
   refreshFavicons();

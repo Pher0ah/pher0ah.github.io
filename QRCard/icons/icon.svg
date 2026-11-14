@@ -3,8 +3,8 @@
        inside the central 80% circle, so the same art works as a maskable icon. -->
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#14857a"/>
-      <stop offset="1" stop-color="#06302f"/>
+      <stop offset="0" stop-color="#7647d6"/>
+      <stop offset="1" stop-color="#231046"/>
     </linearGradient>
     <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#fff" stop-opacity=".28"/>
@@ -27,7 +27,7 @@
   <rect x="132" y="196" width="248" height="216" rx="28" fill="#fbf8f1"/>
 
   <!-- front card: a QR code -->
-  <g transform="translate(161 209) scale(1.9)" fill="#0b3b3a">
+  <g transform="translate(161 209) scale(1.9)" fill="#2a1458">
     <path d="M12 12h28v28H12zM16 16v20h20V16z" fill-rule="evenodd"/>
     <rect x="21" y="21" width="10" height="10"/>
     <path d="M60 12h28v28H60zM64 16v20h20V16z" fill-rule="evenodd"/>
