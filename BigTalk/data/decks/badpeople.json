@@ -500,6 +500,314 @@
     {
       "text": "Who is most likely to get kicked out of a sex shop?",
       "adult": true
+    },
+    {
+      "text": "Who is most likely to clap when the plane lands?",
+      "adult": false
+    },
+    {
+      "text": "Who would be the first to faint at the sight of blood?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to start an argument in a comments section?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to send a meal back twice at a restaurant?",
+      "adult": false
+    },
+    {
+      "text": "Who would sell out the group first under police questioning?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to marry for a visa?",
+      "adult": false
+    },
+    {
+      "text": "Who peaked in high school?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to be recognised from a wanted poster?",
+      "adult": false
+    },
+    {
+      "text": "Who would be the worst flatmate?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to read your diary and then correct the spelling?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to take the last slice without asking?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to borrow money and develop amnesia?",
+      "adult": false
+    },
+    {
+      "text": "Who would be the first to die in a horror film?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to bring an uninvited plus-one?",
+      "adult": false
+    },
+    {
+      "text": "Who gives the worst gifts?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to cry to get their own way?",
+      "adult": false
+    },
+    {
+      "text": "Who would last the shortest time without their phone?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to argue with the referee at a children's game?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to have a secret gambling problem?",
+      "adult": false
+    },
+    {
+      "text": "Who is the worst driver here?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to pick a fight with a seagull, and lose?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to fake an injury to get out of helping someone move house?",
+      "adult": false
+    },
+    {
+      "text": "Who would make the most corrupt politician?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to trip a friend to escape a bear?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to leave a one-star review out of spite?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to sleep through their own wedding?",
+      "adult": false
+    },
+    {
+      "text": "If we were stranded, who would be the first to suggest eating one of us?",
+      "adult": false
+    },
+    {
+      "text": "Who googles themselves the most?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to adopt a pet on a whim and regret it by Friday?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to pretend to know a celebrity?",
+      "adult": false
+    },
+    {
+      "text": "Who has the worst taste in music?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to be removed from a group chat?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to laugh at a funeral?",
+      "adult": false
+    },
+    {
+      "text": "Who would be the villain in a film about this group?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to spoil the ending of a show on purpose?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to wear white to someone else's wedding?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to diagnose themselves online and then argue with the doctor?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to get lost with the map open in their hand?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to become unbearable after getting rich?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to talk through an entire film at the cinema?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to cut the queue and act offended when challenged?",
+      "adult": false
+    },
+    {
+      "text": "Who still uses an embarrassing username from their teens?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to quit their job in a dramatic all-staff announcement?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to haggle in a charity shop?",
+      "adult": false
+    },
+    {
+      "text": "Who would make the worst spy?",
+      "adult": false
+    },
+    {
+      "text": "Who would accept the smallest bribe?",
+      "adult": false
+    },
+    {
+      "text": "Who holds a grudge the longest?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to \"forget\" their wallet at dinner?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to give a child a truly terrible name?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to take a selfie at an inappropriate moment?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to hog the karaoke microphone?",
+      "adult": false
+    },
+    {
+      "text": "Who would crack first on a silent retreat?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to marry someone they met last week in Vegas?",
+      "adult": false
+    },
+    {
+      "text": "Who is most likely to fall for their personal trainer?",
+      "adult": true
+    },
+    {
+      "text": "Who has slept with someone in this room and kept it quiet?",
+      "adult": true
+    },
+    {
+      "text": "Who has the worst taste in partners?",
+      "adult": true
+    },
+    {
+      "text": "Who is most likely to be loud enough for the neighbours to complain?",
+      "adult": true
+    },
+    {
+      "text": "Who is most likely to bring up their ex on a first date?",
+      "adult": true
+    },
+    {
+      "text": "Who is most likely to get matching tattoos with someone they have known for a month?",
+      "adult": true
+    },
+    {
+      "text": "Who is most likely to hit on the bartender, and fail?",
+      "adult": true
+    },
+    {
+      "text": "Who would be the most awkward at dirty talk?",
+      "adult": true
+    },
+    {
+      "text": "Who is most likely to fall asleep during sex?",
+      "adult": true
+    },
+    {
+      "text": "Who is most likely to have a crush on a friend's parent?",
+      "adult": true
+    },
+    {
+      "text": "Who owns a drawer of toys they hope nobody ever finds?",
+      "adult": true
+    },
+    {
+      "text": "Who is most likely to cheat and then confess straight away out of guilt?",
+      "adult": true
+    },
+    {
+      "text": "Who is most likely to stay in a situationship for five years?",
+      "adult": true
+    },
+    {
+      "text": "Who is most likely to kiss and tell, in detail?",
+      "adult": true
+    },
+    {
+      "text": "Who has the most embarrassing hookup story?",
+      "adult": true
+    },
+    {
+      "text": "Who is most likely to be caught with their dating profile still active?",
+      "adult": true
+    },
+    {
+      "text": "Who is most likely to date a friend's ex without asking?",
+      "adult": true
+    },
+    {
+      "text": "Who is most likely to use a cheesy pick-up line and have it work?",
+      "adult": true
+    },
+    {
+      "text": "Whose \"type\" is most obviously bad for them?",
+      "adult": true
+    },
+    {
+      "text": "Who would break a vow of celibacy the fastest?",
+      "adult": true
+    },
+    {
+      "text": "Who is most likely to be heartbroken over someone they dated for two weeks?",
+      "adult": true
+    },
+    {
+      "text": "Who is most likely to give a partner a score out of ten afterwards?",
+      "adult": true
+    },
+    {
+      "text": "Who is most likely to book a couples massage and make it weird?",
+      "adult": true
+    },
+    {
+      "text": "Who would write the steamiest romance novel?",
+      "adult": true
     }
   ]
 }

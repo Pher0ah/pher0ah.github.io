@@ -25,7 +25,8 @@ hosts other decks too: **Bad People**, **Bad Choices** and **Couples**.
   panes, and a **user-customisable accent colour** (with reset-to-default).
 - **Remembers your choices** between sessions (deck, adult theme, accent) via
   `localStorage`.
-- **Installable PWA** — works fully offline once loaded, on any device.
+- **Installable PWA** — every deck is precached, so it works fully offline
+  once loaded, on any device.
 - **GitHub Pages ready** — every path is relative, so it works from a project
   sub-path with zero configuration.
 
@@ -130,5 +131,7 @@ Then open <http://localhost:8000>.
 All paths are relative, so it works under the sub-path with no edits. On a
 phone, use the browser's **Add to Home Screen** to install it as an app.
 
-> **Updating:** when you change shell files (HTML/CSS/JS), bump the `CACHE`
-> version string in `sw.js` so clients pick up the new version.
+> **Updating:** when you change shell files (HTML/CSS/JS), bump the `VERSION`
+> string in `sw.js` so clients pick up the new version. Deck data
+> (`data/`) needs no bump: it is refreshed in the background and the new
+> questions appear on the next visit.

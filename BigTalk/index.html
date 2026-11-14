@@ -57,6 +57,7 @@
       </button>
     </div>
     <p class="stage__hint" id="hint">Tap the card to begin</p>
+    <p class="sr-only" id="card-announce" aria-live="polite"></p>
   </main>
 
   <!-- ============ Slide-in menu (Settings / About) ============ -->
@@ -94,6 +95,21 @@
         <span class="accent-value" id="accent-value">#3ddc84</span>
         <button class="btn btn--ghost" id="accent-reset">Reset to deck default</button>
       </div>
+
+      <!-- Install: button shows only when the browser reports the app is
+           installable; the iOS hint shows for Safari (no install prompt API). -->
+      <section id="install-section" hidden>
+        <h2 class="pane__heading">Install</h2>
+        <p class="pane__sub">Add BigTalk to your home screen to play offline like a native app.</p>
+        <button class="btn btn--accent" id="install-btn">Install app</button>
+      </section>
+      <section id="ios-install-hint" hidden>
+        <h2 class="pane__heading">Install</h2>
+        <p class="pane__sub">
+          To install on iPhone or iPad: tap the <strong>Share</strong> icon in Safari,
+          then choose <strong>Add to Home Screen</strong>.
+        </p>
+      </section>
     </section>
 
     <!-- About pane -->

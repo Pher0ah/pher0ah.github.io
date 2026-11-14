@@ -68,6 +68,11 @@ export class Deck {
     return this.includeAdult ? this._all : this._all.filter((q) => !q.adult);
   }
 
+  /** Number of questions in the deck, regardless of the adult setting. */
+  get total() {
+    return this._all.length;
+  }
+
   /** Number of playable questions right now. */
   get size() {
     return this.available.length;

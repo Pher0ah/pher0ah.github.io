@@ -10,7 +10,7 @@
 import { loadSettings, saveSettings } from "./store.js";
 import { loadRegistry, Deck, FALLBACK_LOGO } from "./decks.js";
 
-const APP_VERSION = "2.0";
+const APP_VERSION = "2.1";
 
 /* ---------- element lookups ---------- */
 const $ = (sel) => document.querySelector(sel);
@@ -20,6 +20,7 @@ const el = {
   question: $("#card-question"),
   watermark: $("#card-watermark"),
   hint: $("#hint"),
+  announce: $("#card-announce"),
   deckTitle: $("#deck-title"),
   menuBtn: $("#menu-btn"),
   menuClose: $("#menu-close"),
@@ -38,6 +39,9 @@ const el = {
   favicon: $("#favicon"),
   appleIcon: $("#apple-icon"),
   version: $("#app-version"),
+  installSection: $("#install-section"),
+  installBtn: $("#install-btn"),
+  iosHint: $("#ios-install-hint"),
 };
 
 /* ---------- app state ---------- */
@@ -45,6 +49,11 @@ const settings = loadSettings();
 let registry = [];      // deck metadata list
 let deck = null;        // active Deck instance
 let started = false;    // has the player flipped at least once?
+let activation = 0;     // bumped per deck switch so stale loads are ignored
+
+const CARD_LABEL = "Flip card to reveal a question";
+// Browser-chrome colour matching the top of the stage for each card tone.
+const THEME_COLOR = { light: "#15151c", dark: "#eef0f5" };
 
 /* =========================================================================
    Theming
@@ -52,10 +61,11 @@ let started = false;    // has the player flipped at least once?
 
 /** Pick black or white ink for text drawn on top of a given hex colour. */
 function readableInk(hex) {
-  const c = hex.replace("#", "");
-  const r = parseInt(c.substr(0, 2), 16);
-  const g = parseInt(c.substr(2, 2), 16);
-  const b = parseInt(c.substr(4, 2), 16);
+  let c = hex.replace("#", "");
+  if (c.length === 3) c = c.replace(/./g, "$&$&"); // #abc → #aabbcc
+  const r = parseInt(c.slice(0, 2), 16);
+  const g = parseInt(c.slice(2, 4), 16);
+  const b = parseInt(c.slice(4, 6), 16);
   // Perceived luminance (sRGB) → choose dark text on light accents.
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
   return luminance > 0.6 ? "#0a0a0f" : "#ffffff";
@@ -87,6 +97,7 @@ function applyTheme() {
     const tone = deck.meta.card === "dark" ? "dark" : "light";
     el.card.dataset.tone = tone;
     document.body.dataset.cardTone = tone;
+    el.themeColor.content = THEME_COLOR[tone];
   }
 
   // Sync accent picker UI.
@@ -113,6 +124,7 @@ function showNextQuestion() {
 }
 
 function flipCard() {
+  if (!deck) return;                 // still loading the first deck
   const revealing = !el.card.classList.contains("is-flipped");
   if (revealing) {
     showNextQuestion();              // load a fresh question before showing the back
@@ -120,6 +132,14 @@ function flipCard() {
       started = true;
       el.hint.style.opacity = "0";   // fade the "tap to begin" prompt away
     }
+    // The button's label hides its content from screen readers, so put the
+    // question in the label and announce it through the live region.
+    const text = el.question.textContent;
+    el.card.setAttribute("aria-label", `${text} Flip card back.`);
+    el.announce.textContent = text;
+  } else {
+    el.card.setAttribute("aria-label", CARD_LABEL);
+    el.announce.textContent = "";
   }
   el.card.classList.toggle("is-flipped");
 }
@@ -127,6 +147,24 @@ function flipCard() {
 /** Reset the card to its logo side (used when switching decks). */
 function resetCard() {
   el.card.classList.remove("is-flipped");
+  el.card.setAttribute("aria-label", CARD_LABEL);
+  el.announce.textContent = "";
+}
+
+/** Flip back to the logo and show the right prompt for the deck's state. */
+function resetRound(loadFailed = false) {
+  resetCard();
+  started = false;
+  el.hint.style.opacity = "1";
+  if (loadFailed) {
+    el.hint.textContent = "Sorry — this deck failed to load.";
+  } else if (deck.size) {
+    el.hint.textContent = "Tap the card to begin";
+  } else if (deck.total && !settings.adult) {
+    el.hint.textContent = "No questions — try enabling the adult theme.";
+  } else {
+    el.hint.textContent = "This deck has no questions yet.";
+  }
 }
 
 /* =========================================================================
@@ -135,24 +173,24 @@ function resetCard() {
 
 async function activateDeck(deckId) {
   const meta = registry.find((d) => d.id === deckId) || registry[0];
-  settings.deckId = meta.id;
+  const mine = ++activation;
 
-  deck = new Deck(meta);
-  deck.includeAdult = settings.adult;
+  const next = new Deck(meta);
+  let loadFailed = false;
   try {
-    await deck.load();
+    await next.load();
   } catch (err) {
     console.error(err);
-    el.question.textContent = "Sorry — this deck failed to load.";
+    loadFailed = true;
   }
+  // A newer deck was picked while this one was loading — let that one win.
+  if (mine !== activation) return;
 
-  resetCard();
-  started = false;
-  el.hint.style.opacity = "1";
-  el.hint.textContent = deck.size
-    ? "Tap the card to begin"
-    : "No questions — try enabling the adult theme.";
+  deck = next;
+  deck.setAdult(settings.adult);
+  settings.deckId = meta.id;
 
+  resetRound(loadFailed);
   applyTheme();
   markSelectedDeck();
   saveSettings(settings);
@@ -170,15 +208,16 @@ function buildDeckList() {
     btn.className = "deck-option";
     if (meta.card === "dark") btn.classList.add("deck-option--dark");
     btn.dataset.deckId = meta.id;
+    btn.type = "button";
     btn.innerHTML = `
-      <img class="deck-option__logo" src="${meta.logo}" alt="" decoding="async"
-           onerror="this.onerror=null;this.src='${FALLBACK_LOGO}'">
+      <img class="deck-option__logo" alt="" decoding="async">
       <span class="deck-option__text">
         <span class="deck-option__name"></span>
         <span class="deck-option__tag"></span>
       </span>
       <span class="deck-option__check" aria-hidden="true">&#10003;</span>`;
-    // Assign text via textContent to avoid any HTML injection from data files.
+    // Assign data-file values via properties, never markup, to avoid injection.
+    setLogo(btn.querySelector(".deck-option__logo"), meta.logo);
     btn.querySelector(".deck-option__name").textContent = meta.name;
     btn.querySelector(".deck-option__tag").textContent = meta.tagline;
     btn.addEventListener("click", () => {
@@ -253,14 +292,10 @@ function wireEvents() {
   // Adult theme toggle
   el.adultToggle.addEventListener("change", () => {
     settings.adult = el.adultToggle.checked;
-    if (deck) deck.setAdult(settings.adult);
-    resetCard();
-    started = false;
-    el.hint.style.opacity = "1";
-    el.hint.textContent = deck && deck.size
-      ? "Tap the card to begin"
-      : "No questions — try enabling the adult theme.";
     saveSettings(settings);
+    if (!deck) return;               // applied when the first deck finishes loading
+    deck.setAdult(settings.adult);
+    resetRound();
   });
 
   // Custom accent colour
@@ -302,6 +337,7 @@ async function init() {
   await activateDeck(startId);
 
   registerServiceWorker();
+  setupInstall();
 }
 
 /** Register the service worker for offline use / installability. */
@@ -311,6 +347,53 @@ function registerServiceWorker() {
   navigator.serviceWorker.register("sw.js").catch((err) =>
     console.warn("Service worker registration failed:", err)
   );
+}
+
+/* =========================================================================
+   Install (Add to Home Screen)
+   Chromium fires `beforeinstallprompt` only when the app is installable
+   (served over HTTPS/localhost + valid manifest + active service worker).
+   We capture it and surface an in-app button so the user isn't reliant on
+   finding "Install app" in the browser menu. iOS Safari has no such API, so
+   we show manual instructions there instead.
+   ========================================================================= */
+let deferredInstallPrompt = null;
+
+function isStandalone() {
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.navigator.standalone === true
+  );
+}
+
+function setupInstall() {
+  if (isStandalone()) return; // already installed — nothing to offer
+
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();          // stop Chrome's mini-infobar
+    deferredInstallPrompt = event;
+    el.installSection.hidden = false; // reveal our in-menu button
+  });
+
+  el.installBtn.addEventListener("click", async () => {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    el.installSection.hidden = true;
+  });
+
+  window.addEventListener("appinstalled", () => {
+    deferredInstallPrompt = null;
+    el.installSection.hidden = true;
+  });
+
+  // iOS Safari: no beforeinstallprompt — offer manual Share → Add to Home Screen.
+  const ua = navigator.userAgent;
+  const isIOS = /iphone|ipad|ipod/i.test(ua) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const isSafari = /^((?!chrome|android|crios|fxios|edg).)*safari/i.test(ua);
+  if (isIOS && isSafari) el.iosHint.hidden = false;
 }
 
 init();

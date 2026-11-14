@@ -408,6 +408,334 @@
     {
       "text": "Would you rather reveal your body count or your bank balance to the table?",
       "adult": true
+    },
+    {
+      "text": "Have you ever laughed at exactly the wrong moment?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever called a teacher or a boss \"Mum\" or \"Dad\"?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever waved back at someone who wasn't waving at you?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever fallen asleep in a meeting or a class?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever drunk straight from the carton and put it back?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever blocked someone else's toilet and walked away?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever sent a message, panicked, and deleted it too late?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever googled a person before meeting them and then acted as if you knew nothing?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever nodded through directions and then gone the wrong way anyway?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever bought something expensive and hidden the price from someone?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever fallen over in public and pretended you meant to?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever driven off after a minor bump without leaving a note?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever said \"on my way\" while still in bed?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever forgotten a close friend's birthday and blamed the post?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever kept using someone's streaming password long after you should have stopped?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever invented an allergy to avoid eating someone's cooking?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever thrown away something that belonged to someone else and played dumb?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever sung confidently and got every lyric wrong?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever liked an old photo by accident while looking through someone's profile?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever touched something just because a sign said not to?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever walked out of a restaurant without paying?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever told a hairdresser you loved it and then cried in the car?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever peeked at your presents before the day?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever claimed to know a band you had never heard of?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever hidden from someone at your own front door?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever skipped a workout and still posted about it?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever cut your own hair and had to pay someone to fix it?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever spent bill money on something fun?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever talked about someone who turned out to be standing right behind you?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever lied to a child just to end the conversation?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever quit something on the very first day?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever lied to a doctor or a dentist about your habits?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever eavesdropped on strangers and got far too invested?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever locked yourself out wearing something you wouldn't want the neighbours to see?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever said yes to a favour and regretted it immediately?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever \"borrowed\" a book, a jumper or a charger and kept it forever?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever argued a point you knew was wrong, just to win?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever eaten something well past its date and paid the price?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever rehearsed an argument in the shower and still lost it?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever joined a queue without knowing what it was for?",
+      "adult": false
+    },
+    {
+      "text": "Would you rather relive your most embarrassing moment once a year or have it filmed and posted once?",
+      "adult": false
+    },
+    {
+      "text": "Would you rather give up your phone for a month or your bed for a month?",
+      "adult": false
+    },
+    {
+      "text": "Would you rather have a rewind button or a pause button for your life?",
+      "adult": false
+    },
+    {
+      "text": "Would you rather be the funniest person in the room or the smartest?",
+      "adult": false
+    },
+    {
+      "text": "Would you rather catch every lie told to you or get away with every lie you tell?",
+      "adult": false
+    },
+    {
+      "text": "Would you rather your parents saw your group chats or your friends heard your therapy sessions?",
+      "adult": false
+    },
+    {
+      "text": "Would you rather sit next to your ex or your boss on a ten-hour flight?",
+      "adult": false
+    },
+    {
+      "text": "Would you rather lose your sense of taste or your sense of humour?",
+      "adult": false
+    },
+    {
+      "text": "Would you rather be ten minutes late to everything or two hours early?",
+      "adult": false
+    },
+    {
+      "text": "Would you rather take back one thing you said or one thing you left unsaid?",
+      "adult": false
+    },
+    {
+      "text": "Would you rather have free flights for life or never pay for a meal again?",
+      "adult": false
+    },
+    {
+      "text": "Would you rather live without music or without the internet?",
+      "adult": false
+    },
+    {
+      "text": "Would you rather know everyone who has ever fancied you or everyone who has ever disliked you?",
+      "adult": false
+    },
+    {
+      "text": "Have you ever had a hookup interrupted by a pet?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever kissed more than one person in a single night?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever hooked up with someone your friends had warned you about?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever slid into a stranger's DMs?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever been caught watching something you shouldn't have been?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever had a holiday fling under a fake name?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever answered your phone in the middle of a hookup?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever hooked up with someone to get over someone else?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever bought something from a sex shop and hidden it badly?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever had a crush on a teacher or a boss?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever been interrupted in the middle of phone sex or a video call?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever texted someone else while on a date?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever broken a bed, or anything else, mid-hookup?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever stayed friends with an ex in the hope of something more?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever snuck someone in or out of a house without being noticed?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever played strip poker or any other stripping game?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever had a hookup that began as an argument?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever googled something about sex and cleared your history straight after?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever matched with someone you know on a dating app and swiped right anyway?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever kept an ex's photos \"just in case\"?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever gone on a second date only because you felt too awkward to say no?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever had a crush on a fictional character that got out of hand?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever had a romantic moment ruined by a bodily function?",
+      "adult": true
+    },
+    {
+      "text": "Have you ever written a love message you are glad you never sent?",
+      "adult": true
+    },
+    {
+      "text": "Would you rather your parents walked in on you or you walked in on them?",
+      "adult": true
+    },
+    {
+      "text": "Would you rather give up kissing or give up cuddling?",
+      "adult": true
+    },
+    {
+      "text": "Would you rather have one night with your celebrity crush or a lifetime with a terrible kisser?",
+      "adult": true
+    },
+    {
+      "text": "Would you rather read your partner's old love letters or have them read yours?",
+      "adult": true
+    },
+    {
+      "text": "Would you rather have great sex and bad conversation or the other way round?",
+      "adult": true
     }
   ]
 }

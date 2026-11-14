@@ -562,7 +562,7 @@
       "adult": false
     },
     {
-      "text": "Who do  you turn to for support?",
+      "text": "Who do you turn to for support?",
       "adult": false
     },
     {
@@ -863,6 +863,270 @@
     },
     {
       "text": "What does it mean to you to be loved unconditionally?",
+      "adult": true
+    },
+    {
+      "text": "What smell instantly takes you back to a specific time in your life?",
+      "adult": false
+    },
+    {
+      "text": "What is a small luxury you refuse to give up?",
+      "adult": false
+    },
+    {
+      "text": "Which teacher changed the way you think, and how?",
+      "adult": false
+    },
+    {
+      "text": "What did you get into trouble for most often as a child?",
+      "adult": false
+    },
+    {
+      "text": "What is a skill you have that nobody would guess?",
+      "adult": false
+    },
+    {
+      "text": "What sound do you find comforting?",
+      "adult": false
+    },
+    {
+      "text": "Which stranger do you still think about?",
+      "adult": false
+    },
+    {
+      "text": "What is the best meal you have ever had, and who was at the table?",
+      "adult": false
+    },
+    {
+      "text": "Which job taught you the most about people?",
+      "adult": false
+    },
+    {
+      "text": "What would you study if you went back to school tomorrow?",
+      "adult": false
+    },
+    {
+      "text": "Which film can you watch again and again, and what does it give you?",
+      "adult": false
+    },
+    {
+      "text": "What is your relationship with silence?",
+      "adult": false
+    },
+    {
+      "text": "What have you inherited from your family that isn't an object?",
+      "adult": false
+    },
+    {
+      "text": "If you could master one musical instrument overnight, which would it be?",
+      "adult": false
+    },
+    {
+      "text": "Which invention do you think has made life worse?",
+      "adult": false
+    },
+    {
+      "text": "What do you do differently from the way you were raised?",
+      "adult": false
+    },
+    {
+      "text": "Which season feels most like you, and why?",
+      "adult": false
+    },
+    {
+      "text": "What is the most spontaneous thing you have ever done?",
+      "adult": false
+    },
+    {
+      "text": "If a museum made an exhibit about you, what would be in the glass case?",
+      "adult": false
+    },
+    {
+      "text": "What are you a snob about?",
+      "adult": false
+    },
+    {
+      "text": "What is the best decision someone else ever made for you?",
+      "adult": false
+    },
+    {
+      "text": "What word or phrase do you say far too often?",
+      "adult": false
+    },
+    {
+      "text": "What do you pretend to like?",
+      "adult": false
+    },
+    {
+      "text": "Which place from your childhood no longer exists?",
+      "adult": false
+    },
+    {
+      "text": "What question are you tired of being asked?",
+      "adult": false
+    },
+    {
+      "text": "What do you do purely for the joy of it, with no goal at all?",
+      "adult": false
+    },
+    {
+      "text": "If an expert could teach you anything for one afternoon, what would you pick?",
+      "adult": false
+    },
+    {
+      "text": "If you could witness any event, past or future, without changing it, what would you choose?",
+      "adult": false
+    },
+    {
+      "text": "What is the most useful thing you own that cost less than $20?",
+      "adult": false
+    },
+    {
+      "text": "How do you behave when you are losing a game?",
+      "adult": false
+    },
+    {
+      "text": "What is your most controversial food opinion?",
+      "adult": false
+    },
+    {
+      "text": "Which of your scars has the best story?",
+      "adult": false
+    },
+    {
+      "text": "What is the longest you have gone without speaking to another person, and how was it?",
+      "adult": false
+    },
+    {
+      "text": "What does everyone seem to love that you just don't get?",
+      "adult": false
+    },
+    {
+      "text": "Who was your first real friend, and where are they now?",
+      "adult": false
+    },
+    {
+      "text": "What do you collect, on purpose or by accident?",
+      "adult": false
+    },
+    {
+      "text": "What is the best piece of news you ever received?",
+      "adult": false
+    },
+    {
+      "text": "What are you irrationally competitive about?",
+      "adult": false
+    },
+    {
+      "text": "What would you do with one extra hour every day?",
+      "adult": false
+    },
+    {
+      "text": "What tiny thing can a person do that instantly earns your respect?",
+      "adult": false
+    },
+    {
+      "text": "What is your pettiest dealbreaker in a friendship?",
+      "adult": false
+    },
+    {
+      "text": "Which language do you wish you spoke, and who would you speak it with?",
+      "adult": false
+    },
+    {
+      "text": "What mistake would you happily make again?",
+      "adult": false
+    },
+    {
+      "text": "Which of your opinions gets the strongest reaction at a dinner table?",
+      "adult": false
+    },
+    {
+      "text": "What was the first thing you bought with your own money?",
+      "adult": false
+    },
+    {
+      "text": "What are you surprisingly sentimental about?",
+      "adult": false
+    },
+    {
+      "text": "If your mood had a weather forecast for this week, what would it be?",
+      "adult": false
+    },
+    {
+      "text": "What does your handwriting say about you?",
+      "adult": false
+    },
+    {
+      "text": "Who have you been meaning to thank, and for what?",
+      "adult": false
+    },
+    {
+      "text": "Which place you have been felt like another planet?",
+      "adult": false
+    },
+    {
+      "text": "What do you think animals understand about us?",
+      "adult": false
+    },
+    {
+      "text": "What is the kindest lie you have ever been told?",
+      "adult": false
+    },
+    {
+      "text": "Which chapter of your life would you call \"the wilderness years\"?",
+      "adult": false
+    },
+    {
+      "text": "What do you know is good for you and still avoid?",
+      "adult": false
+    },
+    {
+      "text": "What secret did you keep for someone else that weighed on you?",
+      "adult": true
+    },
+    {
+      "text": "When did you last feel envy, and what did it tell you about what you want?",
+      "adult": true
+    },
+    {
+      "text": "What have you done that you are still not sure was right?",
+      "adult": true
+    },
+    {
+      "text": "Which part of your life do you edit out when you tell your story to new people?",
+      "adult": true
+    },
+    {
+      "text": "Who did you hurt without ever apologising?",
+      "adult": true
+    },
+    {
+      "text": "What do you fear people would think if they knew you completely?",
+      "adult": true
+    },
+    {
+      "text": "What is the loneliest you have ever been?",
+      "adult": true
+    },
+    {
+      "text": "What compulsion, big or small, have you wrestled with?",
+      "adult": true
+    },
+    {
+      "text": "What have you made peace with about death, and what haven't you?",
+      "adult": true
+    },
+    {
+      "text": "Which relationship ended without the ending you needed?",
+      "adult": true
+    },
+    {
+      "text": "When has anger served you well?",
+      "adult": true
+    },
+    {
+      "text": "What desire have you never acted on?",
       "adult": true
     }
   ]
