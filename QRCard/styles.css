@@ -456,7 +456,8 @@ small, .muted { color: var(--muted); font-size: 12px; }
   *, *::before, *::after { transition-duration: .01ms !important; }
 }
 
-.menu .ver { display: block; padding: 6px 12px 4px; font-size: 11px; color: var(--chrome-muted, #888); }
+/* the menu panel is always dark, whatever the backdrop: don't use the backdrop's text colour here */
+.menu .ver { display: block; padding: 6px 12px 4px; font-size: 11px; color: var(--muted); }
 /* logo adjuster */
 .logo-adjust { display: flex; flex-direction: column; gap: 8px; }
 .logo-adjust[hidden] { display: none; }

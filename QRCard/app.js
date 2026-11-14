@@ -12,7 +12,7 @@ import { paintSurface } from './surfaces.js';
   const STORE = 'qrcards.v1';
   const LEGACY_STORE = 'qrcube.v1';   // QR Cube's saved sides, carried over on first launch
   const HOLD_MS = 380;        // hold this long to pick a card up for reordering
-  const DOUBLE_TAP_MS = 350;  // max gap between the two taps of a double-tap
+  const DOUBLE_TAP_MS = 300;  // a tap waits this long for a second one before it counts as a single tap
   const DOUBLE_TAP_PX = 60;   // max distance between them
   const MOVE_TOL = { mouse: 6, pen: 10, touch: 12 };  // px of wobble before a press becomes a scroll
   const LOGO_FRACTION = 0.22; // logo width as a share of the QR width
@@ -297,7 +297,7 @@ import { paintSurface } from './surfaces.js';
   /** Pull a card out of the stack (or, with no id, put it back). */
   function present(id) {
     const next = id && cardById(id) ? id : null;
-    clearTimeout(fullTimer);
+    cancelTap();
     if (next === selected) return;
     selected = next;
     if (selected) stage.scrollTop = 0;
@@ -357,9 +357,10 @@ import { paintSurface } from './surfaces.js';
    * ================================================================ */
   let g = null;               // current press: {pid, id, el, x0, y0, y, mode: 'pending' | 'scroll' | 'drag'}
   let suppressClick = false;  // the press that just ended was a scroll, a reorder or a flick, not a tap
-  let lastTap = null;         // {id, t, x, y} of the last tap on a card, for double-tap
-  let fullTimer = 0;          // a tap on the open card waits this out, in case it is a double-tap
+  let pendingTap = null;      // {id, t, x, y}: a tap on a card that is waiting to see if a second tap follows
+  let tapTimer = 0;
   let lastPointerType = 'mouse';
+  const cancelTap = () => { clearTimeout(tapTimer); pendingTap = null; };
   const cardAt = e => { const el = e.target.closest?.('.card'); return el && stack.contains(el) ? el : null; };
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
@@ -373,7 +374,7 @@ import { paintSurface } from './surfaces.js';
     const now = performance.now();
     if (selected) {
       // A card is out of the stack: it can be flicked down to put it back.
-      if (!e.target.closest('.actions')) g = { pid: e.pointerId, el: els.get(selected), x0: e.clientX, y0: e.clientY, y: e.clientY, py: e.clientY, t: now, pt: now,
+      if (!e.target.closest('.actions')) g = { pid: e.pointerId, el: els.get(selected), x0: e.clientX, y0: e.clientY, y: e.clientY, trail: [{ y: e.clientY, t: now }],
                                                mode: 'pull0', tol: MOVE_TOL[e.pointerType] ?? MOVE_TOL.touch };
       return;
     }
@@ -422,8 +423,8 @@ import { paintSurface } from './surfaces.js';
 
   stage.addEventListener('pointermove', e => {
     if (!g || e.pointerId !== g.pid) return;
-    g.py = g.y; g.pt = g.t;
-    g.y = e.clientY; g.t = performance.now();
+    g.y = e.clientY;
+    if (g.trail) { g.trail.push({ y: g.y, t: performance.now() }); if (g.trail.length > 24) g.trail.shift(); }
     if (g.mode === 'pull0' && Math.hypot(e.clientX - g.x0, e.clientY - g.y0) > g.tol) {
       g.mode = 'pull';
       try { stage.setPointerCapture(g.pid); } catch { /* pointer already gone */ }
@@ -437,8 +438,9 @@ import { paintSurface } from './surfaces.js';
     if (g.mode === 'pending' && Math.hypot(e.clientX - g.x0, e.clientY - g.y0) > g.tol) { clearTimeout(g.hold); g.mode = 'scroll'; }
     if (g.mode === 'drag') { placeDrag(); autoScroll(); }
   });
-  // Once a card has been picked up, the finger moves the card, not the page.
-  stage.addEventListener('touchmove', e => { if (drag && e.cancelable) e.preventDefault(); }, { passive: false });
+  // Once a card has been picked up, or while one is out of the stack, the finger moves
+  // the card, not the page.
+  stage.addEventListener('touchmove', e => { if ((drag || selected) && e.cancelable) e.preventDefault(); }, { passive: false });
 
   function finishDrag(commit) {
     const d = drag;
@@ -462,8 +464,10 @@ import { paintSurface } from './surfaces.js';
   /** Let go of the open card: far or fast enough downwards puts it back in the stack. */
   function endPull(was, commit) {
     was.el?.classList.remove('pulling');
-    const dy = was.y - was.y0, v = (was.y - was.py) / Math.max(was.t - was.pt, 1);   // px/ms at release
-    if (commit && (dy > 90 || (dy > 16 && v > 0.4))) present(null);
+    // Speed over the last tenth of a second or so, so one late, slow sample can't hide a flick.
+    const now = performance.now(), ref = was.trail.find(p => now - p.t <= 130);
+    const dy = was.y - was.y0, v = ref ? (was.y - ref.y) / Math.max(now - ref.t, 1) : 0;   // px/ms
+    if (commit && (dy > 70 || (dy > 12 && v > 0.25))) present(null);
     else layout();
   }
   // Forget any half-finished press. Called whenever an overlay closes, and when the
@@ -482,21 +486,24 @@ import { paintSurface } from './surfaces.js';
   stage.addEventListener('pointercancel', e => endGesture(e, true));
 
   stage.addEventListener('click', e => {
-    if (suppressClick) { suppressClick = false; lastTap = null; return; }
+    if (suppressClick) { suppressClick = false; return; }
     if (e.target.closest('.actions, .empty')) return;
-    const id = cardAt(e)?.dataset.id, now = performance.now();
-    clearTimeout(fullTimer);
-    // The second tap of a double-tap edits the card the first tap landed on. It is judged
-    // by time and distance, not by what is under it: the first tap has already moved the card.
-    if (lastTap && now - lastTap.t < DOUBLE_TAP_MS && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < DOUBLE_TAP_PX) {
-      const target = lastTap.id;
-      lastTap = null;
-      if (cardById(target)) { navigator.vibrate?.(8); present(target); openEditor(target); return; }
+    const id = cardAt(e)?.dataset.id, now = performance.now(), first = pendingTap;
+    cancelTap();
+    if (first) {
+      // A second tap close to the first, in time and place: a double-tap, which edits the
+      // card and leaves the stack as it is. Otherwise the first tap was a single tap after all.
+      if (now - first.t < DOUBLE_TAP_MS && Math.hypot(e.clientX - first.x, e.clientY - first.y) < DOUBLE_TAP_PX) {
+        if (cardById(first.id)) { navigator.vibrate?.(8); openEditor(first.id); }
+        return;
+      }
+      activate(first.id);
     }
-    lastTap = id && (!selected || id === selected) ? { id, t: now, x: e.clientX, y: e.clientY } : null;
-    if (id && id === selected && encodeCard(cardById(id))) {
-      // On the open card a single tap shows the code full screen, once it is clear no second tap is coming.
-      fullTimer = setTimeout(() => { if (selected === id && !isOpen()) openFull(cardById(id)); }, DOUBLE_TAP_MS);
+    // A tap on a card (in the stack, or the open one) waits a moment in case a second follows.
+    // Taps anywhere else, which only put the open card back, act at once.
+    if (id && (!selected || id === selected)) {
+      pendingTap = { id, t: now, x: e.clientX, y: e.clientY };
+      tapTimer = setTimeout(() => { pendingTap = null; if (!isOpen()) activate(id); }, DOUBLE_TAP_MS);
       return;
     }
     activate(id);
@@ -859,7 +866,7 @@ import { paintSurface } from './surfaces.js';
   /** Edit the card with this id, or (with no id) start a new card. */
   function openEditor(id) {
     updatePreviewSoon.cancel(); maybeFetchFavicon.cancel(); commitAdjust.cancel();
-    clearTimeout(fullTimer);
+    cancelTap();
     closeMenu();
     session++;
     const existing = cardById(id);
