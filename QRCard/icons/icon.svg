@@ -1,33 +1,33 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Full-bleed so iOS/Android can apply their own corner mask. The die stays
+  <!-- Full-bleed so iOS/Android can apply their own corner mask. The stack stays
        inside the central 80% circle, so the same art works as a maskable icon. -->
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#26335c"/>
-      <stop offset="1" stop-color="#0e1222"/>
+      <stop offset="0" stop-color="#14857a"/>
+      <stop offset="1" stop-color="#06302f"/>
     </linearGradient>
-    <radialGradient id="shadow" cx=".5" cy=".5" r=".5">
-      <stop offset="0" stop-color="#000" stop-opacity=".55"/>
-      <stop offset="1" stop-color="#000" stop-opacity="0"/>
-    </radialGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".28"/>
+      <stop offset=".45" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
   </defs>
   <rect width="512" height="512" fill="url(#bg)"/>
-  <ellipse cx="256" cy="452" rx="150" ry="26" fill="url(#shadow)"/>
 
-  <g stroke-linejoin="round" stroke-width="14">
-    <!-- top, left (QR side), right -->
-    <path d="M104 184 256 96 408 184 256 272Z" fill="#fbf8f1" stroke="#fbf8f1"/>
-    <path d="M104 184 256 272V448L104 360Z" fill="#ebe6db" stroke="#ebe6db"/>
-    <path d="M408 184 256 272V448L408 360Z" fill="#cdc6b7" stroke="#cdc6b7"/>
-  </g>
+  <!-- three cards, back to front; each casts a soft edge on the one behind -->
+  <rect x="132" y="104" width="248" height="308" rx="28" fill="#f5a524"/>
+  <rect x="132" y="104" width="248" height="308" rx="28" fill="url(#sheen)"/>
+  <rect x="152" y="121" width="74" height="11" rx="5.5" fill="#fff" opacity=".8"/>
 
-  <!-- top: one pip -->
-  <g transform="matrix(1.52 -.88 1.52 .88 104 184)">
-    <circle cx="50" cy="50" r="11" fill="#1f2a4d"/>
-  </g>
+  <rect x="132" y="143" width="248" height="269" rx="28" fill="#000" opacity=".22"/>
+  <rect x="132" y="150" width="248" height="262" rx="28" fill="#ef5b4c"/>
+  <rect x="132" y="150" width="248" height="262" rx="28" fill="url(#sheen)"/>
+  <rect x="152" y="167" width="96" height="11" rx="5.5" fill="#fff" opacity=".8"/>
 
-  <!-- left: a QR code -->
-  <g transform="matrix(1.52 .88 0 1.76 104 184)" fill="#1f2a4d">
+  <rect x="132" y="189" width="248" height="223" rx="28" fill="#000" opacity=".22"/>
+  <rect x="132" y="196" width="248" height="216" rx="28" fill="#fbf8f1"/>
+
+  <!-- front card: a QR code -->
+  <g transform="translate(161 209) scale(1.9)" fill="#0b3b3a">
     <path d="M12 12h28v28H12zM16 16v20h20V16z" fill-rule="evenodd"/>
     <rect x="21" y="21" width="10" height="10"/>
     <path d="M60 12h28v28H60zM64 16v20h20V16z" fill-rule="evenodd"/>
@@ -41,11 +41,5 @@
     <rect x="46" y="67" width="14" height="7"/><rect x="67" y="60" width="7" height="14"/>
     <rect x="81" y="67" width="7" height="7"/><rect x="46" y="81" width="7" height="7"/>
     <rect x="60" y="81" width="14" height="7"/><rect x="81" y="81" width="7" height="7"/>
-  </g>
-
-  <!-- right: two pips -->
-  <g transform="matrix(1.52 -.88 0 1.76 256 272)" fill="#1f2a4d">
-    <circle cx="28" cy="30" r="10"/>
-    <circle cx="72" cy="70" r="10"/>
   </g>
 </svg>
