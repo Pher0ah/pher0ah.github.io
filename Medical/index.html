@@ -370,6 +370,35 @@ tr.clk{cursor:pointer}
 .evr .b{min-width:0;flex:1}
 .evr .imp{font-size:12.5px;color:var(--tx3);display:-webkit-box;-webkit-line-clamp:3;line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-top:2px}
 
+/* lab flowsheet */
+.fs-wrap{--fs0:230px;overflow:auto;-webkit-overflow-scrolling:touch;max-height:calc(100vh - 230px);
+  border:1px solid var(--line);border-radius:var(--rs);background:var(--panel);box-shadow:var(--shadow)}
+table.fs{table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:12.5px;width:auto}
+.fs col.c0{width:var(--fs0)}
+.fs col.cv{width:72px}
+.fs th,.fs td{padding:0 8px;height:28px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap;overflow:hidden}
+.fs tbody tr:last-child td{border-bottom:none}
+.fs thead th{position:sticky;top:0;z-index:3;background:var(--panel);text-align:right;text-transform:none;letter-spacing:0;
+  font-size:11.5px;font-weight:640;color:var(--tx2);line-height:1.25;height:38px;padding:3px 8px;border-bottom:1px solid var(--line2)}
+.fs thead th.fs-corner{left:0;z-index:5;text-align:left;text-transform:uppercase;letter-spacing:.05em;font-size:11px;color:var(--tx3)}
+.fs td{text-align:right}
+.fs td.fs-n{position:sticky;left:0;z-index:2;text-align:left;background:var(--panel);border-right:1px solid var(--line);line-height:1.2;padding:3px 8px;height:34px}
+.fs td.fs-n small{display:block;font-size:10.5px;color:var(--tx3);overflow:hidden;text-overflow:ellipsis}
+.fs-nm{cursor:pointer;font-weight:560;display:block;overflow:hidden;text-overflow:ellipsis}
+.fs-nm:hover{color:var(--acc)}
+.fs td.fs-hi{background:var(--badBg)}
+.fs td.fs-lo{background:var(--lowBg)}
+.fs .fl{margin-left:3px}
+.fs-tx{font-size:11px;color:var(--tx3)}
+.fs-t1{font-size:12px;color:var(--tx2)}
+.fs tr.fs-cat td{overflow:visible;background:var(--panel2);text-align:left;padding:0;height:24px;font-size:11px;font-weight:660;
+  text-transform:uppercase;letter-spacing:.05em;color:var(--tx2)}
+.fs tr.fs-cat span{position:sticky;left:8px;display:inline-block;z-index:1}
+.fs tbody tr:not(.fs-cat):hover td:not(.fs-hi):not(.fs-lo){background:var(--panel2)}
+@media (max-width:720px){
+  .fs-wrap{--fs0:150px;max-height:calc(100vh - 290px)}
+}
+
 /* mobile */
 @media (max-width:720px){
   .wrap{padding:0 11px}
@@ -1245,7 +1274,7 @@ const KEY="healthrecord.v2";
 const LS={ get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
            set(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ return false; } },
            ok(){ try{ localStorage.setItem("__t","1"); localStorage.removeItem("__t"); return true; }catch(e){ return false; } } };
-const S={ data:null, edit:false, tab:"overview", range:"R3", labCat:"all", labQ:"", vRange:"R3", srcLabel:"" };
+const S={ data:null, edit:false, tab:"overview", range:"R3", labCat:"all", labQ:"", labView:"sheet", labCols:8, labAbn:false, vRange:"R3", srcLabel:"" };
 const REG=new Map(); let regN=0;
 function reg(o){ const k="r"+(++regN); REG.set(k,o); return k; }
 
@@ -2000,18 +2029,41 @@ const DEFAULT_FOLLOWUPS=[];  /* clinical prompts live in the record as followUps
 
 
 /* ---------------------------------------------------------------- labs */
+/* tests in catalogue order (the key order of testCatalog), grouped by category in order of first appearance */
+function labOrder(ids){
+  const pos=new Map(); Object.keys(S.data.testCatalog||{}).forEach((k,i)=>pos.set(k,i));
+  const P=id=>pos.has(id)?pos.get(id):1e9;
+  const s=ids.slice().sort((a,b)=>P(a)-P(b));
+  const rank=new Map(); s.forEach(i=>{ const g=cat(i).category; if(!rank.has(g)) rank.set(g,rank.size); });
+  return s.sort((a,b)=>rank.get(cat(a).category)-rank.get(cat(b).category));
+}
+const LAB_COLS=[[8,"Last 8"],[16,"Last 16"],[0,"All"]];
 function vLabs(){
   const v=$("#v-labs"); v.innerHTML="";
-  const ids=testIds();
-  const cats=Array.from(new Set(ids.map(i=>cat(i).category))).sort();
+  const ids=labOrder(testIds());
+  const cats=Array.from(new Set(ids.map(i=>cat(i).category)));
+  const sheet=S.labView!=="trends";
 
   const bar=document.createElement("div"); bar.className="toolbar";
   const sb=document.createElement("div"); sb.className="searchbar";
   sb.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>'+
-    '<input type="search" placeholder="Search tests\u2026" value="'+esc(S.labQ)+'">';
-  sb.querySelector("input").addEventListener("input",e=>{S.labQ=e.target.value; drawList();});
+    '<input type="search" placeholder="Search tests…" value="'+esc(S.labQ)+'">';
+  sb.querySelector("input").addEventListener("input",e=>{S.labQ=e.target.value; draw();});
   bar.appendChild(sb);
-  bar.appendChild(rangeBar(S.range,r=>{S.range=r; vLabs();}));
+  const vw=document.createElement("div"); vw.className="ranges";
+  vw.innerHTML='<button data-v="sheet"'+(sheet?' class="on"':'')+'>Flowsheet</button><button data-v="trends"'+(sheet?'':' class="on"')+'>Trends</button>';
+  vw.addEventListener("click",e=>{const b=e.target.closest("button"); if(b&&b.dataset.v!==(sheet?"sheet":"trends")){ S.labView=b.dataset.v; vLabs(); }});
+  bar.appendChild(vw);
+  if(sheet){
+    const cw=document.createElement("div"); cw.className="ranges";
+    cw.innerHTML=LAB_COLS.map(c=>'<button data-n="'+c[0]+'"'+(S.labCols===c[0]?' class="on"':'')+' title="Visits shown as columns">'+c[1]+'</button>').join("");
+    cw.addEventListener("click",e=>{const b=e.target.closest("button"); if(b){ S.labCols=+b.dataset.n; vLabs(); }});
+    bar.appendChild(cw);
+    const ab=document.createElement("button"); ab.className="chip"+(S.labAbn?" on":""); ab.textContent="Abnormal only";
+    ab.title="Only tests with a High or Low result in the visits shown"; ab.setAttribute("aria-pressed",S.labAbn?"true":"false");
+    ab.addEventListener("click",()=>{ S.labAbn=!S.labAbn; vLabs(); });
+    bar.appendChild(ab);
+  } else bar.appendChild(rangeBar(S.range,r=>{S.range=r; vLabs();}));
   v.appendChild(bar);
 
   const chips=document.createElement("div"); chips.className="chips"; chips.style.marginBottom="14px";
@@ -2021,19 +2073,20 @@ function vLabs(){
   chips.addEventListener("click",e=>{const b=e.target.closest(".chip"); if(!b)return; S.labCat=b.dataset.c; vLabs();});
   v.appendChild(chips);
 
-  const hint=document.createElement("div"); hint.className="small muted";
-  hint.style.margin="0 0 10px"; hint.textContent="Tap a test to open its history.";
-  v.appendChild(hint);
-
-  const list=document.createElement("div"); v.appendChild(list);
-  function drawList(){
-    clearCharts(); list.innerHTML="";
+  const out=document.createElement("div"); v.appendChild(out);
+  function pick(){
     const q=S.labQ.trim().toLowerCase();
-    let ls=ids.filter(i=>(S.labCat==="all"||cat(i).category===S.labCat) &&
-      (!q||cat(i).name.toLowerCase().includes(q)||i.includes(q)));
-    ls.sort((a,b)=>{ const A=cat(a),B=cat(b);
-      return A.category===B.category ? A.name.localeCompare(B.name) : A.category.localeCompare(B.category); });
-    if(!ls.length){ list.innerHTML='<div class="empty">No tests match \u201c'+esc(S.labQ)+'\u201d</div>'; return; }
+    return ids.filter(i=>(S.labCat==="all"||cat(i).category===S.labCat) &&
+      (!q||cat(i).name.toLowerCase().includes(q)||i.toLowerCase().includes(q)));
+  }
+  function draw(){ clearCharts(); out.innerHTML=""; if(sheet) drawSheet(pick()); else drawTrends(pick()); }
+
+  function drawTrends(ls){
+    const hint=document.createElement("div"); hint.className="small muted";
+    hint.style.margin="0 0 10px"; hint.textContent="Tap a test to open its history.";
+    out.appendChild(hint);
+    const list=document.createElement("div"); out.appendChild(list);
+    if(!ls.length){ list.innerHTML='<div class="empty">No tests match “'+esc(S.labQ)+'”</div>'; return; }
     let lastCat=null;
     ls.forEach(id=>{
       const c=cat(id);
@@ -2046,7 +2099,79 @@ function vLabs(){
       const row=accRow(id); if(row) list.appendChild(row);
     });
   }
-  drawList();
+
+  /* cumulative results table: tests down the side, visits across the top (newest first) */
+  function drawSheet(ls){
+    const res=S.data.labResults||[];
+    /* one pass: visits, and test -> visit -> result */
+    const vis=new Map(), idx={};
+    res.forEach(r=>{
+      const k=r.date+"|"+(r.source||"");
+      if(!vis.has(k)) vis.set(k,{k:k,date:r.date,src:r.source||"",t:pd(r.date)});
+      (idx[r.test]||(idx[r.test]={}))[k]=r;
+    });
+    const all=Array.from(vis.values()).sort((a,b)=>(b.t-a.t)||a.src.localeCompare(b.src));
+    const cols=S.labCols>0?all.slice(0,S.labCols):all;
+    if(!cols.length){ out.innerHTML='<div class="empty">No lab results recorded yet.</div>'; return; }
+    /* cell content and flag for each test over the visible visits */
+    let noRes=0; const rows=[];
+    ls.forEach(id=>{
+      const c=cat(id), row=idx[id]||{}; let any=false, abn=false;
+      const cells=cols.map(col=>{
+        const r=row[col.k]; if(!r) return {td:'<td></td>'};
+        any=true;
+        const isN=typeof r.value==="number", f=isN?flagOf(r.value,c.refLow,c.refHigh):"na";
+        if(f==="hi"||f==="lo") abn=true;
+        const tip=[]; if(r.orig) tip.push("as reported "+r.orig.value+(r.orig.unit?" "+r.orig.unit:""));
+        const sr=srcRefOf(r); if(sr) tip.push("lab range "+refTxt(sr.lo,sr.hi,c.decimals));
+        const title=tip.length?tip.join(" · "):(r.source||"");
+        const body=isN?'<span class="num">'+fmtVal(r.value,c.decimals)+'</span>'+flagChip(f)+(r.text?' <span class="fs-tx">'+esc(r.text)+'</span>':'')
+          :'<span class="fs-tx fs-t1">'+esc(r.text||"—")+'</span>';
+        return {td:'<td class="'+(f==="hi"?"fs-hi":f==="lo"?"fs-lo":"")+'" title="'+esc(title)+'">'+body+'</td>'};
+      });
+      if(!any){ noRes++; return; }
+      if(S.labAbn && !abn) return;
+      rows.push({id:id,c:c,cells:cells});
+    });
+    if(!rows.length){
+      out.innerHTML='<div class="empty">'+(S.labAbn&&noRes<ls.length?'No High or Low results in the visits shown.':
+        ls.length?'No results for these tests in the visits shown.':'No tests match “'+esc(S.labQ)+'”')+'</div>';
+    } else {
+      const info=document.createElement("div"); info.className="small muted"; info.style.margin="0 0 8px";
+      info.textContent=rows.length+" test"+(rows.length===1?"":"s")+" · "+cols.length+" visit"+(cols.length===1?"":"s")+
+        " shown of "+all.length+" · newest on the left · H / L judged against the "+refLabName()+" range";
+      out.appendChild(info);
+      let h='<div class="fs-wrap"><table class="fs" style="width:calc(var(--fs0) + '+(cols.length*72)+'px)">'+
+        '<colgroup><col class="c0">'+cols.map(()=>'<col class="cv">').join("")+'</colgroup>'+
+        '<thead><tr><th class="fs-corner">Test</th>'+cols.map(col=>{
+          const s=fmtD(col.date), i=s.lastIndexOf(" ");
+          return '<th class="fs-d" title="'+esc(col.src||"")+'">'+esc(i<0?s:s.slice(0,i))+(i<0?"":'<br>'+esc(s.slice(i+1)))+'</th>';
+        }).join("")+'</tr></thead><tbody>';
+      let last=null;
+      rows.forEach(r=>{
+        if(r.c.category!==last){ last=r.c.category;
+          h+='<tr class="fs-cat"><td colspan="'+(cols.length+1)+'"><span>'+esc(last)+'</span></td></tr>'; }
+        const meta=[unitTxt(r.c.unit)].concat((r.c.refLow!=null||r.c.refHigh!=null)?[refTxt(r.c.refLow,r.c.refHigh,r.c.decimals)]:[]).filter(Boolean).join(" · ");
+        h+='<tr><td class="fs-n"><span class="fs-nm" data-t="'+esc(r.id)+'" title="Open the history of '+esc(r.c.name)+'">'+esc(r.c.name)+'</span>'+
+          (meta?'<small>'+esc(meta)+'</small>':'')+'</td>'+r.cells.map(x=>x.td).join("")+'</tr>';
+      });
+      const wrap=document.createElement("div"); wrap.innerHTML=h+'</tbody></table></div>';
+      const box=wrap.firstChild;
+      box.addEventListener("click",e=>{const n=e.target.closest("[data-t]"); if(n) openTest(n.dataset.t);});
+      out.appendChild(box);
+    }
+    if(noRes){
+      const m=document.createElement("div"); m.className="small muted"; m.style.margin="8px 0 0";
+      m.appendChild(document.createTextNode(noRes+" test"+(noRes===1?" has":"s have")+" no result in these visits"));
+      if(S.labCols>0){
+        m.appendChild(document.createTextNode(" — "));
+        const b=document.createElement("button"); b.className="lnk"; b.textContent="show all visits";
+        b.addEventListener("click",()=>{ S.labCols=0; vLabs(); }); m.appendChild(b);
+      }
+      out.appendChild(m);
+    }
+  }
+  draw();
 }
 
 /* one folded row: latest result only, until it is opened */
