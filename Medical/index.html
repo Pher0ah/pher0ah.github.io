@@ -236,6 +236,21 @@ tr:last-child td{border-bottom:none}
 .tl-bar.now{background-image:linear-gradient(90deg,currentColor 70%,transparent)}
 .tl-bar:hover{filter:brightness(1.12);z-index:5}
 .tl-today{position:absolute;top:0;bottom:0;width:2px;background:var(--bad);opacity:.55;z-index:4}
+.tl-row.tl-head{height:26px;background:var(--panel2)}
+.tl-hd{position:sticky;left:0;display:flex;align-items:center;gap:7px;padding:0 4px 0 8px;font-size:11px;font-weight:660;
+  text-transform:uppercase;letter-spacing:.05em;color:var(--tx2);white-space:nowrap}
+.tl-hd i{width:9px;height:9px;border-radius:3px;flex:0 0 auto}
+.sw{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px;vertical-align:0}
+
+/* treatment strip under a chart */
+.ts{margin-top:4px}
+.ts-in{position:relative;overflow:hidden}
+.ts-row{position:relative;height:13px}
+.ts-bar{position:absolute;top:1px;height:11px;border-radius:4px;white-space:nowrap}
+.ts-f{position:absolute;inset:0;border-radius:4px}
+.ts-t{position:relative;display:block;padding:0 5px;font-size:9.5px;line-height:11px;color:var(--tx);font-weight:560}
+.ts-more,.ts-cap{font-size:10.5px;color:var(--tx3);margin-top:2px;line-height:1.35}
+tr.dim td:not(.nt){opacity:.5}
 
 /* ============================================================ modal */
 .ov{position:fixed;inset:0;background:rgba(8,12,22,.62);backdrop-filter:blur(3px);z-index:100;
@@ -1274,7 +1289,7 @@ const KEY="healthrecord.v2";
 const LS={ get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
            set(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ return false; } },
            ok(){ try{ localStorage.setItem("__t","1"); localStorage.removeItem("__t"); return true; }catch(e){ return false; } } };
-const S={ data:null, edit:false, tab:"overview", range:"R3", labCat:"all", labQ:"", labView:"sheet", labCols:8, labAbn:false, vRange:"R3", srcLabel:"" };
+const S={ data:null, edit:false, tab:"overview", range:"R3", labCat:"all", labQ:"", labView:"sheet", labCols:8, labAbn:false, vRange:"L30", vExcl:true, srcLabel:"" };
 const REG=new Map(); let regN=0;
 function reg(o){ const k="r"+(++regN); REG.set(k,o); return k; }
 
@@ -1283,9 +1298,11 @@ const RANGES=[{k:"R3",n:"Last 3",pts:3},{k:"1Y",y:1},{k:"3Y",y:3},{k:"5Y",y:5},
 /* Opening window for a series. "Last 3" follows the data instead of the calendar,
    so a test last run years ago still opens on its own readings rather than on an
    empty stretch of the last three years. */
-function windowFor(range,pts){
+/* the Vitals tab has its own list: blood pressure comes in bursts, so it counts readings */
+const VRANGES=[{k:"L30",n:"Last 30",pts:30},{k:"L90",n:"Last 90",pts:90},{k:"1Y",y:1},{k:"5Y",y:5},{k:"ALL",y:null}];
+function windowFor(range,pts,list){
   if(range==="ALL"||!pts||!pts.length) return {};
-  const r=RANGES.find(x=>x.k===range);
+  const r=(list||RANGES).find(x=>x.k===range);
   if(r&&r.pts){
     const slice=pts.slice(-r.pts);
     const a=slice[0].t, b=slice[slice.length-1].t;
@@ -1295,7 +1312,7 @@ function windowFor(range,pts){
     const to=Math.min(b+pad, Math.max(b,anchorTime())+Math.min(pad,DAY*45));
     return {from:a-pad, to:to};
   }
-  return {from:cutoff(range), to:anchorTime()};
+  return {from:cutoff(range,list), to:anchorTime()};
 }
 function anchorTime(){
   let mx=Date.now();
@@ -1303,7 +1320,7 @@ function anchorTime(){
   (S.data.vitals||[]).forEach(r=>{const t=pd(r.date); if(t>mx) mx=t;});
   return mx;
 }
-function cutoff(range){ const r=RANGES.find(x=>x.k===range); return (!r||!r.y)?-Infinity:anchorTime()-r.y*365.25*DAY; }
+function cutoff(range,list){ const r=(list||RANGES).find(x=>x.k===range); return (!r||!r.y)?-Infinity:anchorTime()-r.y*365.25*DAY; }
 
 /* ==================================================================== data */
 function cat(id){ return (S.data.testCatalog||{})[id] || {name:id,unit:"",category:"Other",decimals:2}; }
@@ -1482,7 +1499,8 @@ function drawChart(cv,cfg,win){
     if(bf) L.push("Previous: "+fmtVal(bf.v,cfg.decimals)+" "+unitTxt(cfg.unit)+" \u00b7 "+fmtT(bf.t));
     if(af) L.push("Next: "+fmtVal(af.v,cfg.decimals)+" "+unitTxt(cfg.unit)+" \u00b7 "+fmtT(af.t));
     L.slice(0,axis?3:2).forEach((m,i,ar)=>x.fillText(m,W/2,H/2+(i-(ar.length-1)/2)*15+4));
-    return null;
+    /* no points to inspect, but a treatment strip still needs the time axis */
+    return {empty:true,X:t=>PL+(t-t0)/Math.max(1,(t1-t0))*w,t0:t0,t1:t1,PL:PL,PT:PT,w:w,h:h,W:W,H:H};
   }
 
   let dMin=Math.min.apply(null,vis.map(p=>p.v)), dMax=Math.max.apply(null,vis.map(p=>p.v));
@@ -1492,6 +1510,9 @@ function drawChart(cv,cfg,win){
   if(band.hi!=null) hi=Math.max(hi,band.hi);
   const dSpan=Math.max(dMax-dMin,1e-9);
   if((hi-lo)>dSpan*3.2){ lo=Math.max(lo,dMin-dSpan*0.9); hi=Math.min(hi,dMax+dSpan*0.9); }
+  /* reference lines (e.g. a blood-pressure target) are always inside the scale */
+  const lines=(cfg.lines||[]).filter(l=>l&&isFinite(l.v));
+  lines.forEach(l=>{ if(l.v<lo) lo=l.v; if(l.v>hi) hi=l.v; });
   if(hi-lo<1e-9){ const p=Math.abs(hi)*0.12||1; lo-=p; hi+=p; }
   const padv=(hi-lo)*0.10; lo-=padv; hi+=padv;
 
@@ -1532,7 +1553,7 @@ function drawChart(cv,cfg,win){
     pt.inW.forEach(p=>line.push(p));
     if(pt.after) line.push(pt.after);
     if(!line.length) return;
-    if(line.length>1){
+    if(line.length>1&&!s.noLine){
       if(s.fill){
         const g=x.createLinearGradient(0,PT,0,PT+h);
         g.addColorStop(0,s.color+"33"); g.addColorStop(1,s.color+"00");
@@ -1545,9 +1566,14 @@ function drawChart(cv,cfg,win){
       x.beginPath(); line.forEach((p,i)=> i?x.lineTo(X(p.t),Y(p.v)):x.moveTo(X(p.t),Y(p.v)));
       x.stroke(); x.setLineDash([]);
     }
-    const dots=pt.inW, showAll=dots.length<=90;
+    const dots=pt.inW, showAll=dots.length<=(s.hollow?400:90);
     dots.forEach((p,i)=>{
       const last=(i===dots.length-1);
+      if(s.hollow){   /* readings the device itself flagged: hollow, never joined */
+        if(!showAll) return;
+        x.beginPath(); x.arc(X(p.t),Y(p.v),3,0,7); x.fillStyle=cssv("--panel"); x.fill();
+        x.strokeStyle=s.color; x.lineWidth=1.4; x.stroke(); return;
+      }
       if(!showAll&&!last) return;
       x.beginPath(); x.arc(X(p.t),Y(p.v),last?3.6:2.6,0,7);
       x.fillStyle=(s.dotByFlag&&p.flag)?flagColor(p.flag):s.color; x.fill();
@@ -1555,6 +1581,14 @@ function drawChart(cv,cfg,win){
     });
   });
   x.restore();
+  if(lines.length){
+    x.save(); x.beginPath(); x.rect(PL-1,PT-4,w+2,h+8); x.clip();
+    x.setLineDash([6,4]); x.lineWidth=1.3; x.font="bold 10px -apple-system,system-ui,sans-serif"; x.textAlign="right";
+    lines.forEach(l=>{ const y=Math.round(Y(l.v))+.5;
+      x.strokeStyle=l.color; x.globalAlpha=.85; x.beginPath(); x.moveTo(PL,y); x.lineTo(PL+w,y); x.stroke();
+      x.globalAlpha=1; x.fillStyle=l.color; x.fillText(String(l.label==null?l.v:l.label),PL+w-3,y-3); });
+    x.restore();
+  }
   return {X:X,Y:Y,t0:t0,t1:t1,lo:lo,hi:hi,PL:PL,PT:PT,w:w,h:h,W:W,H:H};
 }
 
@@ -1578,8 +1612,8 @@ function drawBrush(cv,cfg,full,win,compact){
   x.fillStyle=cssv("--panel2"); rrect(x,PL,PT,w,h,7); x.fill();
   x.save(); rrect(x,PL,PT,w,h,7); x.clip();
   cfg.series.forEach(s=>{
-    if(s.points.length<2){
-      s.points.forEach(p=>{ x.fillStyle=s.color; x.beginPath(); x.arc(X(p.t),Y(p.v),2,0,7); x.fill(); });
+    if(s.points.length<2||s.noLine){
+      s.points.forEach(p=>{ x.fillStyle=s.color; x.beginPath(); x.arc(X(p.t),Y(p.v),s.noLine?1.5:2,0,7); x.fill(); });
       return;
     }
     x.strokeStyle=s.color; x.lineWidth=1.2; x.globalAlpha=.85; x.lineJoin="round";
@@ -1664,7 +1698,7 @@ function attachScrub(box,cv,view){
   const cfg=view.cfg;
   function move(ev){
     const g=box._geo;
-    if(!g){ tip.classList.remove("on"); return; }
+    if(!g||g.empty){ tip.classList.remove("on"); return; }
     const rect=cv.getBoundingClientRect();
     const mx=(ev.touches?ev.touches[0].clientX:ev.clientX)-rect.left;
     let best=null,bd=1e12;
@@ -1700,8 +1734,71 @@ function attachScrub(box,cv,view){
   cv.addEventListener("pointercancel",end);
 }
 
+/* ---- treatment strip: which medicines a chart is read against ----
+   Generic clinical defaults by drug class; a medication may override them with its own
+   `affects` list (test keys and/or "bp", "weight"). */
+const TREAT_DEFAULT={
+  "Lipid-lowering":{cats:["Lipids"]},
+  "Antihypertensive":{keys:["bp"]},
+  "GLP-1 / GIP agonist":{keys:["hba1c","glucose_fasting","glucose_pp","weight"]},
+  "Antidiabetic":{keys:["hba1c","glucose_fasting","glucose_pp","weight"]},
+  "Urate-lowering":{keys:["uric_acid"]},
+  "Thyroid":{keys:["tsh","ft4"]}
+};
+function medAffects(m,key,category){
+  if(Array.isArray(m.affects)) return m.affects.indexOf(key)>=0;
+  const d=TREAT_DEFAULT[m.cls]; if(!d) return false;
+  return (!!d.keys&&d.keys.indexOf(key)>=0)||(!!d.cats&&!!category&&d.cats.indexOf(category)>=0);
+}
+/* one line of the generic-first name: "generic (brand)" as plain text */
+function medPlain(m){ return m.generic?m.generic+(m.name&&m.name!==m.generic?" ("+m.name+")":""):(m.name||"?"); }
+function treatItems(spec,full){
+  const now=Date.now(), FADE=2*365.25*DAY, out=[];
+  (Array.isArray(S.data.medications)?S.data.medications:[]).forEach(m=>{
+    if(!m||typeof m!=="object"||!medAffects(m,spec.key,spec.cat)) return;
+    let a=m.start?pd(m.start):null, b=m.end?pd(m.end):null, fl=false, fr=false;
+    if(a!=null&&isNaN(a)) a=null; if(b!=null&&isNaN(b)) b=null;
+    if(a==null){ a=(b!=null?b:now)-FADE; fl=true; }
+    if(b==null){ if(m.status==="active") b=now; else{ b=Math.min(now,a+FADE); fr=true; } }
+    b=Math.max(a+DAY*10,b);
+    if(a>full.t1||b<full.t0) return;
+    out.push({m:m,a:a,b:b,fl:fl,fr:fr});
+  });
+  out.sort((p,q)=>(q.b-p.b)||(q.a-p.a));
+  return out;
+}
+/* -> {el, set(geo)} or null when no medicine is relevant. Bars are placed from the plot's
+   geometry (box._geo) and re-placed on every render, so they follow the dial and zoom. */
+function treatStrip(spec,full){
+  const all=treatItems(spec,full); if(!all.length) return null;
+  const items=all.slice(0,8), more=all.length-items.length;
+  const el=document.createElement("div"); el.className="ts";
+  el.innerHTML='<div class="ts-in">'+items.map(it=>{
+      const m=it.m, C=CLSCOL[m.cls]||CLSCOL.Other;
+      const bg=it.fl&&it.fr?"linear-gradient(90deg,transparent,"+C+"73 32%,"+C+"73 68%,transparent)"
+        :it.fl?"linear-gradient(90deg,transparent,"+C+"73 48%,"+C+"73)"
+        :it.fr?"linear-gradient(90deg,"+C+"73,"+C+"73 52%,transparent)":C+"73";
+      const tip=medPlain(m)+(m.dose?" · "+m.dose:"")+" · "+(m.start?fmtD(m.start):"?")+" → "+
+        (m.end?fmtD(m.end):m.status==="active"?"present":"?")+(it.fl?" — start date not recorded":"")+(it.fr?" — end date not recorded":"");
+      return '<div class="ts-row"><div class="ts-bar" title="'+esc(tip)+'"><div class="ts-f" style="background:'+bg+'"></div>'+
+        '<span class="ts-t">'+esc((m.generic||m.name||"?")+(m.dose?" "+m.dose:""))+'</span></div></div>';
+    }).join("")+'</div>'+(more>0?'<div class="ts-more">+'+more+' more</div>':"")+
+    '<div class="ts-cap">Treatment over the same period</div>';
+  const inn=el.querySelector(".ts-in"), bars=$$(".ts-bar",el);
+  return {el:el,set:function(g){
+    if(!g){ el.style.visibility="hidden"; return; }
+    el.style.visibility=""; el.style.paddingLeft=g.PL+"px"; inn.style.width=g.w+"px";
+    items.forEach((it,i)=>{
+      const L=Math.max(0,g.X(it.a)-g.PL), R=Math.min(g.w,g.X(it.b)-g.PL), b=bars[i];
+      if(!(R>L)){ b.style.display="none"; return; }
+      b.style.display=""; b.style.left=L+"px"; b.style.width=Math.max(3,R-L)+"px";
+    });
+  }};
+}
+
 const CHARTS=new Set();
-/* opt.brush : "full" | "compact" | false */
+/* opt.brush : "full" | "compact" | false
+   opt.treat : {key,cat?} adds a treatment strip (medicines relevant to that test, "bp" or "weight") */
 function mountChart(box,cfg,opt){
   opt=opt||{};
   const main=document.createElement("canvas"); box.appendChild(main);
@@ -1718,6 +1815,8 @@ function mountChart(box,cfg,opt){
   view.win={ t0:(cfg.from!=null?cfg.from:view.full.t0), t1:(cfg.to!=null?cfg.to:view.full.t1) };
   clampWin(view);
 
+  const strip=opt.treat?treatStrip(opt.treat,view.full):null;
+  if(strip) box.appendChild(strip.el);
   const mode=opt.brush||false;
   let bwrap=null,bcv=null,lbl=null;
   if(mode){
@@ -1745,6 +1844,7 @@ function mountChart(box,cfg,opt){
   }
   view.render=function(){
     box._geo=drawChart(main,cfg,view.win);
+    if(strip) strip.set(box._geo);
     if(bcv) drawBrush(bcv,cfg,view.full,view.win,mode==="compact");
     if(lbl){
       const sp=view.win.t1-view.win.t0, y=sp/(365.25*DAY), ys=nf(y,1);
@@ -1835,9 +1935,9 @@ function go(tab){
   ({overview:vOverview,labs:vLabs,vitals:vVitals,meds:vMeds,conditions:vConditions,
     food:vFood,events:vEvents})[tab]();
 }
-function rangeBar(cur,on){
+function rangeBar(cur,on,list){
   const w=document.createElement("div"); w.className="ranges";
-  w.innerHTML=RANGES.map(r=>'<button data-r="'+r.k+'"'+(cur===r.k?' class="on"':'')+'>'+(r.n||r.k)+'</button>').join("");
+  w.innerHTML=(list||RANGES).map(r=>'<button data-r="'+r.k+'"'+(cur===r.k?' class="on"':'')+'>'+(r.n||r.k)+'</button>').join("");
   w.addEventListener("click",e=>{const b=e.target.closest("button"); if(b) on(b.dataset.r);});
   return w;
 }
@@ -2239,7 +2339,7 @@ function testBody(testId,rng){
     ', so the whole history is measured the same way. Where the reporting laboratory printed a '+
     'different range it is shown above and marked \u2260.</div>';
   const box=wrap.querySelector(".chartbox");
-  if(hasChart) mountChart(box,labSeriesCfg(testId,rng||S.range,{height:220,axis:true}),{brush:"full"});
+  if(hasChart) mountChart(box,labSeriesCfg(testId,rng||S.range,{height:220,axis:true}),{brush:"full",treat:{key:testId,cat:c.category}});
   else box.parentElement.innerHTML='<div class="acc-empty">Qualitative test \u2014 see the results below.</div>';
   $$("[data-del]",wrap).forEach(b=>b.addEventListener("click",()=>{
     if(!confirm("Delete this result?")) return;
@@ -2280,58 +2380,90 @@ function bpCat(s,d){
   if(s>=120) return {t:"Elevated",c:"p-wn"};
   return {t:"Normal",c:"p-ok"};
 }
+/* blood-pressure target from the record ("130/80"); 130/80 when absent or unreadable */
+function bpTarget(){
+  const m=/^\s*(\d{2,3})\s*\/\s*(\d{2,3})\s*$/.exec(String(S.data.bpTarget==null?"":S.data.bpTarget));
+  const s=m?+m[1]:130, d=m?+m[2]:80;
+  return {s:s,d:d,txt:s+"/"+d};
+}
 function vVitals(){
   const v=$("#v-vitals"); v.innerHTML=""; clearCharts();
   const all=(S.data.vitals||[]).slice().sort((a,b)=>
     (pd(a.date)-pd(b.date))||String(a.time||"").localeCompare(String(b.time||"")));
   if(!all.length){ v.innerHTML='<div class="card empty">No vitals recorded yet. Switch on <b>Edit</b>, then use <b>Add</b> to log a blood-pressure reading.</div>'; return; }
 
+  const tOf=r=>pd(r.date)+(r.time?(parseInt(r.time.slice(0,2),10)*3600+parseInt(r.time.slice(3,5),10)*60)*1000:0);
+  const hourOf=r=>{ const h=parseInt(String(r.time||"").slice(0,2),10); return isNaN(h)?null:h; };
+  const mean=a=>a.reduce((x,y)=>x+y,0)/a.length;
+  const bpAll=all.filter(r=>r.systolic!=null);
+  const flaggedN=all.filter(r=>r.quality).length, tg=bpTarget();
+  let upd=function(){};   /* redraws the statistics and the log for the chart's current window */
+
   const bar=document.createElement("div"); bar.className="toolbar";
   bar.innerHTML='<h2 style="font-size:16px;margin-right:auto">Blood pressure & vital signs</h2>';
-  bar.appendChild(rangeBar(S.vRange,r=>{S.vRange=r; vVitals();}));
+  bar.appendChild(rangeBar(S.vRange,r=>{S.vRange=r; vVitals();},VRANGES));
   v.appendChild(bar);
 
-  const tOf=r=>pd(r.date)+(r.time?(parseInt(r.time.slice(0,2),10)*3600+parseInt(r.time.slice(3,5),10)*60)*1000:0);
-  const bpAll=all.filter(r=>r.systolic!=null);
-  const bpWin=windowFor(S.vRange,bpAll.map(r=>({t:tOf(r)})));
-  const wFrom=bpWin.from!=null?bpWin.from:-Infinity, wTo=bpWin.to!=null?bpWin.to:Infinity;
-  const rows=all.filter(r=>{const t=tOf(r); return t>=wFrom&&t<=wTo;});
-  const use=rows.length?rows:all;
+  if(flaggedN){
+    const cr=document.createElement("div"); cr.className="toolbar";
+    cr.innerHTML='<button class="chip'+(S.vExcl?" on":"")+'" aria-pressed="'+(S.vExcl?"true":"false")+'">Leave out '+flaggedN+
+      ' reading'+(flaggedN===1?"":"s")+' the device flagged as unreliable</button>';
+    cr.firstChild.addEventListener("click",e=>{ const b=e.currentTarget; S.vExcl=!S.vExcl;
+      b.classList.toggle("on",S.vExcl); b.setAttribute("aria-pressed",S.vExcl?"true":"false"); upd(); });
+    v.appendChild(cr);
+  }
 
-  const bp=use.filter(r=>r.systolic!=null);
-  const last=bpAll.slice(-1)[0];
-  if(bp.length){
-    const sysV=bp.map(r=>r.systolic), diaV=bp.map(r=>r.diastolic), pulV=bp.filter(r=>r.pulse!=null).map(r=>r.pulse);
-    const avg=a=>a.reduce((x,y)=>x+y,0)/a.length;
-    const inT=bp.filter(r=>r.systolic<130&&r.diastolic<80).length;
-    const cta=bpCat(last.systolic,last.diastolic);
-    const st=document.createElement("div"); st.className="grid g-tiles sec";
-    st.innerHTML=[
-      ["Latest",last.systolic+"/"+last.diastolic,fmtD(last.date)+(last.time?" "+last.time:"")+" · "+cta.t],
-      ["Average",Math.round(avg(sysV))+"/"+Math.round(avg(diaV)),bp.length+" readings in this window"],
-      ["Highest",Math.max.apply(null,sysV)+"/"+Math.max.apply(null,diaV),"peak systolic / peak diastolic"],
-      ["Lowest",Math.min.apply(null,sysV)+"/"+Math.min.apply(null,diaV),"trough systolic / trough diastolic"],
-      ["At target",Math.round(inT/bp.length*100)+"%","below 130/80"],
-      ["Resting pulse",pulV.length?Math.round(avg(pulV)):"—",pulV.length?"range "+Math.min.apply(null,pulV)+"–"+Math.max.apply(null,pulV)+" bpm":"—"],
-    ].map(t=>'<div class="card stat"><div class="l">'+t[0]+'</div><div class="v num">'+esc(t[1])+'</div><div class="s">'+esc(t[2])+'</div></div>').join("");
-    v.appendChild(st);
+  const bpWin=windowFor(S.vRange,bpAll.map(r=>({t:tOf(r)})),VRANGES);
+  const wFrom=bpWin.from!=null?bpWin.from:-Infinity, wTo=bpWin.to!=null?bpWin.to:Infinity;
+  const rows0=all.filter(r=>{const t=tOf(r); return t>=wFrom&&t<=wTo;});
+  const use=rows0.length?rows0:all;
+
+  let bpView=null, pv=null, st=null;
+  if(bpAll.length){
+    const L=bpAll[bpAll.length-1];
+    const info=document.createElement("div"); info.className="small"; info.style.margin="0 0 10px";
+    info.innerHTML='<b>Latest:</b> <b class="num">'+esc(L.systolic+(L.diastolic!=null?"/"+L.diastolic:""))+'</b> <span class="muted">mmHg</span> · '+
+      esc(fmtD(L.date)+(L.time?" "+L.time:""))+(L.source?' · '+esc(L.source):"")+(L.quality?' <span class="tagw">flagged by device</span>':"");
+    v.appendChild(info);
+    st=document.createElement("div"); st.className="grid g-tiles sec"; v.appendChild(st);
 
     const cd=document.createElement("div"); cd.className="card sec"; cd.style.padding="12px 8px 6px";
     const cb=document.createElement("div"); cb.className="chartbox"; cd.appendChild(cb);
     v.appendChild(cd);
-    mountChart(cb,{
+    const cBad=cssv("--bad"), cAcc=cssv("--acc"), cGrey=cssv("--tx3"), cOk=cssv("--ok");
+    const ser=(rs,f)=>rs.filter(r=>r[f]!=null&&isFinite(+r[f])).map(r=>({t:tOf(r),v:+r[f],rec:r}));
+    const okR=bpAll.filter(r=>!r.quality), flR=bpAll.filter(r=>r.quality);
+    bpView=mountChart(cb,{
       series:[
-        {name:"Systolic",points:bpAll.map(r=>({t:tOf(r),v:r.systolic,rec:r})),color:cssv("--bad"),width:2},
-        {name:"Diastolic",points:bpAll.map(r=>({t:tOf(r),v:r.diastolic,rec:r})),color:cssv("--acc"),width:2},
-        {name:"Pulse",points:bpAll.filter(r=>r.pulse!=null).map(r=>({t:tOf(r),v:r.pulse,rec:r})),color:cssv("--tx3"),width:1.3,dash:[4,3]},
-      ],
-      band:{lo:70,hi:130}, decimals:0, unit:"mmHg", height:270, axis:true,
+        {name:"Systolic",points:ser(okR,"systolic"),color:cBad,width:2},
+        {name:"Diastolic",points:ser(okR,"diastolic"),color:cAcc,width:2},
+        {name:"Systolic (flagged)",points:ser(flR,"systolic"),color:cGrey,noLine:true,hollow:true},
+        {name:"Diastolic (flagged)",points:ser(flR,"diastolic"),color:cGrey,noLine:true,hollow:true}
+      ].filter(s=>s.points.length),
+      lines:[{v:tg.s,label:String(tg.s),color:cBad},{v:tg.d,label:String(tg.d),color:cAcc}],
+      decimals:0, unit:"mmHg", height:270, axis:true,
       from:bpWin.from, to:bpWin.to
-    },{brush:"full"});
-    const lg=document.createElement("div"); lg.className="legend"; lg.style.margin="-8px 0 18px";
-    lg.innerHTML='<span><i style="background:'+cssv("--bad")+'"></i>Systolic</span><span><i style="background:'+cssv("--acc")+'"></i>Diastolic</span>'+
-      '<span><i style="background:'+cssv("--tx3")+'"></i>Pulse (bpm)</span><span><i style="background:var(--band);border:1px solid var(--line2)"></i>Target zone 70–130</span>';
-    v.appendChild(lg);
+    },{brush:"full",treat:{key:"bp"}});
+    const dash=c=>'<i style="width:16px;height:0;background:none;border-top:2px dashed '+c+';border-radius:0;vertical-align:3px"></i>';
+    const lg=document.createElement("div"); lg.className="legend"; lg.style.margin="6px 8px 4px";
+    lg.innerHTML='<span><i style="background:'+cBad+'"></i>Systolic</span><span><i style="background:'+cAcc+'"></i>Diastolic</span>'+
+      (flR.length?'<span><i style="background:none;border:1.5px solid '+cGrey+';border-radius:50%"></i>Flagged by device (not joined)</span>':"")+
+      '<span>'+dash(cBad)+'Target systolic '+tg.s+'</span><span>'+dash(cAcc)+'Target diastolic '+tg.d+'</span>';
+    cd.appendChild(lg);
+
+    /* pulse: its own small chart on the same time window as the pressure chart */
+    const pAll=all.filter(r=>r.pulse!=null&&isFinite(+r.pulse));
+    if(pAll.length){
+      const ph=document.createElement("div"); ph.className="legend"; ph.style.margin="8px 8px 0";
+      ph.innerHTML='<span><i style="background:'+cOk+'"></i>Pulse (bpm)</span>';
+      const pb=document.createElement("div"); pb.className="chartbox";
+      cd.appendChild(ph); cd.appendChild(pb);
+      pv=mountChart(pb,{series:[
+          {name:"Pulse",points:ser(pAll.filter(r=>!r.quality),"pulse"),color:cOk,width:1.6},
+          {name:"Pulse (flagged)",points:ser(pAll.filter(r=>r.quality),"pulse"),color:cGrey,noLine:true,hollow:true}
+        ].filter(s=>s.points.length),decimals:0,unit:"bpm",height:110,axis:true},{brush:false});
+      pv.win={t0:bpView.win.t0,t1:bpView.win.t1}; pv.render();
+    }
   }
 
   /* other numeric vitals if present */
@@ -2351,7 +2483,7 @@ function vVitals(){
         '<div class="tk-v"><b class="num">'+nf(lastv[e[0]],e[3])+'</b><span class="tk-u">'+e[2]+'</span></div>'+
         '<div class="chartbox"></div><div class="tk-f"><span>'+fmtD(lastv.date)+'</span><span>'+pts.length+' readings</span></div>';
       g.appendChild(card);
-      const exWin=windowFor(S.vRange,allPts);
+      const exWin=windowFor(S.vRange,allPts,VRANGES);
       mountChart(card.querySelector(".chartbox"),{series:[{name:e[1],points:allPts,color:cssv("--acc"),fill:true}],
         decimals:e[3],unit:e[2],height:96,axis:false, from:exWin.from, to:exWin.to},
         {brush:allPts.length>1?"compact":false});
@@ -2359,31 +2491,82 @@ function vVitals(){
     s.appendChild(g); v.appendChild(s);
   }
 
-  /* table */
+  /* reading log: the readings inside the chart's window, newest first */
   const s=document.createElement("div"); s.className="sec";
-  s.innerHTML='<div class="sech"><h2>Reading log</h2><span class="sub">'+use.length+' entries · newest first</span></div>'+
+  s.innerHTML='<div class="sech"><h2>Reading log</h2><span class="sub"></span></div>'+
     '<div class="card tbl-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>BP</th><th>Pulse</th>'+
-    '<th>Category</th><th>Note</th><th></th></tr></thead><tbody>'+
-    use.slice().reverse().map(r=>{
-      const c=r.systolic?bpCat(r.systolic,r.diastolic):null;
-      return '<tr><td class="num">'+fmtD(r.date)+'</td><td class="num muted">'+esc(r.time||"—")+'</td>'+
-      '<td class="num"><b>'+(r.systolic?r.systolic+"/"+r.diastolic:"—")+'</b></td>'+
-      '<td class="num">'+(r.pulse!=null?r.pulse:"—")+'</td>'+
-      '<td>'+(c?'<span class="pill '+c.c+'">'+c.t+'</span>':"—")+'</td>'+
-      '<td class="small muted">'+(r.quality?'<span class="pill p-wn">'+esc((S.data.qualityCodes&&S.data.qualityCodes[r.quality])||r.quality)+'</span> ':'')+esc(r.note||"")+(r.medTaken?' <span class="pill p-acc">med taken</span>':"")+'</td>'+
-      '<td><button class="del" data-del="'+reg(r)+'">×</button></td></tr>';
-    }).join("")+'</tbody></table></div>';
+    '<th>Category</th><th>Device</th><th>Notes</th><th></th></tr></thead><tbody></tbody></table></div>';
   v.appendChild(s);
-  $$("[data-del]",s).forEach(b=>b.addEventListener("click",()=>{
+  const logSub=$(".sub",s), logBody=$("tbody",s), qc=S.data.qualityCodes||{};
+  s.addEventListener("click",e=>{
+    const b=e.target.closest("[data-del]"); if(!b) return;
     if(!confirm("Delete this reading?")) return;
     const o=REG.get(b.dataset.del), i=S.data.vitals.indexOf(o);
     if(i>=0){S.data.vitals.splice(i,1); save(); vVitals(); renderBanner(); toast("Reading deleted");}
-  }));
+  });
+
+  upd=function(){
+    const w=bpView?bpView.win:{t0:-Infinity,t1:Infinity};
+    const rows=all.filter(r=>{ if(r.systolic==null&&r.pulse==null) return false; const t=tOf(r); return t>=w.t0&&t<=w.t1; });
+    if(st){
+      const ok=rows.filter(r=>!(S.vExcl&&r.quality)), b=ok.filter(r=>r.systolic!=null);
+      const sy=b.map(r=>+r.systolic), di=b.filter(r=>r.diastolic!=null).map(r=>+r.diastolic), n=b.length;
+      const pair=rs=>{ if(!rs.length) return "—";
+        const d=rs.filter(r=>r.diastolic!=null).map(r=>+r.diastolic);
+        return Math.round(mean(rs.map(r=>+r.systolic)))+(d.length?"/"+Math.round(mean(d)):""); };
+      const inH=(r,a,z)=>{ const h=hourOf(r); return h!=null&&h>=a&&h<=z; };
+      const mo=b.filter(r=>inH(r,4,11)), ev=b.filter(r=>inH(r,17,23));
+      const ct=n?bpCat(Math.round(mean(sy)),di.length?Math.round(mean(di)):0):null;
+      const hi=b.filter(r=>+r.systolic>=tg.s||(r.diastolic!=null&&+r.diastolic>=tg.d)).length;
+      const rg=a=>Math.min.apply(null,a)+"–"+Math.max.apply(null,a);
+      const ms=n?mean(sy):0, sd=n>1?Math.sqrt(sy.reduce((x,y)=>x+(y-ms)*(y-ms),0)/(n-1)):null;
+      const pu=ok.filter(r=>r.pulse!=null&&isFinite(+r.pulse)).map(r=>+r.pulse);
+      const cnt=k=>k+" reading"+(k===1?"":"s");
+      const T=[
+        ["Mean BP",pair(b),n?cnt(n)+' <span class="pill '+(ct.t==="Normal"?"p-mut":ct.c)+'">'+ct.t+'</span>':"no readings in this window"],
+        ["Morning",pair(mo),(mo.length?cnt(mo.length)+" · ":"none · ")+"04:00–11:59"],
+        ["Evening",pair(ev),(ev.length?cnt(ev.length)+" · ":"none · ")+"17:00–23:59"],
+        ["At or above target",n?Math.round(hi/n*100)+"%":"—",(n?hi+" of "+n+" · ":"")+"target "+tg.txt],
+        ["Range",n?rg(sy)+(di.length?" / "+rg(di):""):"—",n?"SD "+(sd!=null?"±"+Math.round(sd):"—")+" (systolic)":"—"],
+        ["Pulse",pu.length?Math.round(mean(pu)):"—",pu.length?"range "+rg(pu)+" bpm":"—"]
+      ];
+      st.innerHTML=T.map(t=>'<div class="card stat"><div class="l">'+t[0]+'</div><div class="v num"'+
+        (t[0]==="Range"?' style="font-size:18px;padding:2px 0"':'')+'>'+esc(t[1])+'</div><div class="s">'+t[2]+'</div></div>').join("");
+    }
+    const CAP=400, list=rows.slice().reverse(), fl=rows.filter(r=>r.quality).length;
+    logSub.textContent=rows.length+" entries"+(fl?" · "+fl+" flagged":"")+" · newest first"+(list.length>CAP?" · showing the newest "+CAP:"");
+    logBody.innerHTML=list.length?list.slice(0,CAP).map(r=>{
+      const c=r.systolic!=null?bpCat(r.systolic,r.diastolic!=null?r.diastolic:0):null;
+      return '<tr'+(r.quality?' class="dim"':'')+'><td class="num">'+esc(fmtD(r.date))+'</td><td class="num muted">'+esc(r.time||"—")+'</td>'+
+      '<td class="num"><b>'+(r.systolic!=null?esc(r.systolic+(r.diastolic!=null?"/"+r.diastolic:"")):"—")+'</b></td>'+
+      '<td class="num">'+(r.pulse!=null?esc(r.pulse):"—")+'</td>'+
+      '<td>'+(c?'<span class="pill '+c.c+'">'+c.t+'</span>':"—")+'</td>'+
+      '<td class="small muted">'+esc(r.source||"—")+'</td>'+
+      '<td class="small muted nt">'+(r.quality?'<span class="pill p-wn">'+esc(qc[r.quality]||r.quality)+'</span> ':'')+esc(r.note||"")+(r.medTaken?' <span class="pill p-acc">med taken</span>':"")+'</td>'+
+      '<td><button class="del" data-del="'+reg(r)+'">×</button></td></tr>';
+    }).join(""):'<tr><td colspan="8" class="muted">No readings in this window</td></tr>';
+  };
+  if(bpView){
+    let tm=null;
+    bpView.onWindow=function(){
+      if(pv){ pv.win={t0:bpView.win.t0,t1:bpView.win.t1}; pv.render(); }
+      clearTimeout(tm); tm=setTimeout(upd,150);
+    };
+  }
+  upd();
 }
 
 /* ---------------------------------------------------------------- timeline */
 const CLSCOL={"Antihypertensive":"#ef4444","Lipid-lowering":"#3b82f6","Antiplatelet":"#a855f7",
-  "Supplement":"#22c55e","GLP-1 / GIP agonist":"#f59e0b","Other":"#64748b"};
+  "Supplement":"#22c55e","GLP-1 / GIP agonist":"#f59e0b",
+  "Antidiabetic":"#06b6d4","Anticoagulant":"#db2777","Urate-lowering":"#84cc16","Thyroid":"#6366f1",
+  "Analgesic / anti-inflammatory":"#f97316","Gastrointestinal":"#a16207","Respiratory":"#0ea5e9",
+  "Antimicrobial":"#0f766e","Psychotropic":"#c026d3","Other":"#64748b"};
+/* generic name first (brands differ between countries), brand in muted brackets */
+function medName(m){
+  return m.generic?'<b>'+esc(m.generic)+'</b>'+(m.name&&m.name!==m.generic?' <span class="muted">('+esc(m.name)+')</span>':"")
+    :'<b>'+esc(m.name||"—")+'</b>';
+}
 function condColor(c){ return {severe:"#dc2626",moderate:"#f59e0b",mild:"#3b82f6"}[c.severity]||"#64748b"; }
 const EV_LABEL={lab:"Laboratory results",imaging:"Imaging report",pathology:"Pathology report",
   report:"Clinical records","self-reported":"Self-reported \u2014 not in any report"};
@@ -2406,10 +2589,12 @@ function evidenceBlock(c){
 }
 function buildTimeline(items,opt){
   /* items: {label, sub, start, end, ongoing, color, text}
+     or a group heading {head:true, label, color}, drawn as a full-width lane title.
      A missing start, or a missing end on a finished course, is drawn as a faded edge —
      never as a bar running all the way to today. */
   const now=Date.now(), FADE=2*365.25*DAY;
-  items.forEach(i=>{
+  const bars=items.filter(i=>!i.head);
+  bars.forEach(i=>{
     let a=i.start?pd(i.start):null, b=i.end?pd(i.end):null;
     i._fl=false; i._fr=false;
     if(a==null){ a=(b!=null?b:now)-FADE; i._fl=true; }
@@ -2420,7 +2605,7 @@ function buildTimeline(items,opt){
     i._a=a; i._b=Math.max(a+DAY*10,b);
   });
   let t0=Infinity,t1=now;
-  items.forEach(i=>{ t0=Math.min(t0,i._a); t1=Math.max(t1,i._b); });
+  bars.forEach(i=>{ t0=Math.min(t0,i._a); t1=Math.max(t1,i._b); });
   if(!isFinite(t0)) return document.createTextNode("");
   const y0=new Date(t0).getUTCFullYear(), y1=new Date(t1).getUTCFullYear()+1;
   const T0=Date.UTC(y0,0,1), T1=Date.UTC(y1,0,1);
@@ -2437,6 +2622,11 @@ function buildTimeline(items,opt){
   ax+='</div>';
   tl.innerHTML=ax;
   items.forEach(i=>{
+    if(i.head){
+      const hr=document.createElement("div"); hr.className="tl-row tl-head";
+      hr.innerHTML='<div class="tl-hd"><i style="background:'+esc(i.color)+'"></i>'+esc(i.label)+'</div>';
+      tl.appendChild(hr); return;
+    }
     const L=Math.max(0,pct(i._a)), R=Math.min(100,pct(i._b)), C=i.color;
     let bg;
     if(i._fl&&i._fr) bg="linear-gradient(90deg,transparent,"+C+" 32%,"+C+" 68%,transparent)";
@@ -2463,31 +2653,48 @@ function vMeds(){
   const v=$("#v-meds"); v.innerHTML=""; clearCharts();
   const meds=(S.data.medications||[]).slice();
   if(!meds.length){ v.innerHTML='<div class="card empty">No medication recorded yet.</div>'; return; }
-  const active=meds.filter(m=>m.status==="active");
-  const other=meds.filter(m=>m.status!=="active");
+  const gen=m=>String(m.generic||m.name||"");
+  const clsOf=m=>m.cls||"Other", colOf=m=>CLSCOL[m.cls]||CLSCOL.Other;
+  const order=Object.keys(CLSCOL), clsRank=c=>{ const i=order.indexOf(c); return i<0?order.length:i; };
+  const curCmp=(a,b)=>String(a.cls||"￿").localeCompare(String(b.cls||"￿"))||gen(a).localeCompare(gen(b));
+  const active=meds.filter(m=>m.status==="active").sort(curCmp), unk=meds.filter(m=>m.status==="unknown").sort(curCmp);
+  const cur=active.concat(unk), now=Date.now();
 
   const s1=document.createElement("div"); s1.className="sec";
-  s1.innerHTML='<div class="sech"><h2>Current medication</h2><span class="sub">'+active.length+' active</span></div>';
-  const g=document.createElement("div"); g.className="grid g-2";
-  active.forEach(m=>g.appendChild(medCard(m)));
-  s1.appendChild(g); v.appendChild(s1);
+  s1.innerHTML='<div class="sech"><h2>Current medication</h2><span class="sub">'+active.length+' active'+
+    (unk.length?' · '+unk.length+' unconfirmed':'')+'</span></div>'+
+    (cur.length?'<div class="card tbl-wrap"><table><thead><tr><th>Medicine</th><th>Class</th><th>Dose</th><th>Schedule</th>'+
+    '<th>Since</th><th>Prescriber</th><th>Note</th></tr></thead><tbody>'+
+    cur.map(m=>'<tr><td>'+medName(m)+(m.status==="unknown"?'<span class="tagw">unconfirmed</span>':"")+'</td>'+
+      '<td class="small">'+(m.cls?'<span class="sw" style="background:'+colOf(m)+'"></span>'+esc(m.cls):"—")+'</td>'+
+      '<td class="small num">'+esc(m.dose||"—")+'</td><td class="small">'+esc(m.freq||"—")+'</td>'+
+      '<td class="small num">'+(m.start?(isApprox(m.start,m.startApprox)?"~":"")+esc(fmtD(m.start))+
+        (pd(m.start)!=null?'<br><span class="muted">'+durTxt(pd(m.start),now)+'</span>':""):"—")+'</td>'+
+      '<td class="small muted">'+esc(m.prescriber||"—")+'</td>'+
+      '<td class="small muted">'+esc(m.note||"")+'</td></tr>').join("")+'</tbody></table></div>'
+      :'<div class="card empty">No current medication recorded.</div>');
+  v.appendChild(s1);
 
   const s2=document.createElement("div"); s2.className="sec";
   s2.innerHTML='<div class="sech"><h2>Treatment timeline</h2><span class="sub">'+
-    'swipe horizontally · a faded bar edge means that date was never recorded</span></div>';
-  const items=meds.slice().sort((a,b)=>(pd(a.start)||0)-(pd(b.start)||0)).map(m=>{
-    const ongoing=(m.status==="active"||m.status==="unknown");
-    return {
-      label:m.name+(m.dose?" "+m.dose:""), sub:m.generic, start:m.start,
-      end:ongoing?null:m.end, ongoing:ongoing,
-      color:CLSCOL[m.cls]||CLSCOL.Other,
-      text:m.name+" · "+(m.start?fmtD(m.start):"?")+" → "+(ongoing?"present":(m.end?fmtD(m.end):"?"))
-    };
+    'grouped by class · swipe horizontally · a faded bar edge means that date was never recorded</span></div>';
+  const groups={}; meds.forEach(m=>{ (groups[clsOf(m)]=groups[clsOf(m)]||[]).push(m); });
+  const items=[];
+  Object.keys(groups).sort((a,b)=>(clsRank(a)-clsRank(b))||a.localeCompare(b)).forEach(c=>{
+    items.push({head:true,label:c,color:CLSCOL[c]||CLSCOL.Other});
+    groups[c].sort((a,b)=>(pd(a.start)||0)-(pd(b.start)||0)).forEach(m=>{
+      const ongoing=(m.status==="active"||m.status==="unknown");
+      items.push({
+        label:(m.generic||m.name||"?")+(m.dose?" "+m.dose:""), sub:(m.generic&&m.name&&m.name!==m.generic)?m.name:"", start:m.start,
+        end:ongoing?null:m.end, ongoing:ongoing, color:colOf(m),
+        text:medPlain(m)+(m.dose?" · "+m.dose:"")+" · "+(m.start?fmtD(m.start):"?")+" → "+(ongoing?"present":(m.end?fmtD(m.end):"?"))
+      });
+    });
   });
   const card=document.createElement("div"); card.className="card"; card.style.padding="12px";
   card.appendChild(buildTimeline(items,{lbl:"210px"}));
   const lg=document.createElement("div"); lg.className="legend";
-  lg.innerHTML=Object.keys(CLSCOL).map(k=>'<span><i style="background:'+CLSCOL[k]+'"></i>'+k+'</span>').join("");
+  lg.innerHTML='<span style="opacity:.8">Vertical red line = today</span>';
   card.appendChild(lg);
   s2.appendChild(card); v.appendChild(s2);
 
@@ -2498,7 +2705,7 @@ function vMeds(){
     meds.slice().sort((a,b)=>(pd(b.start)||0)-(pd(a.start)||0)).map(m=>{
       const st=MED_CLS[m.status]||'p-mut';
       const a=pd(m.start), b=m.end?pd(m.end):Date.now();
-      return '<tr><td><b>'+esc(m.name)+'</b>'+(m.generic?'<br><span class="small muted">'+esc(m.generic)+'</span>':'')+'</td>'+
+      return '<tr><td>'+medName(m)+'</td>'+
       '<td class="small">'+esc(m.cls||"—")+'</td><td class="small num">'+esc(m.dose||"—")+
         (m.freq?'<br><span class="muted">'+esc(m.freq)+'</span>':'')+'</td>'+
       '<td class="small num">'+(m.start?fmtD(m.start):"—")+(isApprox(m.start,m.startApprox)?"*":"")+'<br>'+
@@ -2514,21 +2721,6 @@ function vMeds(){
     const i=S.data.medications.indexOf(REG.get(b.dataset.del));
     if(i>=0){S.data.medications.splice(i,1); save(); vMeds(); renderTabs(); toast("Entry deleted");}
   }));
-}
-function medCard(m){
-  const d=document.createElement("div"); d.className="card"; d.style.padding="14px";
-  const col=CLSCOL[m.cls]||CLSCOL.Other;
-  d.innerHTML='<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px">'+
-    '<div style="width:4px;align-self:stretch;border-radius:3px;background:'+col+'"></div>'+
-    '<div style="flex:1;min-width:0"><b style="font-size:15px">'+esc(m.name)+'</b> '+
-      '<span class="num" style="color:var(--tx2)">'+esc(m.dose||"")+'</span>'+
-      '<div class="small muted">'+esc(m.generic||"")+'</div></div>'+
-    '<span class="pill p-acc">'+esc(m.cls||"")+'</span></div>'+
-    '<div class="kv"><b>Schedule</b><span>'+esc(m.freq||"—")+'</span></div>'+
-    '<div class="kv"><b>Started</b><span>'+(m.start?fmtD(m.start)+(isApprox(m.start,m.startApprox)?" (approx.)":""):"not recorded")+
-      (m.start?' · <span class="muted">'+durTxt(pd(m.start),Date.now())+' ago</span>':"")+'</span></div>'+
-    (m.note?'<div class="kv"><b>Note</b><span class="small">'+esc(m.note)+'</span></div>':'');
-  return d;
 }
 
 /* ---------------------------------------------------------------- conditions */
