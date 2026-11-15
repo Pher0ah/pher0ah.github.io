@@ -110,7 +110,7 @@ main{padding:16px 0 40px;min-height:60vh}
 .g-tiles{grid-template-columns:repeat(auto-fill,minmax(215px,1fr))}
 .g-charts{grid-template-columns:repeat(auto-fill,minmax(310px,1fr))}
 .g-2{grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}
-.pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:640;
+.pill{white-space:nowrap;display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:640;
   padding:2.5px 8px;border-radius:20px;border:1px solid transparent;letter-spacing:.01em}
 .p-ok{background:var(--okBg);color:var(--ok)}
 .p-hi{background:var(--badBg);color:var(--bad)}
@@ -241,6 +241,8 @@ tr:last-child td{border-bottom:none}
   text-transform:uppercase;letter-spacing:.05em;color:var(--tx2);white-space:nowrap}
 .tl-hd i{width:9px;height:9px;border-radius:3px;flex:0 0 auto}
 .sw{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px;vertical-align:0}
+td.num{white-space:nowrap}
+.g-bp{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
 
 /* treatment strip under a chart */
 .ts{margin-top:4px}
@@ -355,6 +357,14 @@ tr.dim td:not(.nt){opacity:.5}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--tx3);margin-top:8px}
 .legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px}
 
+/* link to the original report file (shown only when the dashboard runs on the owner's own computer) */
+.rpt{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:560;color:var(--acc);text-decoration:none;white-space:nowrap;vertical-align:middle}
+.rpt:hover{text-decoration:underline}
+.rpt svg{width:13px;height:13px;flex:0 0 auto}
+.fs th.fs-d .rpt{margin-left:3px}
+.fs th.fs-d .rpt svg{width:12px;height:12px}
+#printView{display:none}
+
 /* flag chip, read-only mode */
 .fl{display:inline-block;min-width:16px;text-align:center;font-size:10.5px;font-weight:700;border-radius:3px;padding:0 3px;margin-left:5px}
 .fl-hi{background:var(--badBg);color:var(--bad)}
@@ -443,6 +453,44 @@ table.fs{table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:
   th,td{padding:6px 8px}
 }
 @media (min-width:721px){ .tab svg{display:none} }
+
+/* ============================================================ print: only #printView is shown */
+@page{size:A4;margin:14mm}
+@media print{
+  html,body{background:#fff!important;color:#000!important;height:auto!important;overflow:visible!important}
+  body{font:10pt/1.4 "Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  body>*:not(#printView){display:none!important}
+  header.top,.bar,nav.tabs,main,.ov,.splash,#toast{display:none!important}
+  #printView{display:block!important}
+  #printView,#printView *{color:#000!important;background:transparent!important;box-shadow:none!important;text-shadow:none!important}
+  #printView a{text-decoration:none}
+  #printView .muted,#printView .pvm{color:#444!important}
+  #printView h1{font-size:16pt;margin:0 0 3pt;letter-spacing:0}
+  #printView h2{font-size:11.5pt;font-weight:700;margin:11pt 0 4pt;padding-bottom:2pt;border-bottom:.75pt solid #000;
+    break-after:avoid;page-break-after:avoid;letter-spacing:0}
+  #printView .pvt{border-bottom:1.5pt solid #000;padding-bottom:5pt;margin-bottom:6pt}
+  #printView .pvn{font-size:11pt}
+  #printView .pvm{font-size:9pt}
+  #printView .pvl{margin:3pt 0}
+  #printView .tbl-wrap{overflow:visible;border-radius:0}
+  #printView table{width:100%;border-collapse:collapse;font-size:9pt}
+  #printView th,#printView td{border:.5pt solid #aaa;padding:2pt 4pt;vertical-align:top;font-size:9pt;position:static}
+  #printView th{background:#f2f2f2!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;text-transform:none;
+    letter-spacing:0;font-weight:700;text-align:left;white-space:normal}
+  #printView thead{display:table-header-group}
+  #printView tr{break-inside:avoid;page-break-inside:avoid}
+  #printView td.num{white-space:nowrap}
+  #printView .kvt td.k{width:70pt;font-weight:700}
+  #printView .pill,#printView .tagw{display:inline;border:0;border-radius:0;padding:0;margin:0;font-size:inherit;font-weight:inherit}
+  #printView .tagw{margin-left:4pt;font-style:italic}
+  #printView .fl{min-width:0;margin-left:3pt;padding:0 2pt;border:.75pt solid #000;border-radius:2pt;font-size:8pt;font-weight:700}
+  #printView .foot,#printView .none{padding:3pt 0;border:0;font-size:9pt}
+  #printView .evr{display:flex;gap:8pt;padding:3pt 0;border-bottom:.5pt solid #aaa;break-inside:avoid;page-break-inside:avoid}
+  #printView .evr .d{flex:0 0 62pt;font-size:9pt}
+  #printView .evr .imp{display:block;overflow:visible;-webkit-line-clamp:unset;line-clamp:unset;font-size:9pt;margin-top:1pt}
+  #printView .pvq{margin:0 0 4pt;break-inside:avoid;page-break-inside:avoid}
+  #printView .pvf{margin-top:10pt;padding-top:3pt;border-top:.5pt solid #aaa;font-size:8.5pt}
+}
 </style>
 </head>
 <body>
@@ -455,6 +503,7 @@ table.fs{table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:
   </div>
   <div class="tools">
     <button class="btn icon" id="bTheme" title="Toggle theme" aria-label="Toggle theme"></button>
+    <button class="btn" id="bPrint" title="Print or save a clinical summary as PDF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg><span class="lbl">Print</span></button>
     <button class="btn" id="bLoad" title="Load a JSON record file"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span class="lbl">Load</span></button>
     <button class="btn" id="bSave" title="Save the record to a JSON file"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span class="lbl">Save</span></button>
     <button class="btn" id="bEdit" title="Switch editing on or off" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg><span class="lbl">Edit</span></button>
@@ -501,6 +550,7 @@ table.fs{table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:
 
 <div class="ov" id="ov"><div class="md" id="md"></div></div>
 <div id="toast"></div>
+<div id="printView" aria-hidden="true"></div>
 <input type="file" id="fileIn" accept=".json,application/json" style="display:none">
 
 <script>
@@ -527,6 +577,8 @@ const DEFAULT_GUIDE={
   surgicalHistory:"One block each, for example { \"date\": \"2015\", \"procedure\": \"Appendicectomy\" }.",
   immunisations:"One block each, for example { \"date\": \"2024-04\", \"vaccine\": \"Influenza\" }.",
   testCatalog:"Grouped by panel; the order here is the order tests are shown. ref is the reference range: \"4-10\", \"<=200\" or \">=40\". Add a new test here before using its key in a visit.",
+  reports:"To link an original document, add \"report\": \"lab/file-name.pdf\" (or a list of file names) to a lab visit, an event or foodIgG. The link is shown only when the dashboard runs on your own computer.",
+  settings:"bpTarget (for example \"130/80\") sets the blood-pressure target used on the Vitals tab. A medication may list \"affects\": [\"hba1c\", \"bp\"] to say which charts show it.",
   other:"Keys the dashboard does not know are kept exactly as they are."
 };
 const QUALITY_DEFAULT={
@@ -1980,35 +2032,108 @@ function sumTestTr(d){
 }
 const SUM_TEST_HEADS=["Test","Result","Reference","Date","Previous"];
 
-function vOverview(){
-  const v=$("#v-overview"); v.innerHTML=""; clearCharts();
-  const D=S.data, ob=x=>x&&typeof x==="object";
-  const arr=k=>Array.isArray(D[k])?D[k].filter(ob):[];
-  const rk=(list,x)=>{ const i=list.indexOf(x); return i<0?list.length:i; };
-  const kv=(k,html)=>'<tr><td class="k">'+k+'</td><td>'+(html||'<span class="muted">not recorded</span>')+'</td></tr>';
-
-  /* 1. problem list */
-  const conds=arr("conditions");
-  const probs=conds.filter(c=>c.status!=="resolved");
+/* ---- building blocks shared by the Summary tab and the printed summary: each returns HTML ---- */
+const dArr=k=>Array.isArray(S.data[k])?S.data[k].filter(x=>x&&typeof x==="object"):[];
+const rk=(list,x)=>{ const i=list.indexOf(x); return i<0?list.length:i; };
+/* unresolved conditions, most pressing first; resN counts the resolved ones left out */
+function problemList(){
+  const conds=dArr("conditions"), probs=conds.filter(c=>c.status!=="resolved");
   const onsetK=c=>pd(c.onset)==null?8.64e15:pd(c.onset);
   probs.sort((a,b)=>(rk(["active","monitoring","controlled"],a.status)-rk(["active","monitoring","controlled"],b.status))||
     (rk(["severe","moderate","mild"],a.severity)-rk(["severe","moderate","mild"],b.severity))||(onsetK(a)-onsetK(b)));
-  const resN=conds.length-probs.length;
+  return {probs:probs,resN:conds.length-probs.length};
+}
+function problemTable(probs){
   const since=c=>!c.onset?"—":((isApprox(c.onset,c.onsetApprox)||(c.evidence&&c.evidence.derivedDate))?"~":"")+fmtD(c.onset);
   const basis=c=>{ const k=c.evidence&&c.evidence.kind; if(!k) return "—"; const t=EV_BASIS[k]||k;
     return k==="self-reported"?'<span class="acc-warn">'+esc(t)+'</span>':esc(t); };
-  const resLine=resN?'<div class="foot">'+resN+' resolved</div>':"";
-  const s1=sumCard("Problem list",probs.length,["All conditions","conditions"],
-    (probs.length?sumTable(["Problem","Since","Status","Severity","Basis"],probs.map(c=>
-      '<tr><td>'+esc(c.name)+'</td><td class="num">'+esc(since(c))+'</td>'+
-      '<td><span class="pill '+(COND_CLS[c.status]||"p-mut")+'">'+esc(c.status||"—")+'</span></td>'+
-      '<td>'+(c.severity?'<span class="pill '+(SEV_CLS[c.severity]||"p-mut")+'">'+esc(c.severity)+'</span>':"—")+'</td>'+
-      '<td>'+basis(c)+'</td></tr>')):NONE)+resLine);
+  return probs.length?sumTable(["Problem","Since","Status","Severity","Basis"],probs.map(c=>
+    '<tr><td>'+esc(c.name)+'</td><td class="num">'+esc(since(c))+'</td>'+
+    '<td><span class="pill '+(COND_CLS[c.status]||"p-mut")+'">'+esc(c.status||"—")+'</span></td>'+
+    '<td>'+(c.severity?'<span class="pill '+(SEV_CLS[c.severity]||"p-mut")+'">'+esc(c.severity)+'</span>':"—")+'</td>'+
+    '<td>'+basis(c)+'</td></tr>')):NONE;
+}
+/* latest value of each tested test that is High or Low, in catalogue order */
+function abnormalTests(){
+  const have=new Set(testIds());
+  return Object.keys(S.data.testCatalog||{}).filter(id=>have.has(id)).map(id=>sumTestRow(id,true))
+    .filter(d=>d&&(d.f==="hi"||d.f==="lo"));
+}
+function currentMeds(){
+  const meds=dArr("medications");
+  const medCmp=(a,b)=>String(a.cls||"\uffff").localeCompare(String(b.cls||"\uffff"))||
+    String(a.generic||a.name||"").localeCompare(String(b.generic||b.name||""));
+  return {act:meds.filter(m=>m.status==="active").sort(medCmp), unk:meds.filter(m=>m.status==="unknown").sort(medCmp)};
+}
+function medTable(list){
+  const medTr=m=>'<tr><td>'+(m.generic
+      ?'<b>'+esc(m.generic)+'</b>'+(m.name&&m.name!==m.generic?' <span class="muted">('+esc(m.name)+')</span>':"")
+      :'<b>'+esc(m.name||"—")+'</b>')+(m.status==="unknown"?'<span class="tagw">unconfirmed</span>':"")+'</td>'+
+    '<td>'+esc(m.dose||"—")+'</td><td>'+esc(m.freq||"—")+'</td>'+
+    '<td class="num">'+(m.start?(isApprox(m.start,m.startApprox)?"~":"")+esc(fmtD(m.start)):"—")+'</td></tr>';
+  return list.length?sumTable(["Medicine","Dose","Schedule","Since"],list.map(medTr)):NONE;
+}
+/* latest reading, mean of the 30 most recent unflagged readings, pulse; withTarget adds the target (printed summary) */
+function bpBlock(withTarget){
+  const bp=dArr("vitals").filter(r=>r.systolic!=null).sort((a,b)=>vTime(b)-vTime(a));
+  if(!bp.length) return NONE;
+  const L=bp[0], taken=[]; let looked=0, flagged=0;
+  for(let i=0;i<bp.length&&taken.length<30;i++){ looked++; if(bp[i].quality) flagged++; else taken.push(bp[i]); }
+  const mean=a=>a.reduce((x,y)=>x+y,0)/a.length;
+  let avg='<span class="muted">no unflagged readings</span>', pul='—';
+  if(taken.length){
+    const sys=Math.round(mean(taken.map(r=>+r.systolic)));
+    const dd=taken.filter(r=>r.diastolic!=null).map(r=>+r.diastolic), dia=dd.length?Math.round(mean(dd)):null;
+    const ct=bpCat(sys,dia==null?0:dia), first=taken[taken.length-1], lastT=taken[0];
+    const span=first.date===lastT.date?fmtD(lastT.date):fmtD(first.date)+" – "+fmtD(lastT.date);
+    avg='<b class="num">'+sys+(dia!=null?"/"+dia:"")+'</b> <span class="muted">mmHg</span> <span class="pill '+(ct.t==="Normal"?"p-mut":ct.c)+'">'+ct.t+'</span>'+
+      '<div class="small muted">n = '+taken.length+' · '+esc(span)+'</div>';
+    const pp=taken.filter(r=>r.pulse!=null&&isFinite(+r.pulse)).map(r=>+r.pulse);
+    if(pp.length) pul='<b class="num">'+Math.round(mean(pp))+'</b> <span class="muted">bpm</span>';
+  }
+  return '<table class="sumt kvt"><tbody>'+
+    '<tr><td class="k">Latest</td><td><b class="num">'+esc(L.systolic+(L.diastolic!=null?"/"+L.diastolic:""))+'</b> <span class="muted">mmHg</span> · '+
+      esc(fmtD(L.date))+(L.time?" "+esc(L.time):"")+(L.source?' <span class="muted">· '+esc(L.source)+'</span>':"")+
+      (L.quality?'<span class="tagw">flagged unreliable</span>':"")+'</td></tr>'+
+    '<tr><td class="k">Average</td><td>'+avg+'</td></tr>'+
+    '<tr><td class="k">Pulse</td><td>'+pul+'</td></tr>'+
+    (withTarget?'<tr><td class="k">Target</td><td><b class="num">'+esc(bpTarget().txt)+'</b> <span class="muted">mmHg</span></td></tr>':"")+
+    '</tbody></table>'+
+    (flagged?'<div class="foot">'+flagged+' of '+looked+' recent readings were flagged unreliable by the device and are left out</div>':"");
+}
+/* one investigation row; full adds the provider */
+function evRow(e,full){
+  return '<div class="evr"><div class="d num">'+(e.date?(isApprox(e.date,e.dateApprox)?"~":"")+esc(fmtD(e.date)):"—")+'</div><div class="b">'+
+    (e.type?'<span class="pill p-mut">'+esc(e.type)+'</span> ':"")+'<b>'+esc(e.title||"—")+'</b>'+
+    (full&&e.provider?' <span class="muted">· '+esc(e.provider)+'</span>':"")+
+    (e.impression?'<div class="imp">'+esc(e.impression)+'</div>':"")+'</div></div>';
+}
+function historyTable(){
+  const so=S.data.socialHistory&&typeof S.data.socialHistory==="object"?S.data.socialHistory:{};
+  const kv=(k,html)=>'<tr><td class="k">'+k+'</td><td>'+(html||'<span class="muted">not recorded</span>')+'</td></tr>';
+  return '<table class="sumt kvt"><tbody>'+[
+    kv("Allergies",dArr("allergies").map(a=>esc(a.substance||"?")+(a.reaction?" — "+esc(a.reaction):"")+(a.severity?" ("+esc(a.severity)+")":"")).join("; ")),
+    kv("Family history",dArr("familyHistory").map(f=>esc(f.relation||"?")+": "+esc(f.condition||"?")+(f.ageAtOnset!=null&&f.ageAtOnset!==""?" at "+esc(f.ageAtOnset):"")).join("; ")),
+    kv("Social history",[["smoking","Smoking"],["alcohol","Alcohol"],["exercise","Exercise"],["occupation","Occupation"]]
+      .filter(k=>so[k[0]]!=null&&so[k[0]]!=="").map(k=>k[1]+": "+esc(so[k[0]])).join(" · ")),
+    kv("Surgical history",dArr("surgicalHistory").map(x=>(x.date?esc(x.date)+" ":"")+esc(x.procedure||"?")).join("; ")),
+    kv("Immunisations",dArr("immunisations").map(x=>esc(x.vaccine||"?")+(x.date?" "+esc(x.date):"")).join("; "))
+  ].join("")+'</tbody></table>';
+}
+function followUps(){ return (Array.isArray(S.data.followUps)?S.data.followUps:DEFAULT_FOLLOWUPS).filter(x=>x&&typeof x==="object"); }
+
+function vOverview(){
+  const v=$("#v-overview"); v.innerHTML=""; clearCharts();
+  const D=S.data, ob=x=>x&&typeof x==="object";
+
+  /* 1. problem list */
+  const pl=problemList();
+  const s1=sumCard("Problem list",pl.probs.length,["All conditions","conditions"],
+    problemTable(pl.probs)+(pl.resN?'<div class="foot">'+pl.resN+' resolved</div>':""));
 
   /* 2. results outside the reference range (latest value of each test, catalogue order) */
   const have=new Set(testIds());
-  const abn=Object.keys(D.testCatalog||{}).filter(id=>have.has(id)).map(id=>sumTestRow(id,true))
-    .filter(d=>d&&(d.f==="hi"||d.f==="lo"));
+  const abn=abnormalTests();
   const s2=sumCard("Results outside the reference range","latest value of each test",["All results","labs"],
     abn.length?sumTable(SUM_TEST_HEADS,abn.map(sumTestTr)):NONE);
 
@@ -2019,71 +2144,26 @@ function vOverview(){
   const s3=keyRows.length?sumCard("Key results",keyRows.length,null,sumTable(SUM_TEST_HEADS,keyRows.map(sumTestTr))):"";
 
   /* 4. current medication */
-  const meds=arr("medications");
-  const medCmp=(a,b)=>String(a.cls||"\uffff").localeCompare(String(b.cls||"\uffff"))||
-    String(a.generic||a.name||"").localeCompare(String(b.generic||b.name||""));
-  const actM=meds.filter(m=>m.status==="active").sort(medCmp), unkM=meds.filter(m=>m.status==="unknown").sort(medCmp);
-  const medTr=m=>'<tr><td>'+(m.generic
-      ?'<b>'+esc(m.generic)+'</b>'+(m.name&&m.name!==m.generic?' <span class="muted">('+esc(m.name)+')</span>':"")
-      :'<b>'+esc(m.name||"—")+'</b>')+(m.status==="unknown"?'<span class="tagw">unconfirmed</span>':"")+'</td>'+
-    '<td>'+esc(m.dose||"—")+'</td><td>'+esc(m.freq||"—")+'</td>'+
-    '<td class="num">'+(m.start?(isApprox(m.start,m.startApprox)?"~":"")+esc(fmtD(m.start)):"—")+'</td></tr>';
-  const s4=sumCard("Current medication",actM.length+" active"+(unkM.length?" · "+unkM.length+" unconfirmed":""),["All medication","meds"],
-    (actM.length||unkM.length)?sumTable(["Medicine","Dose","Schedule","Since"],actM.concat(unkM).map(medTr)):NONE);
+  const cm=currentMeds();
+  const s4=sumCard("Current medication",cm.act.length+" active"+(cm.unk.length?" · "+cm.unk.length+" unconfirmed":""),["All medication","meds"],
+    medTable(cm.act.concat(cm.unk)));
 
   /* 5. blood pressure */
-  const bp=arr("vitals").filter(r=>r.systolic!=null).sort((a,b)=>vTime(b)-vTime(a));
-  let bpBody=NONE;
-  if(bp.length){
-    const L=bp[0], taken=[]; let looked=0, flagged=0;
-    for(let i=0;i<bp.length&&taken.length<30;i++){ looked++; if(bp[i].quality) flagged++; else taken.push(bp[i]); }
-    const mean=a=>a.reduce((x,y)=>x+y,0)/a.length;
-    let avg='<span class="muted">no unflagged readings</span>', pul='—';
-    if(taken.length){
-      const sys=Math.round(mean(taken.map(r=>+r.systolic)));
-      const dd=taken.filter(r=>r.diastolic!=null).map(r=>+r.diastolic), dia=dd.length?Math.round(mean(dd)):null;
-      const ct=bpCat(sys,dia==null?0:dia), first=taken[taken.length-1], lastT=taken[0];
-      const span=first.date===lastT.date?fmtD(lastT.date):fmtD(first.date)+" – "+fmtD(lastT.date);
-      avg='<b class="num">'+sys+(dia!=null?"/"+dia:"")+'</b> <span class="muted">mmHg</span> <span class="pill '+(ct.t==="Normal"?"p-mut":ct.c)+'">'+ct.t+'</span>'+
-        '<div class="small muted">n = '+taken.length+' · '+esc(span)+'</div>';
-      const pp=taken.filter(r=>r.pulse!=null&&isFinite(+r.pulse)).map(r=>+r.pulse);
-      if(pp.length) pul='<b class="num">'+Math.round(mean(pp))+'</b> <span class="muted">bpm</span>';
-    }
-    bpBody='<table class="sumt kvt"><tbody>'+
-      '<tr><td class="k">Latest</td><td><b class="num">'+esc(L.systolic+(L.diastolic!=null?"/"+L.diastolic:""))+'</b> <span class="muted">mmHg</span> · '+
-        esc(fmtD(L.date))+(L.time?" "+esc(L.time):"")+(L.source?' <span class="muted">· '+esc(L.source)+'</span>':"")+
-        (L.quality?'<span class="tagw">flagged unreliable</span>':"")+'</td></tr>'+
-      '<tr><td class="k">Average</td><td>'+avg+'</td></tr>'+
-      '<tr><td class="k">Pulse</td><td>'+pul+'</td></tr></tbody></table>'+
-      (flagged?'<div class="foot">'+flagged+' of '+looked+' recent readings were flagged unreliable by the device and are left out</div>':"");
-  }
-  const s5=sumCard("Blood pressure","",["Vitals","vitals"],bpBody);
+  const s5=sumCard("Blood pressure","",["Vitals","vitals"],bpBlock(false));
 
   /* 6. recent investigations */
-  const evs=arr("events").sort((a,b)=>(pd(b.date)||0)-(pd(a.date)||0)).slice(0,4);
-  const s6=sumCard("Recent investigations","",["All reports","events"],evs.length?evs.map(e=>
-    '<div class="evr"><div class="d num">'+(e.date?(isApprox(e.date,e.dateApprox)?"~":"")+esc(fmtD(e.date)):"—")+'</div><div class="b">'+
-      (e.type?'<span class="pill p-mut">'+esc(e.type)+'</span> ':"")+'<b>'+esc(e.title||"—")+'</b>'+
-      (e.impression?'<div class="imp">'+esc(e.impression)+'</div>':"")+'</div></div>').join(""):NONE);
+  const evs=dArr("events").sort((a,b)=>(pd(b.date)||0)-(pd(a.date)||0)).slice(0,4);
+  const s6=sumCard("Recent investigations","",["All reports","events"],evs.length?evs.map(e=>evRow(e,false)).join(""):NONE);
 
   /* 7. history */
-  const so=ob(D.socialHistory)?D.socialHistory:{};
-  const hist=[
-    kv("Allergies",arr("allergies").map(a=>esc(a.substance||"?")+(a.reaction?" — "+esc(a.reaction):"")+(a.severity?" ("+esc(a.severity)+")":"")).join("; ")),
-    kv("Family history",arr("familyHistory").map(f=>esc(f.relation||"?")+": "+esc(f.condition||"?")+(f.ageAtOnset!=null&&f.ageAtOnset!==""?" at "+esc(f.ageAtOnset):"")).join("; ")),
-    kv("Social history",[["smoking","Smoking"],["alcohol","Alcohol"],["exercise","Exercise"],["occupation","Occupation"]]
-      .filter(k=>so[k[0]]!=null&&so[k[0]]!=="").map(k=>k[1]+": "+esc(so[k[0]])).join(" · ")),
-    kv("Surgical history",arr("surgicalHistory").map(x=>(x.date?esc(x.date)+" ":"")+esc(x.procedure||"?")).join("; ")),
-    kv("Immunisations",arr("immunisations").map(x=>esc(x.vaccine||"?")+(x.date?" "+esc(x.date):"")).join("; "))
-  ];
-  const s7=sumCard("History","",null,'<table class="sumt kvt"><tbody>'+hist.join("")+'</tbody></table>');
+  const s7=sumCard("History","",null,historyTable());
 
   const grid=document.createElement("div"); grid.className="sumg";
   grid.innerHTML='<div class="sumcol">'+[s1,s2,s3].join("")+'</div><div class="sumcol">'+[s4,s5,s6,s7].join("")+'</div>';
   v.appendChild(grid);
 
   /* 8. open questions */
-  const fu=(Array.isArray(D.followUps)?D.followUps:DEFAULT_FOLLOWUPS).filter(ob);
+  const fu=followUps();
   if(fu.length){
     const s=document.createElement("div"); s.className="sec";
     s.innerHTML='<div class="sech"><h2>Open questions</h2><span class="sub">notes kept in the record — not a diagnosis</span></div>';
@@ -2127,6 +2207,82 @@ function vOverview(){
 }
 const DEFAULT_FOLLOWUPS=[];  /* clinical prompts live in the record as followUps */
 
+/* ---------------------------------------------------------------- links to original reports */
+/* The originals live in lab/ on the owner's own computer and are never published, so a link is
+   drawn only when the page runs from a file or from localhost. */
+function isLocalPage(){ return location.protocol==="file:"||/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname); }
+const DOC_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></svg>';
+/* report: a relative path or a list of them; icon: icon-only links (flowsheet column header) */
+function reportLinks(report,icon){
+  if(!isLocalPage()) return "";
+  const list=(Array.isArray(report)?report:[report]).filter(p=>typeof p==="string"&&p.trim()&&
+    p.indexOf(":")<0&&!/^[\/\\]/.test(p.trim())&&p.indexOf("..")<0).map(p=>p.trim().split(/[\/\\]+/).filter(Boolean));
+  return list.filter(seg=>seg.length).map((seg,i)=>{
+    const lbl=list.length===1?"Original report":"Report "+(i+1);
+    return '<a class="rpt" href="'+esc(seg.map(encodeURIComponent).join("/"))+'" target="_blank" rel="noopener" title="'+esc(seg[seg.length-1])+
+      '" aria-label="'+esc(lbl+": "+seg[seg.length-1])+'">'+DOC_ICON+(icon?"":lbl)+'</a>';
+  }).join(" ");
+}
+/* the same, on a line of its own under existing text */
+function reportBr(report,icon){ const x=reportLinks(report,icon); return x?"<br>"+x:""; }
+/* the `report` field of a lab visit, by its "<date>|<source>" key */
+function visitReport(k){ const i=(S.data.labVisitInfo||{})[k]; return i?i.report:undefined; }
+
+/* ---------------------------------------------------------------- print / PDF summary */
+/* A4 clinical summary, built from S.data each time; #printView is hidden on screen and is the
+   only thing the print stylesheet shows. */
+function keySheetHtml(){
+  const keys=Array.from(new Set((Array.isArray(S.data.keyTests)&&S.data.keyTests.length)?S.data.keyTests:DEFAULT_KEYTESTS));
+  const vi=visitIndex(), has=(k,col)=>!!(vi.idx[k]&&vi.idx[k][col.k]);
+  const cols=vi.all.filter(col=>keys.some(k=>has(k,col))).slice(0,6);
+  if(!cols.length) return NONE;
+  const rows=keys.filter(k=>cols.some(col=>has(k,col))).map(k=>{
+    const c=cat(k);
+    return '<tr><td>'+esc(c.name)+' <span class="muted">'+esc(unitTxt(c.unit))+'</span></td>'+
+      cols.map(col=>'<td class="num">'+(has(k,col)?fsCell(vi.idx[k][col.k],c).body:"")+'</td>').join("")+'</tr>';
+  });
+  return sumTable(["Test"].concat(cols.map(col=>esc(fmtD(col.date)))),rows);
+}
+function printHtml(){
+  const D=S.data, p=D.profile&&typeof D.profile==="object"?D.profile:{};
+  const sec=(t,b)=>'<section class="pvs"><h2>'+t+'</h2>'+b+'</section>';
+  const age=ageAt(p.dob,Date.now());
+  const who=[p.sex,p.dob?"born "+fmtD(p.dob):null,age!=null?age+" years":null].filter(Boolean).map(esc).join(" · ");
+  let h='<div class="pvt"><h1>Health summary</h1><div class="pvn"><b>'+esc(p.name||"Name not recorded")+'</b>'+(who?" · "+who:"")+'</div>'+
+    '<div class="pvm">Printed '+esc(fmtD(todayISO()))+' · Record last saved '+esc(D.updated?fmtD(D.updated):"not recorded")+'</div></div>';
+  const al=dArr("allergies").filter(a=>a.substance);
+  h+='<p class="pvl"><b>Allergies:</b> '+(al.length?al.map(a=>esc(a.substance)+(a.reaction?" — "+esc(a.reaction):"")+
+    (a.severity?" ("+esc(a.severity)+")":"")).join("; "):"none recorded")+'</p>';
+  const bm=bodyMeasures(), body=[];
+  if(bm.h) body.push("Height "+nf(bm.h,1)+" cm");
+  if(bm.w!=null) body.push("Weight "+nf(bm.w,1)+" kg"+(bm.wr?" ("+fmtD(bm.wr.date)+")":""));
+  if(bm.bmi!=null) body.push("BMI "+bm.bmi.toFixed(1));
+  if(body.length) h+='<p class="pvl">'+esc(body.join(" · "))+'</p>';
+
+  const pl=problemList();
+  h+=sec("Problem list",problemTable(pl.probs)+(pl.resN?'<div class="foot">'+pl.resN+' resolved condition'+(pl.resN===1?"":"s")+' not listed</div>':""));
+  const cm=currentMeds();
+  h+=sec("Current medication",medTable(cm.act.concat(cm.unk)));
+  h+=sec("Blood pressure",bpBlock(true)+'<div class="foot">Average = mean of the 30 most recent readings not flagged unreliable.</div>');
+  const abn=abnormalTests();
+  h+=sec("Results outside the reference range",abn.length?sumTable(SUM_TEST_HEADS,abn.map(sumTestTr)):NONE);
+  h+=sec("Key results over the last six visits",keySheetHtml());
+  const evs=dArr("events").sort((a,b)=>(pd(b.date)||0)-(pd(a.date)||0)).slice(0,6);
+  h+=sec("Recent investigations",evs.length?evs.map(e=>evRow(e,true)).join(""):NONE);
+  const fu=followUps();
+  if(fu.length) h+=sec("Open questions",fu.map(f=>'<div class="pvq"><b>'+esc(f.title)+'</b>'+
+    (f.asOf?' <span class="muted">· as of '+esc(fmtD(f.asOf))+'</span>':"")+'<br>'+esc(f.text)+'</div>').join(""));
+  h+=sec("History",historyTable());
+  h+='<div class="pvf">Results are judged against the reference ranges of '+esc(refLabName())+
+    '. This is a personal record summary, not a clinical document.</div>';
+  return h;
+}
+function printSummary(){
+  if(!S.data){ toast("Open a record first"); return; }
+  $("#printView").innerHTML=printHtml();
+  window.print();
+}
+
 
 /* ---------------------------------------------------------------- labs */
 /* tests in catalogue order (the key order of testCatalog), grouped by category in order of first appearance */
@@ -2138,6 +2294,22 @@ function labOrder(ids){
   return s.sort((a,b)=>rank.get(cat(a).category)-rank.get(cat(b).category));
 }
 const LAB_COLS=[[8,"Last 8"],[16,"Last 16"],[0,"All"]];
+/* lab visits (newest first; one per date and laboratory) and test -> visit -> result */
+function visitIndex(){
+  const vis=new Map(), idx={};
+  (S.data.labResults||[]).forEach(r=>{
+    const k=r.date+"|"+(r.source||"");
+    if(!vis.has(k)) vis.set(k,{k:k,date:r.date,src:r.source||"",t:pd(r.date)});
+    (idx[r.test]||(idx[r.test]={}))[k]=r;
+  });
+  return {all:Array.from(vis.values()).sort((a,b)=>(b.t-a.t)||a.src.localeCompare(b.src)),idx:idx};
+}
+/* the flag and the cell content of one result, for the flowsheet and the printed summary */
+function fsCell(r,c){
+  const isN=typeof r.value==="number", f=isN?flagOf(r.value,c.refLow,c.refHigh):"na";
+  return {f:f,body:isN?'<span class="num">'+fmtVal(r.value,c.decimals)+'</span>'+flagChip(f)+(r.text?' <span class="fs-tx">'+esc(r.text)+'</span>':'')
+    :'<span class="fs-tx fs-t1">'+esc(r.text||"—")+'</span>'};
+}
 function vLabs(){
   const v=$("#v-labs"); v.innerHTML="";
   const ids=labOrder(testIds());
@@ -2202,15 +2374,7 @@ function vLabs(){
 
   /* cumulative results table: tests down the side, visits across the top (newest first) */
   function drawSheet(ls){
-    const res=S.data.labResults||[];
-    /* one pass: visits, and test -> visit -> result */
-    const vis=new Map(), idx={};
-    res.forEach(r=>{
-      const k=r.date+"|"+(r.source||"");
-      if(!vis.has(k)) vis.set(k,{k:k,date:r.date,src:r.source||"",t:pd(r.date)});
-      (idx[r.test]||(idx[r.test]={}))[k]=r;
-    });
-    const all=Array.from(vis.values()).sort((a,b)=>(b.t-a.t)||a.src.localeCompare(b.src));
+    const vi=visitIndex(), idx=vi.idx, all=vi.all;
     const cols=S.labCols>0?all.slice(0,S.labCols):all;
     if(!cols.length){ out.innerHTML='<div class="empty">No lab results recorded yet.</div>'; return; }
     /* cell content and flag for each test over the visible visits */
@@ -2220,13 +2384,12 @@ function vLabs(){
       const cells=cols.map(col=>{
         const r=row[col.k]; if(!r) return {td:'<td></td>'};
         any=true;
-        const isN=typeof r.value==="number", f=isN?flagOf(r.value,c.refLow,c.refHigh):"na";
+        const cf=fsCell(r,c), f=cf.f;
         if(f==="hi"||f==="lo") abn=true;
         const tip=[]; if(r.orig) tip.push("as reported "+r.orig.value+(r.orig.unit?" "+r.orig.unit:""));
         const sr=srcRefOf(r); if(sr) tip.push("lab range "+refTxt(sr.lo,sr.hi,c.decimals));
         const title=tip.length?tip.join(" · "):(r.source||"");
-        const body=isN?'<span class="num">'+fmtVal(r.value,c.decimals)+'</span>'+flagChip(f)+(r.text?' <span class="fs-tx">'+esc(r.text)+'</span>':'')
-          :'<span class="fs-tx fs-t1">'+esc(r.text||"—")+'</span>';
+        const body=cf.body;
         return {td:'<td class="'+(f==="hi"?"fs-hi":f==="lo"?"fs-lo":"")+'" title="'+esc(title)+'">'+body+'</td>'};
       });
       if(!any){ noRes++; return; }
@@ -2245,7 +2408,7 @@ function vLabs(){
         '<colgroup><col class="c0">'+cols.map(()=>'<col class="cv">').join("")+'</colgroup>'+
         '<thead><tr><th class="fs-corner">Test</th>'+cols.map(col=>{
           const s=fmtD(col.date), i=s.lastIndexOf(" ");
-          return '<th class="fs-d" title="'+esc(col.src||"")+'">'+esc(i<0?s:s.slice(0,i))+(i<0?"":'<br>'+esc(s.slice(i+1)))+'</th>';
+          return '<th class="fs-d" title="'+esc(col.src||"")+'">'+esc(i<0?s:s.slice(0,i))+(i<0?"":'<br>'+esc(s.slice(i+1)))+reportBr(visitReport(col.k),true)+'</th>';
         }).join("")+'</tr></thead><tbody>';
       let last=null;
       rows.forEach(r=>{
@@ -2331,7 +2494,7 @@ function testBody(testId,rng){
       '<td><span class="pill '+FLAGCLS[ff]+'">'+FLAGTXT[ff]+'</span></td>'+
       '<td class="small num '+(refDiffers(p.rec,c)?'':'muted')+'">'+
         (sr?refTxt(sr.lo,sr.hi,c.decimals)+(refDiffers(p.rec,c)?' <span class="muted">\u2260</span>':''):'\u2014')+'</td>'+
-      '<td class="small muted">'+esc(p.rec.source||"\u2014")+(p.rec.note?'<br>'+esc(p.rec.note):"")+'</td>'+
+      '<td class="small muted">'+esc(p.rec.source||"\u2014")+(p.rec.note?'<br>'+esc(p.rec.note):"")+reportBr(visitReport(p.rec.date+"|"+(p.rec.source||"")))+'</td>'+
       '<td><button class="del" data-del="'+reg(p.rec)+'" title="Delete">\u00d7</button></td></tr>';
     }).join("")+'</tbody></table></div>'+
     '<div class="small muted" style="margin-top:7px">Status is judged against the '+
@@ -2378,7 +2541,7 @@ function bpCat(s,d){
   if(s>=140||d>=90) return {t:"Stage 2",c:"p-hi"};
   if(s>=130||d>=80) return {t:"Stage 1",c:"p-wn"};
   if(s>=120) return {t:"Elevated",c:"p-wn"};
-  return {t:"Normal",c:"p-ok"};
+  return {t:"Normal",c:"p-mut"};
 }
 /* blood-pressure target from the record ("130/80"); 130/80 when absent or unreadable */
 function bpTarget(){
@@ -2425,7 +2588,7 @@ function vVitals(){
     info.innerHTML='<b>Latest:</b> <b class="num">'+esc(L.systolic+(L.diastolic!=null?"/"+L.diastolic:""))+'</b> <span class="muted">mmHg</span> · '+
       esc(fmtD(L.date)+(L.time?" "+L.time:""))+(L.source?' · '+esc(L.source):"")+(L.quality?' <span class="tagw">flagged by device</span>':"");
     v.appendChild(info);
-    st=document.createElement("div"); st.className="grid g-tiles sec"; v.appendChild(st);
+    st=document.createElement("div"); st.className="grid g-tiles g-bp sec"; v.appendChild(st);
 
     const cd=document.createElement("div"); cd.className="card sec"; cd.style.padding="12px 8px 6px";
     const cb=document.createElement("div"); cb.className="chartbox"; cd.appendChild(cb);
@@ -2666,7 +2829,7 @@ function vMeds(){
     (cur.length?'<div class="card tbl-wrap"><table><thead><tr><th>Medicine</th><th>Class</th><th>Dose</th><th>Schedule</th>'+
     '<th>Since</th><th>Prescriber</th><th>Note</th></tr></thead><tbody>'+
     cur.map(m=>'<tr><td>'+medName(m)+(m.status==="unknown"?'<span class="tagw">unconfirmed</span>':"")+'</td>'+
-      '<td class="small">'+(m.cls?'<span class="sw" style="background:'+colOf(m)+'"></span>'+esc(m.cls):"—")+'</td>'+
+      '<td class="small" style="white-space:nowrap">'+(m.cls?'<span class="sw" style="background:'+colOf(m)+'"></span>'+esc(m.cls):"—")+'</td>'+
       '<td class="small num">'+esc(m.dose||"—")+'</td><td class="small">'+esc(m.freq||"—")+'</td>'+
       '<td class="small num">'+(m.start?(isApprox(m.start,m.startApprox)?"~":"")+esc(fmtD(m.start))+
         (pd(m.start)!=null?'<br><span class="muted">'+durTxt(pd(m.start),now)+'</span>':""):"—")+'</td>'+
@@ -2796,7 +2959,7 @@ function vFood(){
   const bandLbl={high:"Very high",mid:"Moderate",low:"Low",ok:"Negative"};
 
   v.innerHTML='<div class="sech"><h2>Food-specific IgG panel</h2><span class="sub">'+
-    esc(f.method||"")+' · '+fmtD(f.date)+' · '+(f.antigensTested||"?")+' antigens tested</span></div>'+
+    esc(f.method||"")+' · '+fmtD(f.date)+' · '+(f.antigensTested||"?")+' antigens tested</span>'+reportLinks(f.report)+'</div>'+
     '<div class="note warn" style="margin-bottom:16px"><b>Read this first.</b> '+esc(f.disclaimer||"")+'</div>';
 
   const mx=Math.max.apply(null,f.positives.map(p=>p.value));
@@ -2855,13 +3018,14 @@ function vEvents(){
   const g=document.createElement("div"); g.className="grid"; g.style.gap="12px";
   ev.forEach(e=>{
     const d=document.createElement("div"); d.className="card evt";
+    const rl=reportLinks(e.report);
     d.innerHTML='<div class="evt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+
       (EVICON[e.type]||EVICON.Record)+'</svg></div>'+
       '<div style="flex:1;min-width:0">'+
       '<div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap">'+
         '<b style="font-size:15px">'+esc(e.title)+'</b><span class="pill p-mut">'+esc(e.type)+'</span>'+
         '<span class="small muted" style="margin-left:auto">'+fmtD(e.date)+(isApprox(e.date,e.dateApprox)?" (approx.)":"")+'</span></div>'+
-      '<div class="small muted" style="margin:3px 0 8px">'+esc(e.provider||"")+'</div>'+
+      '<div class="small muted" style="margin:3px 0 8px">'+esc(e.provider||"")+(e.provider&&rl?" · ":"")+rl+'</div>'+
       (e.findings?'<div style="font-size:13.5px;line-height:1.6;color:var(--tx2)">'+esc(e.findings)+'</div>':'')+
       (e.impression?'<div class="note" style="margin-top:9px"><b>Impression.</b> '+esc(e.impression)+'</div>':'')+
       '<div class="delrow" style="margin-top:9px;text-align:right"><button class="del" data-del="'+reg(e)+'">× remove</button></div></div>';
@@ -3243,6 +3407,9 @@ function dl(text,name){
 $("#bLoad").addEventListener("click",openFile);
 $("#eOpen").onclick=openFile;
 $("#bSave").addEventListener("click",exportJSON);
+$("#bPrint").addEventListener("click",printSummary);
+/* printing from the browser menu or Ctrl+P must not produce a blank page */
+window.addEventListener("beforeprint",()=>{ if(S.data) $("#printView").innerHTML=printHtml(); });
 $("#bAdd").addEventListener("click",openAdd);
 /* read-only unless switched on: nothing here is stored */
 function setEdit(on){
@@ -3270,6 +3437,13 @@ $("#bTheme").addEventListener("click",()=>{
 });
 
 /* ==================================================================== boot */
+/* height, latest weight and BMI, for the banner and the printed summary */
+function bodyMeasures(){
+  const p=S.data.profile||{}, h=+p.height>0?+p.height:null;
+  const wr=(Array.isArray(S.data.vitals)?S.data.vitals:[]).filter(r=>r&&+r.weight>0).sort((x,y)=>vTime(y)-vTime(x))[0];
+  const w=wr?+wr.weight:null;
+  return {h:h,w:w,wr:wr,bmi:(h&&w!=null)?w/((h/100)*(h/100)):null};
+}
 /* patient banner: name, sex, age, DOB; allergies, height, latest weight, BMI, source */
 function renderBanner(){
   const p=S.data.profile||{};
@@ -3277,9 +3451,7 @@ function renderBanner(){
   const a=ageAt(p.dob,Date.now());
   $("#pMeta").textContent=[p.sex,a!=null?a+" years":null,p.dob?"DOB "+fmtD(p.dob):null].filter(Boolean).join(" · ");
   const al=(Array.isArray(S.data.allergies)?S.data.allergies:[]).filter(x=>x&&x.substance);
-  const h=+p.height>0?+p.height:null;
-  const wr=(Array.isArray(S.data.vitals)?S.data.vitals:[]).filter(r=>r&&+r.weight>0).sort((x,y)=>vTime(y)-vTime(x))[0];
-  const w=wr?+wr.weight:null, bits=[];
+  const bm=bodyMeasures(), h=bm.h, wr=bm.wr, w=bm.w, bits=[];
   if(al.length) al.forEach(x=>bits.push('<span class="alg" title="'+esc([x.reaction,x.severity].filter(Boolean).join(" · "))+'">Allergy: '+esc(x.substance)+'</span>'));
   else bits.push('<span>Allergies: none recorded</span>');
   if(h) bits.push('<span class="pm">Height '+nf(h,1)+' cm</span>');

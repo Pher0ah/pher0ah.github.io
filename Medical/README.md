@@ -1,8 +1,9 @@
 # Health Record Dashboard
 
-A single-page dashboard for a personal medical record — labs, vitals, medication,
-conditions, imaging and a food-IgG panel. No server, no build step, no internet connection.
-Open `index.html` in any browser, on a phone or a desktop.
+A single-page dashboard for a personal medical record — a one-screen clinical summary, labs,
+vitals and blood pressure, medication, conditions, imaging and a food-IgG panel — with a Print
+button that produces a clean A4 summary for a clinician. No server, no build step, no internet
+connection. Open `index.html` in any browser, on a phone or a desktop.
 
 > **Hosted copy.** This folder is published at
 > <https://www.egynomics.com/Medical/>, which is a public web address. Only the dashboard is
@@ -19,7 +20,7 @@ Open `index.html` in any browser, on a phone or a desktop.
 | `serve.py` | Serves the folder on localhost so the dashboard can load the record by itself |
 | `publish.py` | Pushes the dashboard to the public site; refuses to publish the record |
 | `tools/record-tool.js` | Checks the record from the command line and converts old files to the current layout; uses the dashboard's own format code |
-| `lab/` | The source PDFs, spreadsheet and CSV exports the record was built from |
+| `lab/` | The source PDFs, spreadsheet and CSV exports the record was built from; results can link to them (see *Links to the original reports*) |
 
 ---
 
@@ -63,8 +64,8 @@ If a file has a syntax error — whether it was fetched at startup or opened wit
 stops and shows the line, column and reason instead of opening it (see *When the file has a mistake*).
 It does not quietly fall back to the browser copy. Smaller problems only raise a *things to check* bar.
 
-**Add** is a form for a lab result, a blood-pressure or vitals reading, a medication, a condition,
-or an imaging/report entry. New tests not in the catalogue can be defined inline (name, unit,
+**Add** (visible only in Edit mode, see below) is a form for a lab result, a blood-pressure or vitals
+reading, a medication, a condition, or an imaging/report entry. New tests not in the catalogue can be defined inline (name, unit,
 category, reference range), and results entered in another unit are converted on the way in.
 
 Every change is written to browser local storage immediately, so nothing is lost if the tab
@@ -76,6 +77,43 @@ The browser copy carries a separate flag saying whether it holds edits the file 
 startup, once the file has loaded, the dashboard offers **Use my edits** only when that flag says
 there are unsaved edits and the stored copy differs from the file; in every other case the stored copy
 is simply overwritten with the file.
+
+### Read-only by default, and Edit
+
+The dashboard opens **read-only**: the Add button and every delete button are hidden, so nothing can
+be changed or removed by a stray tap. Press **Edit** in the header to switch editing on (the button
+then reads **Done**); press it again to switch it off. Edit mode is not remembered — every visit
+starts read-only. Load, Save and Print work in both modes.
+
+### Print / PDF summary
+
+**Print** (printer icon, left of Load) builds a clean A4 summary of the record and opens the browser's
+print dialog; choose *Save as PDF* there to attach it to a chart or an email. On screen the summary is
+never visible, and when printing only it is shown — the header, tabs and everything else are hidden. It
+prints black on white whichever theme is on, in this order:
+
+1. Title block: patient name, sex, date of birth, age, the date printed and the date the record was
+   last saved.
+2. Allergies (or "none recorded"), and height, weight and BMI when known.
+3. Problem list (unresolved conditions only) and current medication.
+4. Blood pressure: the latest reading, the mean of the 30 most recent readings not flagged unreliable
+   (with how many and over what dates, and its category), pulse, and the target.
+5. Results outside the reference range (latest value of each test, with `H` / `L`, the reference range,
+   the date and the previous value).
+6. Key results over the last six visits: a small flowsheet of the `keyTests`, newest visit first.
+7. The six most recent investigations with their full impression, the open questions, and the history
+   sections (allergies, family, social, surgical, immunisations).
+8. A footer naming the laboratory whose ranges were used, and saying this is a personal record
+   summary, not a clinical document.
+
+It normally fits two or three pages. The `H` / `L` letters are bold and boxed so they stay readable on a
+black-and-white printer. Links to original reports are not printed. Printing from the browser menu
+(Ctrl+P) gives the same page.
+
+### Light and dark
+
+The dashboard opens in the **light** theme. The sun / moon button in the header switches to dark and
+back; the choice is remembered in this browser only.
 
 ### Moving through time
 
@@ -89,7 +127,8 @@ history in miniature with the visible slice highlighted:
 - **Double-tap the dial**, or the ⇄ button, to snap back to the whole record.
 - The **− and +** buttons beside the date label zoom out and in a step at a time, down to a
   two-week window.
-- The **Last 3 / 1Y / 3Y / 5Y / 10Y / ALL** pills set the opening window.
+- The **Last 3 / 1Y / 3Y / 5Y / 10Y / ALL** pills set the opening window of the Trends cards on the
+  Summary tab and of the Trends view on the Lab Tests tab. The Vitals tab has its own pills (below).
 
 **Last 3** is the default, and it follows the data rather than the calendar: the window opens on
 whatever span covers that test’s three most recent readings. A test last run many years ago
@@ -100,15 +139,70 @@ sampled rarely spans a long stretch on its last three, a frequently measured one
 When a window contains no results the chart says so and names the nearest result on either
 side, so an empty stretch reads as "not tested since 2021" rather than looking broken.
 
-On the Vitals tab the window also drives the statistics and the reading log, so the tiles always
-describe exactly the readings on screen — the Average tile states how many readings it covers.
+### The tabs
 
-### The Lab Tests list
+**Summary** is the page to hand to a clinician. On a wide screen it has two columns:
 
-Tests are listed folded, one per row, showing only the latest result with its trend and status.
-Opening a row reveals that test’s graph, its scroll dial and the full table of results; its chart
-is only built at that moment, so a large catalogue of tests still opens instantly. Rows are
-grouped by category, and the search box and category chips filter the list.
+- left: the **Problem list** (unresolved conditions with since, status, severity and the basis the entry
+  rests on), **Results outside the reference range** (the latest value of each test that is High or Low,
+  with the reference range, date and previous value) and **Key results** (the `keyTests` that are in
+  range, latest value);
+- right: **Current medication** (generic name first, brand in brackets), **Blood pressure** (latest
+  reading; the mean of the 30 most recent readings not flagged unreliable, with how many and over what
+  dates; pulse), **Recent investigations** (the four newest) and **History** (allergies, family, social,
+  surgical, immunisations — "not recorded" where empty).
+
+Below the columns come the **Open questions** (the `followUps` notes), a **Trends** grid of small charts
+for the `keyTests` with the range pills, and a footnote about units and ranges. Tap a row or a card to
+open that test's full history.
+
+Colour is reserved for abnormal values: red or blue is used only for a result outside its reference
+range (and severe problems), amber for something that needs checking, and every flagged result also
+carries a letter — **H** for high, **L** for low — so it can be read without colour and on paper.
+
+**Lab Tests** has two views, chosen with the *Flowsheet* / *Trends* switch.
+
+- **Flowsheet** (the default) is the cumulative results table: tests down the side in catalogue order,
+  grouped by panel, and one column per laboratory visit across the top, newest on the left. Cells
+  outside the range are tinted and carry `H` / `L`. The **Visits** control (*Last 8*, *Last 16*, *All*)
+  sets how many visits are shown as columns, and **Abnormal only** keeps just the tests with a High or
+  Low result in the visits shown. Clicking a test name opens its history; the search box and the
+  category chips filter the rows. The first column and the date row stay in view while scrolling.
+- **Trends** lists the tests folded, one per row, showing only the latest result with its trend and
+  status. Opening a row reveals that test's graph, its scroll dial and the full table of results; the
+  chart is only built at that moment, so a large catalogue still opens instantly. The range pills set
+  the opening window.
+
+**Vitals & BP** shows the blood-pressure chart with its statistics, the pulse chart, a chart for each
+other vital (weight, BMI, SpO₂, temperature, glucose, waist) that has readings, and the reading log.
+Blood pressure comes in bursts, so this tab has its own window pills — **Last 30**, **Last 90** (these
+count readings, not days, and follow the data), **1Y**, **5Y** and **All**. The window of the chart
+also drives the statistics and the reading log, so the figures always describe exactly the readings on
+screen:
+
+- Mean BP with its ACC/AHA category, the morning (04:00–11:59) and evening (17:00–23:59) means, the
+  share of readings at or above the target, the range with the standard deviation of the systolic
+  value, and the mean pulse. Each tile states how many readings it covers.
+- When the device has flagged readings as unreliable, a toggle — *Leave out N readings the device
+  flagged as unreliable* — is shown, on by default. It removes them from the statistics; on the chart
+  they are drawn as hollow, unjoined points and in the log they are dimmed.
+- Two dashed **target lines** are drawn on the chart. The target is `bpTarget` in the record (see
+  below) and is 130/80 when none is set.
+
+**Medication** lists the current medication (generic name first, the brand in brackets, then class,
+dose, schedule, start and prescriber; unconfirmed entries are tagged), then a treatment timeline with
+**lanes grouped by drug class** (a faded bar edge means the start or end date was never recorded), then
+the full history including stopped and past medicines. Under the charts for the tests and measurements
+a medicine is expected to affect — a test's history chart and the blood-pressure chart — a thin
+**treatment strip** shows when each relevant medicine was taken, so a change can be read against the
+treatment of the day. Which medicines appear is decided by drug class (lipid-lowering on the Lipids
+panel, antihypertensives on blood pressure, antidiabetic and GLP-1 / GIP agents on HbA1c, glucose and
+weight, urate-lowering on uric acid, thyroid on TSH and free T4). A medication can override that with
+its own `affects` list (see `medications`).
+
+**Conditions** is the problem list as cards and a timeline, with the evidence behind each entry;
+**Food IgG** shows the food-sensitivity panel; **Imaging** lists the events (imaging, procedures,
+screening, report transfers), newest first.
 
 ### On a phone
 
@@ -141,8 +235,8 @@ line between sections:
   "socialHistory":   { ... },
   "surgicalHistory": [ ... ],
   "immunisations":   [ ... ],
-  "keyTests":        [ ... ],        // which tests the Overview charts
-  "followUps":       [ ... ],        // the "Worth raising with your doctor" cards
+  "keyTests":        [ ... ],        // which tests the Summary charts and the printed flowsheet use
+  "followUps":       [ ... ],        // the "Open questions" notes on the Summary
   "conditions":      [ ... ],
   "medications":     [ ... ],
   "events":          [ ... ],        // imaging, procedures, reports; newest first
@@ -154,6 +248,9 @@ line between sections:
   "testCatalog":     { ... }         // definition of each test, grouped by panel
 }
 ```
+
+Optional settings such as `bpTarget` are not part of this list; like any key the dashboard does not
+reorder, they are kept and written after `testCatalog`.
 
 Layout rules, so you know what to expect when you open the file:
 
@@ -208,8 +305,8 @@ One block per visit to a laboratory: the date, the laboratory, and the results k
 
 **To add a visit:** copy a whole visit block, paste it at the top of `labVisits`, change the date and
 the laboratory, then list the results as `"test_key": value`. Every key must exist in `testCatalog`
-(add the test there first if it does not). Extra visit-level fields such as `report` or `note` are
-kept.
+(add the test there first if it does not). Extra visit-level fields such as `note` are kept. A visit
+may also carry a `report` (see *Links to the original reports*).
 
 A result is written as:
 
@@ -345,8 +442,15 @@ One block per medicine and dose:
 ```
 
 `status` is `active`, `past`, `stopped` or `unknown`. Leave `end` as `null` while the medicine is still
-being taken. `cls` colours the timeline — Antihypertensive, Lipid-lowering, Antiplatelet, Supplement,
-GLP-1 / GIP agonist are pre-coloured; anything else is grey. Dates may be partial (see Dates).
+being taken. `cls` groups the medicine into a lane on the timeline and colours it — Antihypertensive, Lipid-lowering,
+Antiplatelet, Supplement, GLP-1 / GIP agonist, Antidiabetic, Anticoagulant, Urate-lowering, Thyroid and a
+few more are pre-coloured; anything else is grey. Dates may be partial (see Dates). Put the **generic
+name in `generic`** and the brand in `name`: the dashboard shows the generic name first, with the brand
+in brackets.
+
+An optional `affects` list says which charts show this medicine in their treatment strip: test keys,
+and `"bp"` or `"weight"` — for example `"affects": ["hba1c", "bp"]`. Without it the class decides (see
+the Medication tab above); with it, only the listed charts show the medicine.
 
 ### `conditions`
 
@@ -389,12 +493,15 @@ Imaging, procedures, screening and report transfers, newest first.
 }
 ```
 
-`type` selects the icon: Ultrasound, Pathology, Screening, Cardiac, Record, Immunology.
+`type` selects the icon: Ultrasound, Pathology, Screening, Cardiac, Record, Immunology. An optional
+`report` links the original document (see *Links to the original reports*). The Summary shows the
+newest four, with the impression; the printed summary the newest six.
 
 ### History sections
 
-Five short sections hold the background a clinician asks for. They start empty and are not shown as
-tabs yet; they are kept and written back exactly as you type them.
+Five short sections hold the background a clinician asks for. They appear in the **History** card of the
+Summary tab and in the printed summary (allergies also in the header of the page), showing "not
+recorded" while empty; they are kept and written back exactly as you type them.
 
 ```json
 "allergies":       [ { "substance": "Penicillin", "reaction": "rash", "severity": "moderate", "noted": "2010" } ],
@@ -413,25 +520,54 @@ string, `bands` (the colour bands) and `positives`: `{ "group", "name", "antigen
 line. Bands are drawn at 5 / 10 / 20 µg/mL.
 
 An optional `interpretation` string is shown under the chart as a note. Leave it out and no note is
-drawn.
+drawn. An optional `report` links the original document (see *Links to the original reports*).
 
 ### `keyTests`
 
-An array of test keys (for example `["hgb", "ldl", "crp"]`) that sets which cards appear under
-**Key trends** on the Overview. When it is empty, a built-in default list is used.
+An array of test keys (for example `["hgb", "ldl", "crp"]`) that sets which tests appear under **Key
+results** and **Trends** on the Summary tab and in the six-visit flowsheet of the printed summary. When
+it is empty, a built-in default list is used.
 
 ### `followUps`
 
-The "Worth raising with your doctor" cards on the Overview tab. These live in the record rather
-than in the dashboard, so they can be rewritten as the picture changes without touching
+The **Open questions** notes on the Summary tab (and in the printed summary). These live in the record
+rather than in the dashboard, so they can be rewritten as the picture changes without touching
 `index.html`:
 
 ```json
-{ "level": "warn", "title": "...", "text": "..." }
+{ "level": "warn", "title": "...", "text": "...", "asOf": "2024-03-12" }
 ```
 
-`level` only sets the colour of the stripe — `bad` red, `warn` amber, empty neutral. Leave the list
-empty and the section disappears.
+`level` only sets the colour of the stripe — `bad` red, `warn` amber, empty neutral. `asOf` is optional;
+when present it is shown as *as of* that date. Leave the list empty and the section disappears.
+
+### `bpTarget`
+
+An optional top-level text such as `"130/80"`: the blood-pressure target. It sets the two dashed target
+lines on the Vitals chart, the "at or above target" statistic, and the target shown in the printed
+summary. When it is absent or cannot be read, 130/80 is used.
+
+### Links to the original reports
+
+A lab visit, an event and the `foodIgG` panel may each carry an optional `report`: the path of the
+original document relative to the dashboard, or a list of paths.
+
+```json
+{ "date": "2023-01-05", "lab": "Example Laboratory", "report": "lab/example-report.pdf", "results": { "ferritin": 60 } }
+```
+
+```json
+{ "date": "2023-09-18", "type": "Imaging", "title": "Chest X-ray", "report": ["lab/example-xray.pdf", "lab/example-xray-2.pdf"] }
+```
+
+Where the link appears: in the column header of that visit in the Flowsheet (a small document icon), in
+the Source column of the test's result table, on the event's card, and in the header line of the Food IgG
+tab. A single file shows as *Original report*; several show as *Report 1*, *Report 2* and so on.
+
+The links are shown **only when the dashboard runs on your own computer** — opened from the disk
+(`file://`) or served by `serve.py` on localhost. On the public site, or anywhere else, they are not
+drawn at all, so the published copy never points at files that are not there. Only relative paths are
+accepted: a value that contains a colon or `..`, or starts with `/` or a backslash, is ignored.
 
 ### When the file has a mistake
 
@@ -473,7 +609,8 @@ it also turns doubtful-reading notes into `quality` codes, rounds approximate fi
 `YYYY-MM`, and sorts medications once (active, unknown, stopped, past, newest first).
 
 `index.html` contains no personal information at all: every name, value and clinical note comes
-from the record file.
+from the record file, and the printed summary is built from that file in your browser — nothing is sent
+anywhere.
 
 ---
 
