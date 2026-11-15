@@ -291,8 +291,105 @@ import { paintSurface } from './surfaces.js';
     });
     stack.style.height = (presenting ? availH : n ? pad * 2 + (n - 1) * peek + h : 0) + 'px';
     actions.style.top = pad + h + 14 + 'px';
+    if (!presenting) {
+      maxScroll = Math.max(0, stage.scrollHeight - availH);
+      // The stack got shorter (a card deleted, the window resized): don't leave it hanging.
+      if (!anim && g?.mode !== 'scroll' && (pos < 0 || pos > maxScroll)) pos = clamp(pos, 0, maxScroll);
+    }
+    applyScroll();
   }
   new ResizeObserver(layout).observe(stage);
+
+  /* ---- Scrolling, with a little physics ----
+   * The browser's own scrolling is off. The stack follows the finger, carries on with
+   * momentum when let go, and past either end it stretches apart (pulled down) or bunches
+   * up (pushed up), against a rubber-band resistance, then springs back into place. */
+  let pos = 0;              // scroll offset; below 0 or past maxScroll is overscroll
+  let maxScroll = 0;
+  let vel = 0, anim = 0;    // px/ms, and the animation frame, while coasting or springing
+  const RUBBER = 0.55, SPRING_K = 0.00018, SPRING_C = 0.022;   // springs back in about half a second, with a slight bounce
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  const band = (x, d) => (1 - 1 / (x * RUBBER / d + 1)) * d;            // finger travel past the end → stack travel
+  const unband = (y, d) => d / RUBBER * (1 / (1 - Math.min(y, d * 0.98) / d) - 1);
+  const fromFinger = r => { const d = stage.clientHeight || 600; return r < 0 ? -band(-r, d) : r > maxScroll ? maxScroll + band(r - maxScroll, d) : r; };
+  const toFinger = p => { const d = stage.clientHeight || 600; return p < 0 ? -unband(-p, d) : p > maxScroll ? maxScroll + unband(p - maxScroll, d) : p; };
+
+  function applyScroll() {
+    const s = selected ? 0 : clamp(pos, 0, maxScroll);
+    const o = selected ? 0 : pos < 0 ? -pos : pos > maxScroll ? maxScroll - pos : 0;   // >0 pulled down, <0 pushed up
+    const t = `translate3d(0, ${(-s).toFixed(1)}px, 0)`;
+    stack.style.transform = t;
+    hint.style.transform = t;
+    // Overscroll moves each card a little more than the one above it, so the gaps open up
+    // (or close up, though never so far that the title strips disappear).
+    const n = state.cards.length;
+    const gap = n > 1 ? clamp(o * (o > 0 ? 1.6 : 0.6) / (n - 1), -0.6 * M.peek, 0.8 * M.peek) : 0;
+    state.cards.forEach((c, i) => {
+      const el = els.get(c.id);
+      if (el) el.style.translate = o ? `0 ${(o * 0.6 + i * gap).toFixed(1)}px` : '';
+    });
+  }
+
+  /** Stop any coasting or springing. Returns true if the stack was still moving. */
+  function stopCoast() {
+    const moving = !!anim;
+    cancelAnimationFrame(anim);
+    anim = 0;
+    return moving;
+  }
+  /** Let the stack go at speed v (px/ms): it slows to a stop, and springs back from past an end. */
+  function coast(v) {
+    stopCoast();
+    vel = v;
+    if (!v && pos >= 0 && pos <= maxScroll) return;   // nothing to do (and a quick second tap must not find it "moving")
+    if (reducedMotion.matches) { vel = 0; pos = clamp(pos, 0, maxScroll); applyScroll(); return; }
+    let spring = null, last = performance.now();
+    const step = now => {
+      const dt = Math.min(32, now - last);
+      last = now;
+      if (spring === null && (pos < 0 || pos > maxScroll)) {
+        spring = pos < 0 ? 0 : maxScroll;
+        vel = clamp(vel, -1.2, 1.2);   // running into an end at speed only stretches it a little
+      }
+      if (spring !== null) {
+        for (let k = 0; k < 4; k++) { const h = dt / 4; vel += (-SPRING_K * (pos - spring) - SPRING_C * vel) * h; pos += vel * h; }
+        if (Math.abs(pos - spring) < 0.3 && Math.abs(vel) < 0.02) { pos = spring; vel = 0; }
+      } else {
+        pos += vel * dt;
+        vel *= Math.pow(0.998, dt);   // the same slow-down as a phone's own scrolling
+        if (Math.abs(vel) < 0.02) vel = 0;
+      }
+      applyScroll();
+      anim = vel || (spring !== null && pos !== spring) ? requestAnimationFrame(step) : 0;
+    };
+    anim = requestAnimationFrame(step);
+  }
+  /** Move to a scroll position, easing there along with the cards. */
+  function glideTo(p) {
+    stopCoast();
+    for (const el of [stack, hint]) el.classList.add('glide');
+    clearTimeout(glideTo.t);
+    glideTo.t = setTimeout(() => { stack.classList.remove('glide'); hint.classList.remove('glide'); }, 650);
+    if (p !== undefined) pos = p;
+    applyScroll();
+  }
+
+  // Mouse wheel and trackpad.
+  stage.addEventListener('wheel', e => {
+    if (selected || drag || !maxScroll) return;
+    e.preventDefault();
+    stopCoast();
+    pos = clamp(pos + e.deltaY * (e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? stage.clientHeight : 1), 0, maxScroll);
+    applyScroll();
+  }, { passive: false });
+  // Keyboard focus on a card out of view scrolls it into view (ours, not the browser's).
+  stage.addEventListener('scroll', () => { stage.scrollTop = 0; });
+  stage.addEventListener('focusin', e => {
+    const el = cardAt(e);
+    if (!el || selected || drag) return;
+    const y = M.pad + cardIndex(el.dataset.id) * M.peek, want = clamp(clamp(pos, y + M.peek + 48 - stage.clientHeight, y - 8), 0, maxScroll);
+    if (Math.abs(want - pos) > 1) glideTo(want);
+  });
 
   /** Pull a card out of the stack (or, with no id, put it back). */
   function present(id) {
@@ -300,7 +397,8 @@ import { paintSurface } from './surfaces.js';
     cancelTap();
     if (next === selected) return;
     selected = next;
-    if (selected) stage.scrollTop = 0;
+    // The stack keeps its scroll position for when the card goes back.
+    glideTo(clamp(pos, 0, maxScroll));
     syncActions();
     layout();
   }
@@ -378,10 +476,12 @@ import { paintSurface } from './surfaces.js';
                                                mode: 'pull0', tol: MOVE_TOL[e.pointerType] ?? MOVE_TOL.touch };
       return;
     }
-    if (!el) return;
-    g = { pid: e.pointerId, id: el.dataset.id, el, x0: e.clientX, y0: e.clientY, y: e.clientY, mode: 'pending',
-          tol: MOVE_TOL[e.pointerType] ?? MOVE_TOL.touch };
-    g.hold = setTimeout(startDrag, HOLD_MS);
+    if (e.target.closest('.empty')) return;
+    // Touching the stack while it is still moving just stops it, as on a phone: no tap, no pick-up.
+    const stopped = stopCoast();
+    g = { pid: e.pointerId, id: el?.dataset.id, el, x0: e.clientX, y0: e.clientY, y: e.clientY, trail: [{ y: e.clientY, t: now }],
+          mode: 'pending', stopped, tol: MOVE_TOL[e.pointerType] ?? MOVE_TOL.touch };
+    if (el && !stopped) g.hold = setTimeout(startDrag, HOLD_MS);
   });
 
   function startDrag() {
@@ -390,7 +490,7 @@ import { paintSurface } from './surfaces.js';
     g.mode = 'drag';
     try { stage.setPointerCapture(g.pid); } catch { /* pointer already gone */ }
     const base = M.pad + i * M.peek;
-    drag = { id: g.id, target: i, y: base, off: base - (g.y + stage.scrollTop), raf: 0 };
+    drag = { id: g.id, target: i, y: base, off: base - (g.y + pos), raf: 0 };
     g.el.classList.add('lifted');
     stage.classList.add('reordering');
     navigator.vibrate?.(12);
@@ -399,7 +499,7 @@ import { paintSurface } from './surfaces.js';
 
   /** Follow the pointer and work out which slot the card is over. */
   function placeDrag() {
-    drag.y = g.y + stage.scrollTop + drag.off;
+    drag.y = g.y + pos + drag.off;
     drag.target = clamp(Math.round((drag.y - M.pad) / (M.peek || 1)), 0, state.cards.length - 1);
     layout();
   }
@@ -412,9 +512,10 @@ import { paintSurface } from './surfaces.js';
       if (!g) return;
       const r = stage.getBoundingClientRect(), edge = 70;
       const v = g.y < r.top + edge ? g.y - (r.top + edge) : g.y > r.bottom - edge ? g.y - (r.bottom - edge) : 0;
-      const before = stage.scrollTop;
-      if (v) stage.scrollTop += v * 0.25;
-      if (stage.scrollTop === before) return;
+      const before = pos;
+      pos = clamp(pos + v * 0.25, 0, maxScroll);
+      if (pos === before) return;
+      applyScroll();
       placeDrag();
       drag.raf = requestAnimationFrame(step);
     };
@@ -431,11 +532,18 @@ import { paintSurface } from './surfaces.js';
       g.el?.classList.add('pulling');
     }
     if (g.mode === 'pull' && g.el) {
-      // The open card follows the finger down (and resists being pushed up).
+      // The open card follows the finger down, and stretches against being pushed up.
       const dy = g.y - g.y0;
-      g.el.style.transform = `translate3d(0, ${(M.pad + (dy > 0 ? dy : dy * 0.2)).toFixed(1)}px, 0)`;
+      g.el.style.transform = `translate3d(0, ${(M.pad + (dy > 0 ? dy : -band(-dy, 240))).toFixed(1)}px, 0)`;
     }
-    if (g.mode === 'pending' && Math.hypot(e.clientX - g.x0, e.clientY - g.y0) > g.tol) { clearTimeout(g.hold); g.mode = 'scroll'; }
+    if (g.mode === 'pending' && Math.hypot(e.clientX - g.x0, e.clientY - g.y0) > g.tol) {
+      clearTimeout(g.hold);
+      g.mode = 'scroll';
+      g.f0 = toFinger(pos);   // where the finger "is" in the stack, overscroll unstretched
+      g.sy = g.y;
+      try { stage.setPointerCapture(g.pid); } catch { /* pointer already gone */ }
+    }
+    if (g.mode === 'scroll') { pos = fromFinger(g.f0 - (g.y - g.sy)); applyScroll(); }
     if (g.mode === 'drag') { placeDrag(); autoScroll(); }
   });
   // Once a card has been picked up, or while one is out of the stack, the finger moves
@@ -459,14 +567,20 @@ import { paintSurface } from './surfaces.js';
     g = null;
     if (was.mode === 'drag') finishDrag(true);
     if (was.mode === 'pull') endPull(was, !cancelled);
-    if (!['pending', 'pull0'].includes(was.mode) || cancelled) suppressClick = true;
+    // Let the stack go: with the finger's speed after a scroll, or just back into place.
+    if (was.mode === 'scroll' || was.mode === 'pending') coast(was.mode === 'scroll' && !cancelled ? -speed(was) : 0);
+    if (!['pending', 'pull0'].includes(was.mode) || cancelled || was.stopped) suppressClick = true;
+  }
+  /** The finger's speed (px/ms, down is positive) over the last tenth of a second or so,
+   *  so one late, slow sample can't hide a flick. */
+  function speed(was) {
+    const now = performance.now(), ref = was.trail.find(p => now - p.t <= 130);
+    return ref ? (was.y - ref.y) / Math.max(now - ref.t, 1) : 0;
   }
   /** Let go of the open card: far or fast enough downwards puts it back in the stack. */
   function endPull(was, commit) {
     was.el?.classList.remove('pulling');
-    // Speed over the last tenth of a second or so, so one late, slow sample can't hide a flick.
-    const now = performance.now(), ref = was.trail.find(p => now - p.t <= 130);
-    const dy = was.y - was.y0, v = ref ? (was.y - ref.y) / Math.max(now - ref.t, 1) : 0;   // px/ms
+    const dy = was.y - was.y0, v = speed(was);
     if (commit && (dy > 70 || (dy > 12 && v > 0.25))) present(null);
     else layout();
   }
@@ -478,6 +592,7 @@ import { paintSurface } from './surfaces.js';
     const was = g;
     g = null;
     if (was.mode === 'pull') endPull(was, false);
+    if (was.mode === 'scroll') coast(0);
     finishDrag(false);
   }
   addEventListener('blur', resetGesture);
