@@ -11,7 +11,7 @@
 :root{
   --bg:#f4f6fa; --bg2:#ffffff; --panel:#ffffff; --panel2:#f8fafc;
   --line:#e2e8f0; --line2:#cbd5e1;
-  --tx:#0f172a; --tx2:#475569; --tx3:#94a3b8;
+  --tx:#0f172a; --tx2:#475569; --tx3:#5f6f86;
   --acc:#2563eb; --acc2:#1d4ed8; --accSoft:rgba(37,99,235,.10);
   --ok:#15803d; --okBg:rgba(22,163,74,.12);
   --warn:#b45309; --warnBg:rgba(217,119,6,.14);
@@ -25,7 +25,7 @@
 html[data-theme="dark"]{
   --bg:#0b1220; --bg2:#0f1729; --panel:#131c2f; --panel2:#0f1729;
   --line:#1e2a42; --line2:#2c3a56;
-  --tx:#e8eef8; --tx2:#a3b1c9; --tx3:#64748b;
+  --tx:#e8eef8; --tx2:#a3b1c9; --tx3:#8a98ae;
   --acc:#60a5fa; --acc2:#3b82f6; --accSoft:rgba(96,165,250,.14);
   --ok:#4ade80; --okBg:rgba(74,222,128,.14);
   --warn:#fbbf24; --warnBg:rgba(251,191,36,.14);
@@ -38,7 +38,7 @@ html[data-theme="dark"]{
   html:not([data-theme="light"]){
     --bg:#0b1220; --bg2:#0f1729; --panel:#131c2f; --panel2:#0f1729;
     --line:#1e2a42; --line2:#2c3a56;
-    --tx:#e8eef8; --tx2:#a3b1c9; --tx3:#64748b;
+    --tx:#e8eef8; --tx2:#a3b1c9; --tx3:#8a98ae;
     --acc:#60a5fa; --acc2:#3b82f6; --accSoft:rgba(96,165,250,.14);
     --ok:#4ade80; --okBg:rgba(74,222,128,.14);
     --warn:#fbbf24; --warnBg:rgba(251,191,36,.14);
@@ -93,7 +93,7 @@ header.top{
 .btn svg{width:16px;height:16px;flex:0 0 auto}
 
 /* tabs */
-nav.tabs{position:sticky;top:0;z-index:55;background:var(--bg2);border-bottom:1px solid var(--line)}
+nav.tabs{position:sticky;top:var(--hdrH,57px);z-index:55;background:var(--bg2);border-bottom:1px solid var(--line)}
 .tabsin{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .tabsin::-webkit-scrollbar{display:none}
 .tab{
@@ -936,6 +936,9 @@ function validate(d,warn,isV1){
 
 /* ---------------------------------------------------------------- public: read */
 function fromFile(obj){
+  const KNOWN=["labVisits","labResults","testCatalog","profile","vitals","medications","conditions"];
+  if(!obj||typeof obj!=="object"||Array.isArray(obj)||!KNOWN.some(k=>k in obj))
+    throw new Error("That file does not look like a health record.");
   if(!isObj(obj)) throw new Error('This file does not contain a health record (expected one JSON object).');
   const src=clone(obj), warnings=[];
   const warn=(where,message)=>{ warnings.push({where:where,message:message,text:where+': '+message}); };
@@ -1184,6 +1187,29 @@ function fmtD(s){
 }
 function fmtDS(t){ const d=new Date(t); return MON[d.getUTCMonth()]+" "+String(d.getUTCFullYear()).slice(2); }
 function nf(v,d){ if(v==null||isNaN(v)) return "—"; return Number(v).toFixed(d==null?2:d).replace(/\.0+$|(\.\d*?)0+$/,"$1"); }
+/* a measured value: at most `d` decimals, but never fewer than one when the test has decimals */
+function fmtVal(v,d){
+  if(v==null||isNaN(v)) return "—";
+  d=(d==null?2:d); const min=Math.min(1,d);
+  let s=Number(v).toFixed(d);
+  if(d>min) s=s.replace(/0+$/,"").replace(/\.$/,"");
+  const i=s.indexOf("."); const have=i<0?0:s.length-i-1;
+  if(have<min) s=Number(v).toFixed(min);
+  return s;
+}
+/* units are stored the way they are typed; show them the way they are printed */
+function unitTxt(u){
+  const SUP={"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","-":"⁻"};
+  return String(u||"").replace(/x10\^(-?\d+)/g,(m,e)=>"×10"+e.split("").map(ch=>SUP[ch]||ch).join(""));
+}
+/* how old a result is: "" when under a year, otherwise "2 yr 3 mo ago" */
+function ageTxt(t){
+  const d=new Date(t), n=new Date(); if(isNaN(d)) return "";
+  const months=(n.getFullYear()-d.getFullYear())*12+(n.getMonth()-d.getMonth());
+  if(months<12) return "";
+  const yr=Math.floor(months/12), mo=months%12;
+  return yr+" yr"+(mo?" "+mo+" mo":"")+" ago";
+}
 function ageAt(dob,t){ if(!dob) return null; const b=new Date(pd(dob)),n=new Date(t||Date.now());
   let a=n.getUTCFullYear()-b.getUTCFullYear(); const m=n.getUTCMonth()-b.getUTCMonth();
   if(m<0||(m===0&&n.getUTCDate()<b.getUTCDate())) a--; return a; }
@@ -1366,6 +1392,14 @@ function clampWin(v){
   if(v.win.t1>F.t1){ v.win.t1=F.t1; v.win.t0=F.t1-span; }
 }
 
+function niceTicks(lo,hi,n){
+  const span=hi-lo; if(!(span>0)) return {ticks:[lo],dec:0};
+  const raw=span/n, p=Math.pow(10,Math.floor(Math.log10(raw))), f=raw/p;
+  const step=(f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*p;
+  const ticks=[]; for(let v=Math.ceil(lo/step-1e-9)*step; v<=hi+1e-9; v+=step) ticks.push(+v.toFixed(10));
+  const dec=Math.max(0,Math.min(4,-Math.floor(Math.log10(step)+1e-9)+((f>2&&f<=2.5)?1:0)));
+  return {ticks:ticks,dec:dec};
+}
 /* main plot for the window win={t0,t1} */
 function drawChart(cv,cfg,win){
   const box=cv.parentElement, W=box.clientWidth||300, H=cfg.height||120;
@@ -1390,8 +1424,8 @@ function drawChart(cv,cfg,win){
     parts.forEach(p=>{ if(p.before&&(!bf||p.before.t>bf.t)) bf=p.before;
                        if(p.after&&(!af||p.after.t<af.t)) af=p.after; });
     const L=["Nothing recorded in this window"];
-    if(bf) L.push("Previous: "+nf(bf.v,cfg.decimals)+" "+(cfg.unit||"")+" \u00b7 "+fmtT(bf.t));
-    if(af) L.push("Next: "+nf(af.v,cfg.decimals)+" "+(cfg.unit||"")+" \u00b7 "+fmtT(af.t));
+    if(bf) L.push("Previous: "+fmtVal(bf.v,cfg.decimals)+" "+unitTxt(cfg.unit)+" \u00b7 "+fmtT(bf.t));
+    if(af) L.push("Next: "+fmtVal(af.v,cfg.decimals)+" "+unitTxt(cfg.unit)+" \u00b7 "+fmtT(af.t));
     L.slice(0,axis?3:2).forEach((m,i,ar)=>x.fillText(m,W/2,H/2+(i-(ar.length-1)/2)*15+4));
     return null;
   }
@@ -1419,10 +1453,11 @@ function drawChart(cv,cfg,win){
   }
   if(axis){
     x.font="10px -apple-system,system-ui,sans-serif"; x.fillStyle=cssv("--tx3"); x.textAlign="right";
-    for(let i=0;i<=4;i++){ const v=lo+(hi-lo)*i/4, y=Y(v);
+    const nt=niceTicks(lo,hi,4);
+    for(const v of nt.ticks){ const y=Y(v);
       x.strokeStyle=cssv("--grid"); x.lineWidth=1;
       x.beginPath(); x.moveTo(PL,y+.5); x.lineTo(PL+w,y+.5); x.stroke();
-      x.fillText(nf(v,(hi-lo)<3?2:(hi-lo)<30?1:0),PL-6,y+3.5);
+      x.fillText(v.toFixed(nt.dec),PL-6,y+3.5);
     }
     x.textAlign="center";
     const span=t1-t0, nT=W<380?3:W<640?4:6;
@@ -1595,8 +1630,8 @@ function attachScrub(box,cv,view){
       x.fillStyle=it.s.color; x.fill(); x.strokeStyle=cssv("--panel"); x.lineWidth=2; x.stroke(); });
     tip.innerHTML='<div class="muted" style="font-size:11px;margin-bottom:2px">'+fmtT(best.t)+'</div>'+
       stack.map(it=>'<div><span style="color:'+it.s.color+'">\u25cf</span> '+
-        (cfg.series.length>1?esc(it.s.name)+" ":"")+'<b>'+nf(it.p.v,cfg.decimals)+'</b> <span class="muted">'+
-        esc(cfg.unit||"")+'</span></div>').join("");
+        (cfg.series.length>1?esc(it.s.name)+" ":"")+'<b>'+fmtVal(it.p.v,cfg.decimals)+'</b> <span class="muted">'+
+        esc(unitTxt(cfg.unit))+'</span></div>').join("");
     tip.style.left=Math.min(Math.max(g.X(best.t),60),g.W-60)+"px";
     tip.style.top=g.Y(best.v!=null?best.v:stack[0].p.v)+"px";
     tip.classList.add("on");
@@ -1698,17 +1733,18 @@ function tickerCard(testId,range,opts){
   if(prev&&prev.v!=null&&last.v!=null&&prev.v!==0){
     const d=last.v-prev.v, q=trendQuality(prev.v,last.v,r.lo,r.hi);
     const col=q==="good"?"var(--ok)":q==="bad"?"var(--bad)":"var(--tx3)";
-    delta='<span class="tk-d num" style="color:'+col+'">'+(d>0?"▲":d<0?"▼":"▬")+" "+
-      nf(Math.abs(d),c.decimals)+' <span style="opacity:.7">('+(d>0?"+":"")+nf(d/Math.abs(prev.v)*100,1)+'%)</span></span>';
+    delta='<span class="tk-d num" style="color:'+col+'" title="change since '+esc(fmtVal(prev.v,c.decimals)+" on "+fmtD(prev.rec.date))+'">'+(d>0?"▲":d<0?"▼":"▬")+" "+
+      nf(Math.abs(d),c.decimals)+' <span style="opacity:.7">('+(d>0?"+":"")+nf(d/Math.abs(prev.v)*100,1)+'%)</span> <span class="muted" style="font-weight:500">vs '+fmtDS(prev.t)+'</span></span>';
   }
-  const val = last.v!=null ? nf(last.v,c.decimals) : esc(last.rec.text||"—");
+  const val = last.v!=null ? fmtVal(last.v,c.decimals) : esc(last.rec.text||"—");
+  const age=ageTxt(last.t);
   el.innerHTML=
     '<div class="tk-h"><div class="tk-n">'+esc(c.name)+'</div>'+
       '<span class="pill '+FLAGCLS[f]+'"><i class="dot"></i>'+FLAGTXT[f]+'</span></div>'+
-    '<div class="tk-v"><b class="num">'+val+'</b><span class="tk-u">'+esc(c.unit||"")+'</span>'+delta+'</div>'+
+    '<div class="tk-v"><b class="num">'+val+'</b><span class="tk-u">'+esc(unitTxt(c.unit))+'</span>'+delta+'</div>'+
     '<div class="chartbox"></div>'+
-    '<div class="tk-f"><span>'+fmtD(last.rec.date)+'</span><span>'+all.length+' result'+(all.length>1?"s":"")+
-      (r.lo!=null||r.hi!=null?' · ref '+(r.lo!=null?nf(r.lo,c.decimals):"")+'–'+(r.hi!=null?nf(r.hi,c.decimals):""):"")+'</span></div>';
+    '<div class="tk-f"><span>'+fmtD(last.rec.date)+(age?' · <b style="color:var(--warn)">'+age+'</b>':'')+'</span><span>'+all.length+' result'+(all.length>1?"s":"")+
+      (r.lo!=null||r.hi!=null?' · ref '+refTxt(r.lo,r.hi,c.decimals):"")+'</span></div>';
   const box=el.querySelector(".chartbox");
   if(series(testId).length>1) mountChart(box,labSeriesCfg(testId,range,{height:o.h||58,axis:false}),{brush:o.brush||false});
   else if(series(testId).length) mountChart(box,labSeriesCfg(testId,"ALL",{height:o.h||58,axis:false}));
@@ -1802,10 +1838,10 @@ function vOverview(){
   const fu=(S.data.followUps||DEFAULT_FOLLOWUPS);
   if(fu&&fu.length){
     const s=document.createElement("div"); s.className="sec";
-    s.innerHTML='<div class="sech"><h2>Worth raising with your doctor</h2><span class="sub">generated from the patterns in this record — not a diagnosis</span></div>';
+    s.innerHTML='<div class="sech"><h2>Worth raising with your doctor</h2><span class="sub">notes kept in the record — not a diagnosis</span></div>';
     const g=document.createElement("div"); g.className="grid g-2";
     fu.forEach(f=>{ const d=document.createElement("div"); d.className="note "+(f.level||"");
-      d.innerHTML='<b>'+esc(f.title)+'</b><br>'+esc(f.text); g.appendChild(d); });
+      d.innerHTML='<b>'+esc(f.title)+'</b>'+(f.asOf?' <span class="muted small">· as of '+fmtD(f.asOf)+'</span>':'')+'<br>'+esc(f.text); g.appendChild(d); });
     s.appendChild(g); v.appendChild(s);
   }
 
@@ -1894,7 +1930,7 @@ function accRow(testId){
   if(prev&&prev.v!=null&&last.v!=null&&prev.v!==0){
     const d=last.v-prev.v, q=trendQuality(prev.v,last.v,r.lo,r.hi);
     const col=q==="good"?"var(--ok)":q==="bad"?"var(--bad)":"var(--tx3)";
-    delta='<span class="tk-d num" style="color:'+col+'">'+(d>0?"\u25b2":d<0?"\u25bc":"\u25ac")+
+    delta='<span class="tk-d num" style="color:'+col+'" title="change since '+esc(fmtVal(prev.v,c.decimals)+" on "+fmtD(prev.rec.date))+'">'+(d>0?"\u25b2":d<0?"\u25bc":"\u25ac")+
       " "+nf(Math.abs(d),c.decimals)+'</span>';
   }
   const el=document.createElement("div"); el.className="acc";
@@ -1902,10 +1938,10 @@ function accRow(testId){
     '<button class="acc-h" aria-expanded="false">'+
       '<span class="acc-nm"><b>'+esc(c.name)+'</b><small>'+esc(c.category)+' \u00b7 '+
         all.length+' result'+(all.length>1?"s":"")+'</small></span>'+
-      '<span class="acc-v"><b class="num">'+(last.v!=null?nf(last.v,c.decimals):esc(last.rec.text||"\u2014"))+
-        '</b><i>'+esc(c.unit||"")+'</i>'+delta+'</span>'+
+      '<span class="acc-v"><b class="num">'+(last.v!=null?fmtVal(last.v,c.decimals):esc(last.rec.text||"\u2014"))+
+        '</b><i>'+esc(unitTxt(c.unit))+'</i>'+delta+'</span>'+
       '<span class="pill '+FLAGCLS[f]+'"><i class="dot"></i>'+FLAGTXT[f]+'</span>'+
-      '<span class="acc-dt num">'+fmtD(last.rec.date)+'</span>'+
+      '<span class="acc-dt num">'+fmtD(last.rec.date)+(ageTxt(last.t)?' \u00b7 <b style="color:var(--warn)">'+ageTxt(last.t)+'</b>':'')+'</span>'+
       '<svg class="acc-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>'+
     '</button><div class="acc-b"></div>';
   const head=el.querySelector(".acc-h"), body=el.querySelector(".acc-b");
@@ -1927,7 +1963,7 @@ function testBody(testId,rng){
     '<div class="card acc-chart"><div class="chartbox"></div></div>'+
     ((c.refLow!=null||c.refHigh!=null)
       ? '<div class="legend"><span><i style="background:var(--band);border:1px solid var(--line2)"></i>'+
-        'Reference range '+refTxt(c.refLow,c.refHigh,c.decimals)+' '+esc(c.unit||"")+'</span></div>'
+        'Reference range '+refTxt(c.refLow,c.refHigh,c.decimals)+' '+esc(unitTxt(c.unit))+'</span></div>'
       : '')+
     '<h4 style="margin:16px 0 8px;font-size:13px">All results ('+all.length+')</h4>'+
     '<div class="card tbl-wrap"><table><thead><tr><th>Date</th><th>Value</th><th>Status</th>'+
@@ -1935,7 +1971,7 @@ function testBody(testId,rng){
     all.slice().reverse().map(p=>{
       const rr=refOf(p.rec,c), ff=flagOf(p.v,rr.lo,rr.hi), sr=srcRefOf(p.rec);
       return '<tr><td class="num">'+fmtD(p.rec.date)+'</td>'+
-      '<td class="num"><b>'+(p.v!=null?nf(p.v,c.decimals):esc(p.rec.text||"\u2014"))+'</b>'+
+      '<td class="num"><b>'+(p.v!=null?fmtVal(p.v,c.decimals):esc(p.rec.text||"\u2014"))+'</b>'+
         (p.rec.orig?'<br><span class="muted small">as reported: '+esc(p.rec.orig.value)+' '+esc(p.rec.orig.unit)+'</span>':'')+
         (p.rec.text&&p.v!=null?' <span class="muted small">'+esc(p.rec.text)+'</span>':'')+'</td>'+
       '<td><span class="pill '+FLAGCLS[ff]+'">'+FLAGTXT[ff]+'</span></td>'+
@@ -1945,7 +1981,7 @@ function testBody(testId,rng){
       '<td><button class="del" data-del="'+reg(p.rec)+'" title="Delete">\u00d7</button></td></tr>';
     }).join("")+'</tbody></table></div>'+
     '<div class="small muted" style="margin-top:7px">Status is judged against the '+
-    esc(c.rangeSource||refLabName())+' range of '+refTxt(c.refLow,c.refHigh,c.decimals)+' '+esc(c.unit||"")+
+    esc(c.rangeSource||refLabName())+' range of '+refTxt(c.refLow,c.refHigh,c.decimals)+' '+esc(unitTxt(c.unit))+
     ', so the whole history is measured the same way. Where the reporting laboratory printed a '+
     'different range it is shown above and marked \u2260.</div>';
   const box=wrap.querySelector(".chartbox");
@@ -1968,8 +2004,8 @@ function openTest(testId){
     body.innerHTML=
       '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px">'+
         '<div><div class="num" style="font-size:32px;font-weight:700;letter-spacing:-.03em">'+
-          (last.v!=null?nf(last.v,c.decimals):esc(last.rec.text||"\u2014"))+
-          ' <span style="font-size:14px;color:var(--tx3);font-weight:500">'+esc(c.unit||"")+'</span></div>'+
+          (last.v!=null?fmtVal(last.v,c.decimals):esc(last.rec.text||"\u2014"))+
+          ' <span style="font-size:14px;color:var(--tx3);font-weight:500">'+esc(unitTxt(c.unit))+'</span></div>'+
           '<div class="small muted">'+fmtD(last.rec.date)+' \u00b7 '+esc(last.rec.source||"")+'</div></div>'+
         '<span class="pill '+FLAGCLS[f]+'"><i class="dot"></i>'+FLAGTXT[f]+'</span>'+
         '<div style="flex:1"></div><div id="mdRange"></div></div>'+
@@ -2018,7 +2054,7 @@ function vVitals(){
     const st=document.createElement("div"); st.className="grid g-tiles sec";
     st.innerHTML=[
       ["Latest",last.systolic+"/"+last.diastolic,fmtD(last.date)+(last.time?" "+last.time:"")+" · "+cta.t],
-      ["Average",Math.round(avg(sysV))+"/"+Math.round(avg(diaV)),bp.length+" readings in range"],
+      ["Average",Math.round(avg(sysV))+"/"+Math.round(avg(diaV)),bp.length+" readings in this window"],
       ["Highest",Math.max.apply(null,sysV)+"/"+Math.max.apply(null,diaV),"peak systolic / peak diastolic"],
       ["Lowest",Math.min.apply(null,sysV)+"/"+Math.min.apply(null,diaV),"trough systolic / trough diastolic"],
       ["At target",Math.round(inT/bp.length*100)+"%","below 130/80"],
@@ -2797,6 +2833,11 @@ window.addEventListener("resize",()=>{ clearTimeout(window._rz);
   window._rz=setTimeout(()=>{ CHARTS.forEach(f=>f()); },160); });
 
 applyTheme();
+(function(){
+  const h=document.querySelector("header.top");
+  const set=()=>document.documentElement.style.setProperty("--hdrH",h.offsetHeight+"px");
+  set(); if(window.ResizeObserver) new ResizeObserver(set).observe(h); else window.addEventListener("resize",set);
+})();
 
 /* ==================================================================== startup
    The record lives in health-data.json beside this page. Served over http it is
