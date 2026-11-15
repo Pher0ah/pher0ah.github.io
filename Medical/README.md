@@ -1,6 +1,6 @@
 # Health Record Dashboard
 
-A single-page dashboard for a 20-year personal medical record — labs, vitals, medication,
+A single-page dashboard for a personal medical record — labs, vitals, medication,
 conditions, imaging and a food-IgG panel. No server, no build step, no internet connection.
 Open `index.html` in any browser, on a phone or a desktop.
 
@@ -15,6 +15,7 @@ Open `index.html` in any browser, on a phone or a desktop.
 |---|---|
 | `index.html` | The dashboard. Holds no data of its own — it reads the record at startup |
 | `health-data.json` | The record itself — the file you edit, back up and version |
+| `RECORD-NOTES.md` | Private notes on where the data came from; never published |
 | `serve.py` | Serves the folder on localhost so the dashboard can load the record by itself |
 | `publish.py` | Pushes the dashboard to the public site; refuses to publish the record |
 | `lab/` | The source PDFs, spreadsheet and CSV exports the record was built from |
@@ -77,10 +78,10 @@ history in miniature with the visible slice highlighted:
 - The **Last 3 / 1Y / 3Y / 5Y / 10Y / ALL** pills set the opening window.
 
 **Last 3** is the default, and it follows the data rather than the calendar: the window opens on
-whatever span covers that test’s three most recent readings. A test last run in 2011 opens on its
-own results instead of on an empty stretch of the last three years, and a test run monthly opens
-tight. Because it is measured in readings, the span differs per graph — CK spans six years on its
-last three, blood pressure spans about two weeks.
+whatever span covers that test’s three most recent readings. A test last run many years ago
+opens on its own results instead of on an empty stretch of the last three years, and a test run
+monthly opens tight. Because it is measured in readings, the span differs per graph — a test
+sampled rarely spans a long stretch on its last three, a frequently measured one only a few weeks.
 
 When a window contains no results the chart says so and names the nearest result on either
 side, so an empty stretch reads as "not tested since 2021" rather than looking broken.
@@ -92,7 +93,7 @@ describe exactly the readings on screen — the Average tile states how many rea
 
 Tests are listed folded, one per row, showing only the latest result with its trend and status.
 Opening a row reveals that test’s graph, its scroll dial and the full table of results; its chart
-is only built at that moment, so a catalogue of eighty-odd tests still opens instantly. Rows are
+is only built at that moment, so a large catalogue of tests still opens instantly. Rows are
 grouped by category, and the search box and category chips filter the list.
 
 ### On a phone
@@ -108,8 +109,8 @@ The scroll dial takes a finger drag, and timelines and wide tables scroll sidewa
 ```jsonc
 {
   "schemaVersion": "1.1",
-  "generated": "2026-08-15",
-  "referenceLab": "Saudi German Hospital, Riyadh",   // sets the units and ranges
+  "generated": "2026-01-01",
+  "referenceLab": "Example Hospital Laboratory",   // sets the units and ranges
   "unitPolicy":   "...",
   "profile":      { ... },
   "testCatalog":  { ... },   // definition of each test: name, unit, reference range
@@ -118,7 +119,9 @@ The scroll dial takes a finger drag, and timelines and wide tables scroll sidewa
   "medications":  [ ... ],
   "conditions":   [ ... ],
   "events":       [ ... ],   // imaging, procedures, screening, reports
-  "foodIgG":      { ... }
+  "foodIgG":      { ... },
+  "keyTests":     [ ... ],   // optional, see below
+  "followUps":    [ ... ]    // optional, see below
 }
 ```
 
@@ -131,37 +134,36 @@ renders missing dates as faded timeline edges rather than inventing a span.
 Defines a test once; every result then refers to it by key.
 
 ```json
-"uric_acid": {
-  "name": "Uric Acid",
-  "unit": "mg/dL",
-  "category": "Metabolic",
-  "decimals": 2,
-  "refLow": 3.5,
-  "refHigh": 7.2,
+"ferritin": {
+  "name": "Ferritin",
+  "unit": "µg/L",
+  "category": "Vitamins & Minerals",
+  "decimals": 0,
+  "refLow": 30,
+  "refHigh": 400,
   "higherBetter": false
 }
 ```
 
 `refLow` / `refHigh` hold the reference laboratory's range and are what every result is
 flagged against. Both are optional — omit the one that doesn't apply (LDL has only a
-`refHigh`, HDL only a `refLow`; MPV has neither, because the reference lab prints none).
+`refHigh`, HDL only a `refLow`, MPV has neither).
 `category` drives the filter chips on the Lab Tests tab, and any new category name works.
 `higherBetter` is only needed where a high value is the good outcome (HDL, eGFR).
 
-`rangeSource` is optional and names the laboratory a range was borrowed from, for the handful
-of tests the reference lab does not run at all (PSA, chloride, magnesium, globulin). The detail
-view credits it instead of the reference lab.
+`rangeSource` is optional and names the laboratory a range was borrowed from, for tests the
+reference lab does not run at all. The detail view credits it instead of the reference lab.
 
 ### `labResults`
 
 ```json
-{ "date": "2025-08-30", "test": "uric_acid", "value": 8.0,
-  "source": "Saudi German Hospital, Riyadh" }
+{ "date": "2024-03-12", "test": "ferritin", "value": 85,
+  "source": "Example Laboratory" }
 ```
 
 Optional per-result fields:
 
-- `orig` — `{"value": 2.19, "unit": "mmol/L"}`, the number exactly as the report printed it,
+- `orig` — `{"value": 2.0, "unit": "mmol/L"}`, the number exactly as the report printed it,
   kept whenever the value had to be converted into the record's unit.
 - `srcRefLow` / `srcRefHigh` — the range printed on *that* report. These are provenance
   only: they are shown in the detail table and marked ≠ where they disagree with the
@@ -173,24 +175,21 @@ Optional per-result fields:
 
 ### Units and reference ranges
 
-Two rules keep a 20-year, four-country record readable:
+Two rules keep a long-term record readable:
 
 **One unit per test.** A chart that mixes mmol/L and mg/dL is meaningless. Every value is
-stored in the unit used by the reference laboratory named in `referenceLab` — currently
-**Saudi German Hospital, Riyadh**, which reports in conventional units (mg/dL for lipids,
-glucose, creatinine and urate; g/dL for haemoglobin; x10⁹/L for cell counts).
+stored in the unit used by the laboratory named in `referenceLab`.
 
 **One reference range per test.** Every result is flagged against the range in `testCatalog`,
-which holds the reference laboratory's printed ranges. This matters more than it sounds: the
-Aug 2026 panel from a different hospital prints Hb 13–17.4 and RBC 4.04–6.13, ranges wide
-enough to call almost anything normal. Judged against those, a 19-year trend appears to come
-and go; judged consistently, it is visible. The other laboratory's range is still recorded in
-`srcRefLow` / `srcRefHigh` and shown alongside each result.
+which holds the reference laboratory's printed ranges. A result from a different laboratory can
+print a range wide enough to call almost anything normal. Judged against those, a long trend can
+appear to come and go; judged consistently, it is visible. The other laboratory's range is still
+recorded in `srcRefLow` / `srcRefHigh` and shown alongside each result.
 
-The trade-off is that a result sitting right on another laboratory's boundary can flip. ALP 39
-U/L from May 2024 is comfortably normal on its own report (range 30–110) but reads one unit
-Low against the reference range of 40–130. The detail table shows both, marked ≠, so a
-borderline flag is always traceable to the ranges rather than to the value.
+The trade-off is that a result sitting right on another laboratory's boundary can flip. A value
+can be comfortably normal on its own report and still read as one unit Low against the reference
+range. The detail table shows both, marked ≠, so a borderline flag is always traceable to the
+ranges rather than to the value.
 
 **You do not have to convert anything by hand.** The Add form has a unit selector next to the
 value: enter the number exactly as the report prints it, pick the unit, and the dashboard
@@ -222,8 +221,8 @@ the `unit` and `refLow`/`refHigh` in `testCatalog`, and convert the stored value
 ### `vitals`
 
 ```json
-{ "date": "2020-11-28", "time": "18:43", "systolic": 141, "diastolic": 86,
-  "pulse": 69, "note": "woke up", "medTaken": true, "source": "Home monitor" }
+{ "date": "2024-03-12", "time": "07:30", "systolic": 124, "diastolic": 78,
+  "pulse": 64, "note": "before breakfast", "medTaken": true, "source": "Example monitor" }
 ```
 
 `weight`, `spo2`, `temp`, `waist` and `glucose` are also recognised and each gets its own
@@ -233,10 +232,10 @@ by the ACC/AHA thresholds (Normal / Elevated / Stage 1 / Stage 2 / Crisis).
 ### `medications`
 
 ```json
-{ "name": "Sevikar", "generic": "Olmesartan medoxomil / Amlodipine",
-  "cls": "Antihypertensive", "dose": "40 / 5 mg", "freq": "Once daily, morning",
-  "start": "2024-05-10", "startApprox": true, "end": null,
-  "status": "active", "prescriber": "...", "note": "..." }
+{ "name": "Glucophage", "generic": "Metformin",
+  "cls": "Antidiabetic", "dose": "500 mg", "freq": "Twice daily with meals",
+  "start": "2022-06-01", "startApprox": true, "end": null,
+  "status": "active", "prescriber": "Dr Example", "note": "..." }
 ```
 
 `status` is `active`, `past`, `stopped` or `unknown`. `cls` colours the timeline —
@@ -247,9 +246,9 @@ asterisk in the table.
 ### `conditions`
 
 ```json
-{ "name": "Hyperuricaemia", "category": "Metabolic", "onset": "2006-08-22",
-  "onsetApprox": false, "resolved": null, "status": "active",
-  "severity": "moderate", "note": "..." }
+{ "name": "Asthma", "category": "Respiratory", "onset": "2015-04-01",
+  "onsetApprox": false, "resolved": null, "status": "controlled",
+  "severity": "mild", "note": "..." }
 ```
 
 `status` is `active`, `monitoring`, `controlled` or `resolved`; `severity` is `mild`,
@@ -262,24 +261,22 @@ symptom written down from memory do not look alike:
 ```json
 "evidence": {
   "kind": "lab" | "imaging" | "pathology" | "report" | "self-reported",
-  "detail": "Ultrasound abdomen & pelvis, 30 Aug 2025, Saudi German Hospital.",
+  "detail": "Spirometry, 3 Apr 2015, Example Clinic.",
   "derivedDate": true
 }
 ```
 
 Anything marked `self-reported` is drawn in amber and labelled *not in any report*. Set
 `derivedDate` when the onset was worked back from a phrase rather than recorded — the card then
-shows *(estimated, no date recorded)* instead of a date that looks measured. Four entries in this
-record are of that kind: erectile dysfunction, lower urinary tract symptoms, severe fatigue and
-weight regain, all from one narrative list in the consolidated spreadsheet.
+shows *(estimated, no date recorded)* instead of a date that looks measured.
 
 ### `events`
 
 Imaging, procedures, screening and report transfers.
 
 ```json
-{ "date": "2025-08-30", "type": "Ultrasound",
-  "title": "Ultrasound, abdomen and pelvis", "provider": "...",
+{ "date": "2023-09-18", "type": "Imaging",
+  "title": "Chest X-ray", "provider": "Example Radiology",
   "findings": "...", "impression": "..." }
 ```
 
@@ -290,6 +287,14 @@ Imaging, procedures, screening and report transfers.
 One panel with `date`, `method`, `unit`, `antigensTested`, `negativeCount`, a `disclaimer`
 string, and `positives`: `[{ "group", "name", "antigen", "value" }]`. Bands are drawn at
 5 / 10 / 20 µg/mL.
+
+An optional `interpretation` string is shown under the chart as a note. Leave it out and no
+note is drawn.
+
+### `keyTests`
+
+Optional array of test keys (for example `["hgb", "ldl", "crp"]`) that sets which cards appear
+under **Key trends** on the Overview. When it is absent, a built-in default list is used.
 
 ### `followUps`
 
@@ -306,28 +311,6 @@ whole key and the section disappears.
 
 `index.html` contains no personal information at all: every name, value and clinical note comes
 from the record file.
-
----
-
-## Where this data came from
-
-- **2006–2011** — 21 visits across Royal Clinic (Egypt), Emirates Hospital, MedCare and
-  Advanced Radiology (UAE), from the consolidated spreadsheet.
-- **2019–2021** — Melbourne Pathology, Australia.
-- **2022 and 2024** — Australian Clinical Labs, referred by Dr Sam Assad at Bulleen Plaza
-  Medical Centre. One report (20 May 2024) that also carries a 15 Nov 2022 comparison column;
-  both columns are entered as separate result sets. This is where PSA, chloride, magnesium,
-  globulin and the LDL/HDL ratio enter the record.
-- **2024–2025** — Saudi German Hospital, Riyadh (CBC, CRP, ESR, LDH, CK, creatinine, uric
-  acid, two ultrasounds, peripheral smear).
-- **2026** — Specialised Hospital, Riyadh (10 Aug 2026 panel) and the Al Narjis food-IgG panel.
-- **Blood pressure** — 70 home readings from a phone app, Oct–Nov 2020, and 189 automatic readings from a Huawei Watch D2, Aug 2025–Aug 2026. The watch export flags measurements taken in poor conditions (loose strap, movement, wrong position); those notes are kept on the reading rather than filtered out, so a spike with a quality caveat is visible but not hidden.
-- **Medication** — the consolidated history plus the Australian GP summary of 9 Jul 2024.
-
-Two things in the source data conflict and are flagged in the record rather than silently
-resolved: the Mounjaro end date (the sheet says ~Apr 2026 in one column and "stopped 3 weeks
-ago" in another), and whether Physiotens (moxonidine) is still being taken — it is on the
-2024 Australian list but absent from the 2026 medication sheet.
 
 ---
 

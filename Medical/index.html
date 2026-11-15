@@ -458,7 +458,7 @@ function reg(o){ const k="r"+(++regN); REG.set(k,o); return k; }
 const RANGES=[{k:"R3",n:"Last 3",pts:3},{k:"1Y",y:1},{k:"3Y",y:3},{k:"5Y",y:5},
                {k:"10Y",y:10},{k:"ALL",y:null}];
 /* Opening window for a series. "Last 3" follows the data instead of the calendar,
-   so a test last run in 2011 still opens on its own readings rather than on an
+   so a test last run years ago still opens on its own readings rather than on an
    empty stretch of the last three years. */
 function windowFor(range,pts){
   if(range==="ALL"||!pts||!pts.length) return {};
@@ -485,7 +485,7 @@ function cutoff(range){ const r=RANGES.find(x=>x.k===range); return (!r||!r.y)?-
 /* ==================================================================== data */
 function cat(id){ return (S.data.testCatalog||{})[id] || {name:id,unit:"",category:"Other",decimals:2}; }
 /* Every result is judged against the reference laboratory's range (testCatalog), so a
-   20-year trend is measured with one yardstick. The range the reporting lab printed is
+   long-term trend is measured with one yardstick. The range the reporting lab printed is
    kept on the result as srcRefLow/srcRefHigh and shown in the detail table. */
 function refOf(rec,c){ return { lo:c.refLow, hi:c.refHigh }; }
 function srcRefOf(rec){
@@ -1005,7 +1005,7 @@ function rangeBar(cur,on){
 }
 
 /* ---------------------------------------------------------------- overview */
-const KEYTESTS=["hgb","hct","rbc","ldl","hdl","tg","uric_acid","hba1c","creatinine","wbc","alt","crp"];
+const DEFAULT_KEYTESTS=["hgb","hct","rbc","ldl","hdl","tg","uric_acid","hba1c","creatinine","wbc","alt","crp"];
 function vOverview(){
   const v=$("#v-overview"); v.innerHTML="";
   const p=S.data.profile||{}, now=Date.now();
@@ -1069,15 +1069,16 @@ function vOverview(){
   head.appendChild(rangeBar(S.range,r=>{S.range=r; vOverview();}));
   s2.appendChild(head);
   const g2=document.createElement("div"); g2.className="grid g-tiles";
-  KEYTESTS.forEach(id=>{ const c=tickerCard(id,S.range,{h:58,brush:"compact"}); if(c) g2.appendChild(c); });
+  const keyTests=(Array.isArray(S.data.keyTests)&&S.data.keyTests.length)?S.data.keyTests:DEFAULT_KEYTESTS;
+  keyTests.forEach(id=>{ const c=tickerCard(id,S.range,{h:58,brush:"compact"}); if(c) g2.appendChild(c); });
   s2.appendChild(g2); v.appendChild(s2);
 
   /* source note */
   const foot=document.createElement("div"); foot.className="note small";
   foot.innerHTML="<b>This is a record-keeping tool, not medical advice.</b> Values were consolidated from "+
-    "laboratory reports, imaging reports and a home blood-pressure log across four countries. Every result is "+
+    "laboratory reports, imaging reports and home measurements. Every result is "+
     "stored in the units used by <b>"+esc(refLabName())+"</b> and flagged against that laboratory's reference "+
-    "ranges, so a 20-year trend is judged by one yardstick rather than drifting with whichever lab ran the "+
+    "ranges, so a long-term trend is judged by one yardstick rather than drifting with whichever lab ran the "+
     "sample. Values reported in other units were converted, and both the original number and the reporting "+
     "laboratory's own range are kept with each result — open any test to see them. "+
     (S.srcLabel?"<br><span class='muted'>Loaded from: "+esc(S.srcLabel)+"</span>":"");
@@ -1604,15 +1605,11 @@ function vFood(){
     '<span>All values in '+esc(f.unit||"µg/mL")+' · below 5 = negative ('+(f.negativeCount||0)+' antigens)</span>';
   v.appendChild(lg);
 
-  const guide=document.createElement("div"); guide.className="note";
-  guide.innerHTML='<b>What the pattern shows.</b> The reactivity is concentrated in dairy (β-lactoglobulin '+
-    'highest of all at 28.4), egg (white 23.8, yolk 16.6) and cashew (22.1). Everything else sits in the low band. '+
-    'A pragmatic approach is to remove the three top groups — cow-milk dairy, egg and cashew — for 4 to 6 weeks, '+
-    'keep a symptom diary, then reintroduce one group at a time over a week each. Note that camel, goat and buffalo '+
-    'milk were all negative, as were every fish, meat, wheat and gluten antigen — so this does not call for a broad '+
-    'elimination diet. Discuss with a dietitian before removing whole food groups, especially with fatty liver and '+
-    'lipid targets in play.';
-  v.appendChild(guide);
+  if(f.interpretation){
+    const guide=document.createElement("div"); guide.className="note";
+    guide.innerHTML='<b>Interpretation.</b> '+esc(f.interpretation);
+    v.appendChild(guide);
+  }
 }
 
 /* ---------------------------------------------------------------- events */
@@ -1680,9 +1677,9 @@ function openAdd(){
         ids.map(i=>'<option value="'+i+'">'+esc(cat(i).name)+' ('+esc(cat(i).unit||"—")+')</option>').join("")+
         '<option value="__new">➕ New test not in the list…</option></select></div>'+
         '<div id="newTest" style="display:none" class="card" style="padding:12px;margin-bottom:13px">'+
-          '<div class="frow"><div class="fld"><label>Test name</label><input name="ntName" placeholder="e.g. PSA (total)"></div>'+
+          '<div class="frow"><div class="fld"><label>Test name</label><input name="ntName" placeholder="e.g. Troponin"></div>'+
           '<div class="fld"><label>Unit</label><input name="ntUnit" placeholder="ng/mL"></div></div>'+
-          '<div class="frow"><div class="fld"><label>Category</label><input name="ntCat" placeholder="Oncology" list="catList"></div>'+
+          '<div class="frow"><div class="fld"><label>Category</label><input name="ntCat" placeholder="e.g. Cardiac" list="catList"></div>'+
           '<div class="fld"><label>Ref. low</label><input name="ntLo" type="number" step="any"></div>'+
           '<div class="fld"><label>Ref. high</label><input name="ntHi" type="number" step="any"></div></div></div>'+
         '<div class="frow"><div class="fld"><label>Date</label><input name="date" type="date" value="'+t+'" required></div>'+
@@ -1713,8 +1710,8 @@ function openAdd(){
       return '<div class="frow"><div class="fld"><label>Brand name</label><input name="name" required placeholder="brand name"></div>'+
         '<div class="fld"><label>Generic name</label><input name="generic" placeholder="generic name"></div></div>'+
         '<div class="frow"><div class="fld"><label>Class</label><input name="cls" list="clsList" placeholder="Antihypertensive"></div>'+
-        '<div class="fld"><label>Dose</label><input name="dose" placeholder="40 / 5 mg"></div>'+
-        '<div class="fld"><label>Frequency</label><input name="freq" placeholder="Once daily, morning"></div></div>'+
+        '<div class="fld"><label>Dose</label><input name="dose" placeholder="e.g. 10 mg"></div>'+
+        '<div class="fld"><label>Frequency</label><input name="freq" placeholder="e.g. once daily"></div></div>'+
         '<div class="frow"><div class="fld"><label>Start date</label><input name="start" type="date"></div>'+
         '<div class="fld"><label>End date <span class="muted">(blank = ongoing)</span></label><input name="end" type="date"></div>'+
         '<div class="fld"><label>Status</label><select name="status"><option value="active">active</option>'+
@@ -1723,7 +1720,7 @@ function openAdd(){
         '<div class="fld"><label>Note</label><textarea name="note"></textarea></div>';
     }
     if(type==="cond"){
-      return '<div class="fld"><label>Condition / issue</label><input name="name" required placeholder="e.g. Obstructive sleep apnoea"></div>'+
+      return '<div class="fld"><label>Condition / issue</label><input name="name" required placeholder="e.g. Asthma"></div>'+
         '<div class="frow"><div class="fld"><label>Category</label><input name="category" list="condCatList" placeholder="Cardiovascular"></div>'+
         '<div class="fld"><label>Severity</label><select name="severity"><option value="mild">mild</option>'+
           '<option value="moderate" selected>moderate</option><option value="severe">severe</option></select></div>'+
@@ -1738,7 +1735,7 @@ function openAdd(){
       '<div class="fld"><label>Type</label><select name="type"><option>Ultrasound</option><option>Pathology</option>'+
         '<option>Screening</option><option>Cardiac</option><option>Imaging</option><option>Procedure</option>'+
         '<option>Consultation</option><option>Record</option><option>Immunology</option></select></div></div>'+
-      '<div class="fld"><label>Title</label><input name="title" required placeholder="Ultrasound, abdomen and pelvis"></div>'+
+      '<div class="fld"><label>Title</label><input name="title" required placeholder="e.g. Chest X-ray"></div>'+
       '<div class="fld"><label>Provider / doctor</label><input name="provider"></div>'+
       '<div class="fld"><label>Findings</label><textarea name="findings"></textarea></div>'+
       '<div class="fld"><label>Impression</label><textarea name="impression"></textarea></div>';
