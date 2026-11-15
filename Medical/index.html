@@ -215,7 +215,8 @@ td{padding:6px 10px;border-bottom:1px solid var(--line);vertical-align:top}
 tr:last-child td{border-bottom:none}
 .tbl-wrap tbody tr:hover{background:var(--panel2)}
 .del{color:var(--tx3);font-size:16px;line-height:1;padding:3px 6px;border-radius:6px}
-.del:hover{color:var(--bad);background:var(--badBg)}
+.del:hover,.del.armed{color:var(--bad);background:var(--badBg)}
+.del.armed{font-size:12px;font-weight:600;white-space:nowrap}
 
 /* ============================================================ timeline */
 .tl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:6px}
@@ -1344,6 +1345,13 @@ const LS={ get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; 
 const S={ data:null, edit:false, tab:"overview", range:"R3", labCat:"all", labQ:"", labView:"sheet", labCols:8, labAbn:false, vRange:"L30", vExcl:true, srcLabel:"" };
 const REG=new Map(); let regN=0;
 function reg(o){ const k="r"+(++regN); REG.set(k,o); return k; }
+/* Two-step delete inside the page: the first click arms the button, a second click within
+   4 s deletes. Avoids confirm(), which browsers silently answer "cancel" once dialogs are blocked. */
+function armDel(b,fn){
+  if(b.dataset.armed){ clearTimeout(b._t); delete b.dataset.armed; fn(); return; }
+  const old=b.innerHTML; b.dataset.armed="1"; b.classList.add("armed"); b.innerHTML="Delete?";
+  b._t=setTimeout(()=>{ delete b.dataset.armed; b.classList.remove("armed"); b.innerHTML=old; },4000);
+}
 
 const RANGES=[{k:"R3",n:"Last 3",pts:3},{k:"1Y",y:1},{k:"3Y",y:3},{k:"5Y",y:5},
                {k:"10Y",y:10},{k:"ALL",y:null}];
@@ -2504,11 +2512,10 @@ function testBody(testId,rng){
   const box=wrap.querySelector(".chartbox");
   if(hasChart) mountChart(box,labSeriesCfg(testId,rng||S.range,{height:220,axis:true}),{brush:"full",treat:{key:testId,cat:c.category}});
   else box.parentElement.innerHTML='<div class="acc-empty">Qualitative test \u2014 see the results below.</div>';
-  $$("[data-del]",wrap).forEach(b=>b.addEventListener("click",()=>{
-    if(!confirm("Delete this result?")) return;
+  $$("[data-del]",wrap).forEach(b=>b.addEventListener("click",()=>armDel(b,()=>{
     const o=REG.get(b.dataset.del), arr=S.data.labResults, i=arr.indexOf(o);
     if(i>=0){ arr.splice(i,1); save(); closeModal(); toast("Result deleted"); go(S.tab); }
-  }));
+  })));
   return wrap;
 }
 
@@ -2663,9 +2670,10 @@ function vVitals(){
   const logSub=$(".sub",s), logBody=$("tbody",s), qc=S.data.qualityCodes||{};
   s.addEventListener("click",e=>{
     const b=e.target.closest("[data-del]"); if(!b) return;
-    if(!confirm("Delete this reading?")) return;
-    const o=REG.get(b.dataset.del), i=S.data.vitals.indexOf(o);
-    if(i>=0){S.data.vitals.splice(i,1); save(); vVitals(); renderBanner(); toast("Reading deleted");}
+    armDel(b,()=>{
+      const o=REG.get(b.dataset.del), i=S.data.vitals.indexOf(o);
+      if(i>=0){S.data.vitals.splice(i,1); save(); vVitals(); renderBanner(); toast("Reading deleted");}
+    });
   });
 
   upd=function(){
@@ -2879,11 +2887,10 @@ function vMeds(){
       '<td><button class="del" data-del="'+reg(m)+'">×</button></td></tr>';
     }).join("")+'</tbody></table></div><div class="small muted" style="margin-top:6px">* approximate date</div>';
   v.appendChild(s3);
-  $$("[data-del]",s3).forEach(b=>b.addEventListener("click",()=>{
-    if(!confirm("Delete this medication entry?")) return;
+  $$("[data-del]",s3).forEach(b=>b.addEventListener("click",()=>armDel(b,()=>{
     const i=S.data.medications.indexOf(REG.get(b.dataset.del));
     if(i>=0){S.data.medications.splice(i,1); save(); vMeds(); renderTabs(); toast("Entry deleted");}
-  }));
+  })));
 }
 
 /* ---------------------------------------------------------------- conditions */
@@ -2941,11 +2948,11 @@ function condCard(c){
     (c.note?'<div style="margin-top:9px;font-size:13px;color:var(--tx2);line-height:1.55">'+esc(c.note)+'</div>':'')+
     evidenceBlock(c)+
     '<div class="delrow" style="margin-top:10px;text-align:right"><button class="del" data-del="'+reg(c)+'">× remove</button></div>';
-  d.querySelector("[data-del]").addEventListener("click",()=>{
-    if(!confirm("Delete this condition?")) return;
+  const cb=d.querySelector("[data-del]");
+  cb.addEventListener("click",()=>armDel(cb,()=>{
     const i=S.data.conditions.indexOf(c);
     if(i>=0){S.data.conditions.splice(i,1); save(); vConditions(); renderTabs(); toast("Condition deleted");}
-  });
+  }));
   return d;
 }
 
@@ -3029,11 +3036,11 @@ function vEvents(){
       (e.findings?'<div style="font-size:13.5px;line-height:1.6;color:var(--tx2)">'+esc(e.findings)+'</div>':'')+
       (e.impression?'<div class="note" style="margin-top:9px"><b>Impression.</b> '+esc(e.impression)+'</div>':'')+
       '<div class="delrow" style="margin-top:9px;text-align:right"><button class="del" data-del="'+reg(e)+'">× remove</button></div></div>';
-    d.querySelector("[data-del]").addEventListener("click",()=>{
-      if(!confirm("Delete this entry?")) return;
+    const eb=d.querySelector("[data-del]");
+    eb.addEventListener("click",()=>armDel(eb,()=>{
       const i=S.data.events.indexOf(e);
       if(i>=0){S.data.events.splice(i,1); save(); vEvents(); renderTabs(); toast("Entry deleted");}
-    });
+    }));
     g.appendChild(d);
   });
   v.appendChild(g);
