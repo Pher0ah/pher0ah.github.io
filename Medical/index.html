@@ -296,6 +296,9 @@ tr:last-child td{border-bottom:none}
   font-size:12px;color:var(--tx3);line-height:1.7;text-align:left}
 .splash-alt code{background:var(--panel2);border:1px solid var(--line);padding:2px 7px;
   border-radius:5px;font-size:11.5px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.splash-btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.errbox{margin:0 0 18px;padding:10px 12px;text-align:left;overflow-x:auto;white-space:pre;background:var(--panel2);
+  border:1px solid var(--line);border-radius:var(--rs);font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--tx)}
 .btn.dirty{border-color:var(--warn);color:var(--warn)}
 .btn.dirty::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--warn)}
 .bar{display:none;background:var(--warnBg);border-bottom:1px solid var(--line)}
@@ -400,6 +403,12 @@ tr:last-child td{border-bottom:none}
   <button class="btn" id="rDrop">Discard</button>
 </div></div></div>
 
+<div class="bar" id="warnBar"><div class="wrap"><div class="in">
+  <span id="warnMsg"></span>
+  <button class="btn" id="wShow">Show</button>
+  <button class="btn" id="wDrop">Dismiss</button>
+</div><ul id="warnList" style="display:none;margin:0 0 9px;padding:0 0 0 20px;font-size:12.5px;line-height:1.6"></ul></div></div>
+
 <nav class="tabs"><div class="wrap"><div class="tabsin" id="tabs"></div></div></nav>
 
 <main><div class="wrap">
@@ -414,9 +423,14 @@ tr:last-child td{border-bottom:none}
 
 <div class="splash" id="splash"><div class="card splash-card">
   <div class="splash-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
-  <h2>Open your health record</h2>
+  <h2 id="splashTitle">Open your health record</h2>
   <p id="emptyMsg"></p>
-  <button class="btn pri" id="eOpen" style="height:46px;padding:0 24px;font-size:15px">Choose health-data.json</button>
+  <pre class="errbox" id="errBox" style="display:none"></pre>
+  <div class="splash-btns">
+    <button class="btn pri" id="eOpen" style="height:46px;padding:0 24px;font-size:15px">Choose health-data.json</button>
+    <button class="btn" id="eStored" style="display:none;height:46px;padding:0 18px;font-size:14px">Open the last copy saved in this browser</button>
+    <button class="btn" id="eKeep" style="display:none;height:46px;padding:0 18px;font-size:14px">Keep the record that is open</button>
+  </div>
   <div class="splash-alt" id="emptyAlt"></div>
 </div></div>
 
@@ -426,6 +440,730 @@ tr:last-child td{border-bottom:none}
 
 <script>
 "use strict";
+/* ==== RECORD-FORMAT:BEGIN ==== */
+/* The record file format ("v2") and nothing else: pure functions, no DOM, no S, no other
+   globals. tools/record-tool.js evaluates exactly this block, so the dashboard and the
+   command-line tool share one implementation. */
+const RecordFormat=(function(){
+'use strict';
+
+/* ---------------------------------------------------------------- constants */
+const DEFAULT_GUIDE={
+  about:"This is your health record. The dashboard (index.html) reads it and writes it back in exactly this layout, so you can also edit it by hand in any text editor. After a hand edit, reload the dashboard: it reports mistakes with their line number.",
+  order:"Sections you edit most come first; reference data (testCatalog) is last. In labVisits, vitals and events the newest entry is at the top.",
+  dates:"Dates are YYYY-MM-DD. When only the month or year is known, write YYYY-MM or YYYY; the dashboard shows it as approximate.",
+  labVisits:"To add results: copy a whole visit block, paste it at the top of labVisits, change the date and lab, then list each result as \"test_key\": value. The key must exist in testCatalog. A plain number is enough. To keep the figure and range exactly as printed use { \"value\": 5.6, \"reported\": \"145 mmol/L\", \"labRange\": \"3.5-5.5\" }. Use quoted text such as \"Negative\" for results that are not numbers.",
+  vitals:"One reading per line, for example { \"at\": \"2026-01-31 07:30\", \"bp\": \"124/78\", \"pulse\": 64, \"device\": \"cuff\" }. Optional: weight (kg), spo2, temp, glucose, waist, note, quality (a key of qualityCodes), medTaken. device is a key of devices, or any name.",
+  medications:"One block per medicine and dose. status is active, past, stopped or unknown. Leave end as null while it is still being taken.",
+  conditions:"status is active, monitoring, controlled or resolved. severity is mild, moderate or severe and is optional. evidence.kind is lab, imaging, pathology, report or self-reported.",
+  allergies:"One block each, for example { \"substance\": \"Penicillin\", \"reaction\": \"rash\", \"severity\": \"moderate\", \"noted\": \"2010\" }.",
+  familyHistory:"One block each, for example { \"relation\": \"Father\", \"condition\": \"Type 2 diabetes\", \"ageAtOnset\": 55 }.",
+  socialHistory:"smoking, alcohol, exercise, occupation: short free text, or null when not recorded.",
+  surgicalHistory:"One block each, for example { \"date\": \"2015\", \"procedure\": \"Appendicectomy\" }.",
+  immunisations:"One block each, for example { \"date\": \"2024-04\", \"vaccine\": \"Influenza\" }.",
+  testCatalog:"Grouped by panel; the order here is the order tests are shown. ref is the reference range: \"4-10\", \"<=200\" or \">=40\". Add a new test here before using its key in a visit.",
+  other:"Keys the dashboard does not know are kept exactly as they are."
+};
+const QUALITY_DEFAULT={
+  'strap-loose':"Strap loose. Results may be inaccurate.",
+  'position':"Didn't hold the correct position. Results may be inaccurate.",
+  'moved':"Didn't hold still during the measurement. Results may be inaccurate.",
+  'irregular-heartbeat':"Heartbeat irregular. Results may be inaccurate.",
+  'after-exercise':"Didn't wait long enough after exercising. Results may be inaccurate."
+};
+const TOP_ORDER=['_guide','schemaVersion','updated','referenceLab','unitPolicy','profile','allergies',
+  'familyHistory','socialHistory','surgicalHistory','immunisations','keyTests','followUps','conditions',
+  'medications','events','labVisits','devices','qualityCodes','vitals','foodIgG','testCatalog'];
+/* held in memory only; never written as top-level keys */
+const MEMORY_ONLY=['labResults','labVisitInfo','labVisitsInvalid','vitalsInvalid'];
+const MED_STATUS=['active','past','stopped','unknown'];
+const COND_STATUS=['active','monitoring','controlled','resolved'];
+const MED_ORDER=['active','unknown','stopped','past'];
+const VITAL_FIELDS=['pulse','weight','bmi','spo2','temp','glucose','waist'];
+const VITAL_HANDLED=['date','time','systolic','diastolic','source','_raw','quality','note','medTaken'].concat(VITAL_FIELDS);
+const RESULT_KNOWN=['date','test','source','value','text','orig','srcRefLow','srcRefHigh','note','_raw'];
+const CAT_KNOWN=['name','unit','category','refLow','refHigh','decimals','higherBetter','qualitative','rangeSource','_raw'];
+
+/* ---------------------------------------------------------------- small helpers */
+const hasOwn=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
+const isObj=v=>v!==null&&typeof v==='object'&&!Array.isArray(v);
+const isScalar=v=>v===null||typeof v!=='object';
+const isNum=v=>typeof v==='number'&&isFinite(v);
+const str=v=>{ const s=JSON.stringify(v); return s===undefined?'null':s; };
+const cmp=(a,b)=>a<b?-1:a>b?1:0;
+function clone(v){ return v===undefined?undefined:JSON.parse(JSON.stringify(v)); }
+function validDate(s){
+  if(typeof s!=='string') return false;
+  const m=/^(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?$/.exec(s); if(!m) return false;
+  const mo=m[2]?+m[2]:1, d=m[3]?+m[3]:1;
+  if(mo<1||mo>12) return false;
+  const dim=new Date(Date.UTC(2000+(+m[1]%400),mo,0)).getUTCDate();
+  return d>=1&&d<=dim;
+}
+/* sortable day for a possibly partial date; a partial date counts as its first day */
+function dateKey(s){
+  const m=/^(\d{4})(?:-(\d{2}))?(?:-(\d{2}))?/.exec(String(s==null?'':s));
+  return m?m[1]+'-'+(m[2]||'01')+'-'+(m[3]||'01'):'';
+}
+
+/* ---------------------------------------------------------------- range grammar */
+const NUM='-?\\d+(?:\\.\\d+)?';
+const RE_BOTH=new RegExp('^('+NUM+')\\s*(?:-|\\u2013|\\u2014|to)\\s*('+NUM+')$','i');
+const RE_LE=new RegExp('^(?:<=|\\u2264|<)\\s*('+NUM+')$');
+const RE_GE=new RegExp('^(?:>=|\\u2265|>)\\s*('+NUM+')$');
+/* -> {lo,hi} (either may be missing; {} for an empty string) or null when unreadable */
+function parseRange(s){
+  if(typeof s!=='string') return null;
+  const t=s.trim(); if(!t) return {};
+  let m=RE_BOTH.exec(t); if(m) return {lo:+m[1],hi:+m[2]};
+  m=RE_LE.exec(t); if(m) return {hi:+m[1]};
+  m=RE_GE.exec(t); if(m) return {lo:+m[1]};
+  return null;
+}
+/* -> string, undefined (no bounds) or null (cannot be written as text) */
+function rangeText(lo,hi){
+  const hl=lo!==undefined&&lo!==null, hh=hi!==undefined&&hi!==null;
+  if(!hl&&!hh) return undefined;
+  if((hl&&!isNum(lo))||(hh&&!isNum(hi))) return null;
+  if(hl&&hh) return lo+'-'+hi;
+  return hh?'<='+hi:'>='+lo;
+}
+/* "156 g/L" <-> {value:156,unit:"g/L"} */
+function parseReported(s){
+  if(typeof s!=='string') return null;
+  const m=/^\s*(-?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)(?:\s+(\S.*?))?\s*$/.exec(s);
+  return m?{value:+m[1],unit:m[2]||''}:null;
+}
+function reportedText(o){
+  if(!isObj(o)) return null;
+  const ks=Object.keys(o);
+  if(ks.length!==2||!hasOwn(o,'value')||!hasOwn(o,'unit')) return null;
+  if(!isNum(o.value)||typeof o.unit!=='string'||o.unit!==o.unit.trim()) return null;
+  return o.unit?o.value+' '+o.unit:String(o.value);
+}
+
+/* ---------------------------------------------------------------- JSON error locator */
+function Fail(pos,reason){ this.pos=pos; this.reason=reason; }
+function lineStarts(text){
+  const st=[0];
+  for(let k=0;k<text.length;k++){
+    const c=text.charCodeAt(k);
+    if(c===13){ if(text.charCodeAt(k+1)===10) k++; st.push(k+1); }
+    else if(c===10) st.push(k+1);
+  }
+  return st;
+}
+/* Own small strict JSON scanner. -> null when the text is valid, else {line,col,reason}
+   (1-based; the reason is plain English). Not tied to any browser's error message. */
+function locateJsonError(text){
+  text=String(text==null?'':text);
+  const n=text.length, starts=lineStarts(text), stack=[];
+  let i=0;
+  function lineOf(pos){
+    let a=0,b=starts.length-1;
+    while(a<b){ const m=(a+b+1)>>1; if(starts[m]<=pos) a=m; else b=m-1; }
+    return {line:a+1,col:pos-starts[a]+1};
+  }
+  function fail(pos,reason){ throw new Fail(pos,reason); }
+  function show(c){ return c==='\t'?'a tab':'"'+c+'"'; }
+  function skipWs(){
+    while(i<n){
+      const c=text.charCodeAt(i);
+      if(c===32||c===9||c===10||c===13||c===0xFEFF) i++;
+      else if(c===47) fail(i,'Comments are not allowed in a JSON file. Remove the text starting with "/".');
+      else break;
+    }
+  }
+  function eof(){
+    let p=n; while(p>0&&/\s/.test(text.charAt(p-1))) p--;
+    const top=stack[stack.length-1];
+    fail(p,top
+      ? 'Unexpected end of file: the '+top.ch+' opened on line '+lineOf(top.pos).line+' is never closed. Add the missing '+(top.ch==='{'?'}':']')+' at the end.'
+      : 'Unexpected end of file: a value is missing.');
+  }
+  const startsValue=c=>c==='"'||c==="'"||c==='{'||c==='['||c==='-'||/[0-9A-Za-z_$]/.test(c);
+  function missingComma(prevEnd,pos){
+    const a=lineOf(Math.max(0,prevEnd-1)).line, b=lineOf(pos).line;
+    return a<b ? 'A comma is missing at the end of line '+a+', between that item and the next one.'
+               : 'A comma is missing between these two items.';
+  }
+  function parseString(){
+    const start=i; i++;
+    for(;;){
+      if(i>=n) fail(start,'This text has no closing quote: the file ends before it. Text must start and end with a double quote (").');
+      const c=text.charAt(i), code=text.charCodeAt(i);
+      if(c==='"'){ i++; return; }
+      if(c==='\n'||c==='\r') fail(start,'This text has no closing quote on its line. Text must start and end with a double quote (") on the same line.');
+      if(code<32) fail(i,'This text contains a raw '+(c==='\t'?'tab':'control')+' character. Write it as an escape such as \\t.');
+      if(c==='\\'){
+        const e=text.charAt(i+1);
+        if(e==='u'){
+          if(!/^[0-9a-fA-F]{4}$/.test(text.substr(i+2,4))) fail(i,'A \\u escape must be followed by four hexadecimal digits.');
+          i+=6; continue;
+        }
+        if('"\\/bfnrt'.indexOf(e)<0||e==='') fail(i,'Invalid escape "\\'+e+'" in text. To write a backslash use two of them (\\\\), for example in a Windows path.');
+        i+=2; continue;
+      }
+      i++;
+    }
+  }
+  function parseNumber(){
+    const re=/-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?/y; re.lastIndex=i;
+    const m=re.exec(text);
+    if(!m) fail(i,'This is not a valid number. A minus sign must be followed by digits.');
+    const end=i+m[0].length, nx=text.charAt(end);
+    if(nx){
+      if(/[0-9]/.test(nx)) fail(i,'Numbers cannot start with a zero (write 7, not 07).');
+      if(nx==='.') fail(end,'A decimal point must be followed by digits (write 5.0, not 5.).');
+      if(/[A-Za-z_$+]/.test(nx)) fail(end,'This number is followed by stray text. If it is meant to be text, put it in double quotes.');
+    }
+    i=end;
+  }
+  function parseValue(ctx){
+    skipWs(); if(i>=n) eof();
+    const c=text.charAt(i);
+    if(c==='{') return parseObject();
+    if(c==='[') return parseArray();
+    if(c==='"') return parseString();
+    if(c==="'") fail(i,'Text must be in double quotes ("like this"), not single quotes (\'like this\').');
+    if(c==='-'||(c>='0'&&c<='9')) return parseNumber();
+    if(/[A-Za-z_$]/.test(c)){
+      const w=/[A-Za-z0-9_$]+/.exec(text.slice(i))[0];
+      if(w==='true'||w==='false'||w==='null'){ i+=w.length; return; }
+      fail(i,'Unexpected word "'+w+'". Text must be in double quotes; the only bare words allowed are true, false and null.');
+    }
+    if(c===','||c==='}'||c===']'||c===':'){
+      fail(i,ctx==='colon'?'A value is missing after the colon.':'A value is missing here (two commas in a row, or a comma straight after an opening bracket).');
+    }
+    if(c==='.') fail(i,'A number must start with a digit (write 0.5, not .5).');
+    if(c==='+') fail(i,'A number cannot start with "+". Remove the plus sign.');
+    fail(i,'Unexpected character '+show(c)+'.');
+  }
+  function parseObject(){
+    stack.push({ch:'{',pos:i}); i++;
+    skipWs(); if(i>=n) eof();
+    if(text.charAt(i)==='}'){ i++; stack.pop(); return; }
+    for(;;){
+      skipWs(); if(i>=n) eof();
+      const c=text.charAt(i), ks=i;
+      if(c==='"') parseString();
+      else if(c==="'") fail(i,'Keys must be in double quotes ("key"), not single quotes (\'key\').');
+      else if(/[A-Za-z0-9_$]/.test(c)){
+        const w=/[A-Za-z0-9_$]+/.exec(text.slice(i))[0];
+        fail(i,'The key '+w+' must be written in double quotes: "'+w+'".');
+      }
+      else if(c===']') fail(i,'This ] does not match the { opened on line '+lineOf(stack[stack.length-1].pos).line+'.');
+      else if(c===',') fail(i,'An extra comma: a key (in double quotes) is expected here.');
+      else if(c==='}') fail(i,'A key is expected here.');
+      else fail(i,'A key in double quotes is expected here, but found '+show(c)+'.');
+      const keyText=text.slice(ks,i);
+      skipWs(); if(i>=n) eof();
+      if(text.charAt(i)!==':') fail(i,'A colon ( : ) is missing after the key '+keyText+'. Write it as "key": value.');
+      i++;
+      parseValue('colon');
+      const prevEnd=i;
+      skipWs(); if(i>=n) eof();
+      const d=text.charAt(i);
+      if(d===','){
+        const cp=i; i++; skipWs(); if(i>=n) eof();
+        if(text.charAt(i)==='}') fail(cp,'Extra comma: remove this comma, because nothing follows it before the closing }.');
+        continue;
+      }
+      if(d==='}'){ i++; stack.pop(); return; }
+      if(d===']') fail(i,'This ] does not match the { opened on line '+lineOf(stack[stack.length-1].pos).line+'.');
+      if(startsValue(d)) fail(i,missingComma(prevEnd,i));
+      fail(i,'Expected a comma or a closing } here, but found '+show(d)+'.');
+    }
+  }
+  function parseArray(){
+    stack.push({ch:'[',pos:i}); i++;
+    skipWs(); if(i>=n) eof();
+    if(text.charAt(i)===']'){ i++; stack.pop(); return; }
+    for(;;){
+      parseValue('item');
+      const prevEnd=i;
+      skipWs(); if(i>=n) eof();
+      const d=text.charAt(i);
+      if(d===','){
+        const cp=i; i++; skipWs(); if(i>=n) eof();
+        if(text.charAt(i)===']') fail(cp,'Extra comma: remove this comma, because nothing follows it before the closing ].');
+        continue;
+      }
+      if(d===']'){ i++; stack.pop(); return; }
+      if(d==='}') fail(i,'This } does not match the [ opened on line '+lineOf(stack[stack.length-1].pos).line+'.');
+      if(startsValue(d)) fail(i,missingComma(prevEnd,i));
+      fail(i,'Expected a comma or a closing ] here, but found '+show(d)+'.');
+    }
+  }
+  try{
+    skipWs();
+    if(i>=n) fail(0,'The file is empty.');
+    parseValue('top'); skipWs();
+    if(i<n) fail(i,'Unexpected extra text after the end of the record. Remove it, or check for a missing comma or bracket above.');
+    return null;
+  }catch(e){
+    if(e instanceof Fail){ const p=lineOf(e.pos); return {line:p.line,col:p.col,reason:e.reason}; }
+    throw e;
+  }
+}
+function syntaxError(text,loc){
+  const lines=text.split(/\r\n|\n|\r/);
+  const gut=k=>String(k).padStart(5)+' | ';
+  const clip=(s,col)=>{
+    if(s.length<=160) return {t:s,off:0};
+    const a=Math.max(0,Math.min(col-60,s.length-140));
+    return {t:(a>0?'…':'')+s.slice(a,a+140)+(a+140<s.length?'…':''),off:a>0?a-1:0};
+  };
+  const out=[]; let caret='';
+  for(let k=Math.max(1,loc.line-1);k<=loc.line;k++){
+    const c=clip(lines[k-1]||'',k===loc.line?loc.col:0);
+    out.push(gut(k)+c.t);
+    if(k===loc.line) caret=' '.repeat(gut(k).length+Math.max(0,loc.col-1-c.off))+'^';
+  }
+  const e=new Error('Line '+loc.line+', column '+loc.col+': '+loc.reason);
+  e.name='RecordSyntaxError'; e.line=loc.line; e.col=loc.col; e.reason=loc.reason;
+  e.context=out.join('\n'); e.caret=caret;
+  return e;
+}
+
+/* ---------------------------------------------------------------- devices */
+function deviceKey(devices,source){
+  const ks=Object.keys(devices);
+  for(let k=0;k<ks.length;k++) if(devices[ks[k]]===source) return ks[k];
+  const low=source.toLowerCase();
+  let base;
+  if(low.indexOf('watch')>=0) base='watch';
+  else if(low.indexOf('monitor')>=0||low.indexOf('cuff')>=0) base='cuff';
+  else if(low.indexOf('manual')>=0) base='manual';
+  else base=low.replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'device';
+  let k=base,n=1;
+  while(hasOwn(devices,k)){ n++; k=base+'-'+n; }
+  devices[k]=source;
+  return k;
+}
+
+/* ---------------------------------------------------------------- v1 -> memory */
+function migrateV1(src){
+  const m=src;
+  if(m.generated!==undefined){ m.updated=m.generated; }
+  delete m.generated;
+  m.schemaVersion='2.0';
+  m.qualityCodes=clone(QUALITY_DEFAULT);
+  const byText={};
+  Object.keys(QUALITY_DEFAULT).forEach(c=>{ byText[QUALITY_DEFAULT[c]]=c; });
+  const devices=isObj(m.devices)?m.devices:{};
+  (Array.isArray(m.vitals)?m.vitals:[]).forEach(v=>{
+    if(!isObj(v)) return;
+    if(typeof v.note==='string'&&hasOwn(byText,v.note)&&v.quality===undefined){ v.quality=byText[v.note]; delete v.note; }
+    if(typeof v.source==='string'&&v.source) deviceKey(devices,v.source);
+  });
+  m.devices=devices;
+  const fix=(o,dk,fk)=>{
+    if(isObj(o)&&o[fk]===true&&typeof o[dk]==='string'&&/^\d{4}-\d{2}-01$/.test(o[dk])){ o[dk]=o[dk].slice(0,7); delete o[fk]; }
+  };
+  (Array.isArray(m.medications)?m.medications:[]).forEach(o=>{ fix(o,'start','startApprox'); fix(o,'end','endApprox'); });
+  (Array.isArray(m.conditions)?m.conditions:[]).forEach(o=>{ fix(o,'onset','onsetApprox'); });
+  (Array.isArray(m.events)?m.events:[]).forEach(o=>{ fix(o,'date','dateApprox'); });
+  if(Array.isArray(m.medications)){
+    const rank=s=>{ const r=MED_ORDER.indexOf(s); return r<0?MED_ORDER.length:r; };
+    m.medications.sort((a,b)=>{
+      const ra=rank(a&&a.status), rb=rank(b&&b.status);
+      if(ra!==rb) return ra-rb;
+      const sa=a&&typeof a.start==='string'?dateKey(a.start):'', sb=b&&typeof b.start==='string'?dateKey(b.start):'';
+      if(!sa&&!sb) return 0; if(!sa) return 1; if(!sb) return -1;
+      return cmp(sb,sa);
+    });
+  }
+  if(m.allergies===undefined) m.allergies=[];
+  if(m.familyHistory===undefined) m.familyHistory=[];
+  if(m.socialHistory===undefined) m.socialHistory={smoking:null,alcohol:null,exercise:null,occupation:null};
+  if(m.surgicalHistory===undefined) m.surgicalHistory=[];
+  if(m.immunisations===undefined) m.immunisations=[];
+  if(m._guide===undefined) m._guide=clone(DEFAULT_GUIDE);
+  m.labVisitInfo={};
+  return m;
+}
+
+/* ---------------------------------------------------------------- v2 -> memory */
+function readV2(src,warn){
+  const d={};
+  Object.keys(src).forEach(k=>{
+    if(k==='labVisits'||k==='vitals'||k==='testCatalog') return;
+    if(MEMORY_ONLY.indexOf(k)>=0){ warn('top level','"'+k+'" is not part of the file format and was ignored.'); return; }
+    d[k]=src[k];
+  });
+  if(d.generated!==undefined&&d.updated===undefined){ d.updated=d.generated; delete d.generated; }
+
+  /* testCatalog: grouped in the file, flat in memory */
+  const cat={}, groupOf={};
+  if(src.testCatalog!==undefined){
+    if(!isObj(src.testCatalog)) warn('testCatalog','should be an object with one entry per panel; it was ignored.');
+    else Object.keys(src.testCatalog).forEach(group=>{
+      const g=src.testCatalog[group];
+      if(!isObj(g)){ warn('testCatalog › '+group,'a panel must be an object of tests; it was skipped.'); return; }
+      Object.keys(g).forEach(key=>{
+        const row=g[key], where='testCatalog › '+group+' › '+key;
+        if(!isObj(row)){ warn(where,'a test must be an object such as { "name": ..., "unit": ... }; it was skipped.'); return; }
+        if(hasOwn(cat,key)){ warn(where,'this key is also defined in the panel "'+groupOf[key]+'"; the first definition is used and this one is ignored.'); return; }
+        groupOf[key]=group;
+        const e={};
+        if(row.name!==undefined) e.name=row.name;
+        if(row.unit!==undefined) e.unit=row.unit;
+        e.category=group;
+        if(row.ref!==undefined){
+          const r=parseRange(row.ref);
+          if(r){ if(r.lo!==undefined) e.refLow=r.lo; if(r.hi!==undefined) e.refHigh=r.hi; }
+          else{ warn(where,'cannot read ref '+str(row.ref)+' (use "4-10", "<=200" or ">=40"); that field was skipped.'); e._raw={ref:row.ref}; }
+        }
+        Object.keys(row).forEach(k=>{ if(k!=='name'&&k!=='unit'&&k!=='ref'&&k!=='category') e[k]=row[k]; });
+        cat[key]=e;
+      });
+    });
+  }
+  d.testCatalog=cat;
+
+  /* labVisits -> flat labResults */
+  d.labResults=[]; d.labVisitInfo={}; d.labVisitsInvalid=[];
+  const seen={};
+  if(src.labVisits!==undefined&&!Array.isArray(src.labVisits)) warn('labVisits','should be a list of visits; it was ignored.');
+  (Array.isArray(src.labVisits)?src.labVisits:[]).forEach((v,vi)=>{
+    if(!isObj(v)){ warn('labVisits › visit '+(vi+1),'a visit must be an object; it was set aside.'); d.labVisitsInvalid.push(v); return; }
+    if(!validDate(v.date)){ warn('labVisits › visit '+(vi+1),'the visit has no valid date (use YYYY-MM-DD); it was set aside and is not shown.'); d.labVisitsInvalid.push(v); return; }
+    if(v.results!==undefined&&!isObj(v.results)){ warn('labVisits › '+v.date,'"results" must be an object of test: value pairs; the visit was set aside.'); d.labVisitsInvalid.push(v); return; }
+    const lab=typeof v.lab==='string'?v.lab:'', key=v.date+'|'+lab;
+    if(seen[key]) warn('labVisits › '+v.date,'two visits share this date and laboratory; their results are merged.');
+    seen[key]=true;
+    const extra={};
+    Object.keys(v).forEach(k=>{ if(k!=='date'&&k!=='lab'&&k!=='results'&&!(k==='lab'&&lab==='')) extra[k]=v[k]; });
+    if(v.lab!==undefined&&typeof v.lab!=='string') extra.lab=v.lab;
+    if(Object.keys(extra).length||!v.results||!Object.keys(v.results).length) d.labVisitInfo[key]=Object.assign(d.labVisitInfo[key]||{},extra);
+    const res=v.results||{};
+    Object.keys(res).forEach(tk=>{
+      const where='labVisits › '+v.date+' › '+tk;
+      if(!hasOwn(cat,tk)) warn(where,'this test key is not in testCatalog (add it there, or fix the spelling).');
+      d.labResults.push(readResult(tk,res[tk],v.date,lab,where,warn));
+    });
+  });
+
+  /* vitals */
+  d.vitals=[]; d.vitalsInvalid=[];
+  if(src.vitals!==undefined&&!Array.isArray(src.vitals)) warn('vitals','should be a list of readings; it was ignored.');
+  const dev=isObj(d.devices)?d.devices:{}, qc=isObj(d.qualityCodes)?d.qualityCodes:{};
+  (Array.isArray(src.vitals)?src.vitals:[]).forEach((row,ix)=>{
+    const where='vitals › row '+(ix+1);
+    if(!isObj(row)){ warn(where,'a reading must be an object; it was set aside.'); d.vitalsInvalid.push(row); return; }
+    const am=typeof row.at==='string'?/^(\d{4}-\d{2}-\d{2})(?:[ T](\d{2}:\d{2}))?$/.exec(row.at.trim()):null;
+    if(!am||!validDate(am[1])||(am[2]&&(+am[2].slice(0,2)>23||+am[2].slice(3)>59))){
+      warn(where,'"at" is missing or unreadable'+(row.at!==undefined?' ('+str(row.at)+')':'')+'; use "YYYY-MM-DD HH:MM". The reading was set aside and is not shown.');
+      d.vitalsInvalid.push(row); return;
+    }
+    const e={date:am[1]};
+    if(am[2]) e.time=am[2];
+    if(row.bp!==undefined){
+      const bm=typeof row.bp==='string'?/^\s*(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)\s*$/.exec(row.bp):null;
+      if(bm){ e.systolic=+bm[1]; e.diastolic=+bm[2]; }
+      else{ warn(where,'cannot read bp '+str(row.bp)+' (use "124/78"); that field was skipped.'); e._raw={bp:row.bp}; }
+    }
+    Object.keys(row).forEach(k=>{
+      if(k==='at'||k==='bp') return;
+      if(k==='device'){ const dv=row.device; e.source=(typeof dv==='string'&&hasOwn(dev,dv))?dev[dv]:dv; return; }
+      e[k]=row[k];
+    });
+    if(typeof row.quality==='string'&&!hasOwn(qc,row.quality)) warn(where,'quality code "'+row.quality+'" is not in qualityCodes.');
+    d.vitals.push(e);
+  });
+  return d;
+}
+function readResult(key,val,date,lab,where,warn){
+  const rec={date:date,test:key};
+  if(lab) rec.source=lab;
+  if(typeof val==='number'){ rec.value=val; return rec; }
+  if(typeof val==='string'){ rec.text=val; return rec; }
+  if(!isObj(val)){ warn(where,'a result must be a number, some text, or { "value": ... }; it has no readable value.'); rec._raw={result:val}; return rec; }
+  Object.keys(val).forEach(k=>{
+    const x=val[k];
+    if(k==='reported'){
+      const o=parseReported(x);
+      if(o) rec.orig=o; else{ warn(where,'cannot read reported '+str(x)+' (use a number, a space, then the unit, e.g. "156 g/L"); that field was skipped.'); (rec._raw=rec._raw||{}).reported=x; }
+    }
+    else if(k==='labRange'){
+      const r=parseRange(x);
+      if(r){ if(r.lo!==undefined) rec.srcRefLow=r.lo; if(r.hi!==undefined) rec.srcRefHigh=r.hi; }
+      else{ warn(where,'cannot read labRange '+str(x)+' (use "3.5-5.5", "<=200" or ">=40"); that field was skipped.'); (rec._raw=rec._raw||{}).labRange=x; }
+    }
+    else if(k==='date'||k==='test'||k==='source') return;
+    else rec[k]=x;
+  });
+  return rec;
+}
+
+/* ---------------------------------------------------------------- warnings on memory */
+function validate(d,warn,isV1){
+  const dateOk=(list,fields,label,nameKey,statuses)=>{
+    if(!Array.isArray(list)) return;
+    list.forEach((o,ix)=>{
+      if(!isObj(o)) return;
+      const where=label+' › #'+(ix+1)+(typeof o[nameKey]==='string'?' '+o[nameKey]:'');
+      fields.forEach(f=>{
+        const x=o[f];
+        if(x===undefined||x===null||x==='') return;
+        if(!validDate(x)) warn(where+' › '+f,'the date '+str(x)+' is not YYYY, YYYY-MM or YYYY-MM-DD.');
+      });
+      if(statuses){
+        if(o.status===undefined) warn(where,'has no status (use '+statuses.join(', ')+').');
+        else if(statuses.indexOf(o.status)<0) warn(where,'status '+str(o.status)+' is not one of '+statuses.join(', ')+'.');
+      }
+    });
+  };
+  dateOk(d.medications,['start','end'],'medications','name',MED_STATUS);
+  dateOk(d.conditions,['onset','resolved'],'conditions','name',COND_STATUS);
+  dateOk(d.events,['date'],'events','title',null);
+  if(isV1){
+    const cat=isObj(d.testCatalog)?d.testCatalog:{};
+    (d.labResults||[]).forEach(r=>{
+      if(!isObj(r)) return;
+      if(!validDate(r.date)) warn('labVisits › '+(r.date||'(no date)')+' › '+r.test,'the result has no valid date (use YYYY-MM-DD).');
+      else if(!hasOwn(cat,r.test)) warn('labVisits › '+r.date+' › '+r.test,'this test key is not in testCatalog (add it there, or fix the spelling).');
+    });
+    (d.vitals||[]).forEach((v,ix)=>{
+      if(!isObj(v)) return;
+      const where='vitals › row '+(ix+1);
+      if(!validDate(v.date)||(v.time!==undefined&&!/^\d{2}:\d{2}$/.test(v.time))) warn(where,'"at" is missing or unreadable (date '+str(v.date)+', time '+str(v.time)+').');
+      if((v.systolic!==undefined||v.diastolic!==undefined)&&!(isNum(v.systolic)&&isNum(v.diastolic))) warn(where,'bp is not readable (systolic and diastolic must both be numbers).');
+    });
+  }
+}
+
+/* ---------------------------------------------------------------- public: read */
+function fromFile(obj){
+  if(!isObj(obj)) throw new Error('This file does not contain a health record (expected one JSON object).');
+  const src=clone(obj), warnings=[];
+  const warn=(where,message)=>{ warnings.push({where:where,message:message,text:where+': '+message}); };
+  const isV1=Array.isArray(src.labResults)&&!src.labVisits;
+  const d=isV1?migrateV1(src):readV2(src,warn);
+  validate(d,warn,isV1);
+  return {data:d,warnings:warnings};
+}
+function parseText(text){
+  text=String(text==null?'':text);
+  if(text.charCodeAt(0)===0xFEFF) text=text.slice(1);
+  let obj;
+  try{ obj=JSON.parse(text); }
+  catch(err){
+    throw syntaxError(text,locateJsonError(text)||{line:1,col:1,reason:'The file is not valid JSON.'});
+  }
+  return fromFile(obj);
+}
+
+/* ---------------------------------------------------------------- writer */
+/* one-line value: { "k": v, "k2": v2 } and [a, b]; {} and [] when empty */
+function inl(v){
+  if(Array.isArray(v)) return v.length?'['+v.map(inl).join(', ')+']':'[]';
+  if(isObj(v)){
+    const ks=Object.keys(v).filter(k=>v[k]!==undefined);
+    return ks.length?'{ '+ks.map(k=>str(k)+': '+inl(v[k])).join(', ')+' }':'{}';
+  }
+  return str(v);
+}
+function rowOf(pairs){ return pairs.length?'{ '+pairs.map(p=>str(p[0])+': '+inl(p[1])).join(', ')+' }':'{}'; }
+/* standard 2-space pretty print; arrays of scalars stay on one line. `ind` is the indent of
+   the line that holds the opening bracket. rows: arrays of objects become one-line rows. */
+function pretty(v,ind,rows){
+  const pad=' '.repeat(ind);
+  if(Array.isArray(v)){
+    if(!v.length) return '[]';
+    if(v.every(isScalar)) return inl(v);
+    const items=v.map(x=>pad+'  '+(rows&&isObj(x)?inl(x):pretty(x,ind+2,rows)));
+    return '[\n'+items.join(',\n')+'\n'+pad+']';
+  }
+  if(isObj(v)){
+    const ks=Object.keys(v).filter(k=>v[k]!==undefined);
+    if(!ks.length) return '{}';
+    return '{\n'+ks.map(k=>pad+'  '+str(k)+': '+pretty(v[k],ind+2,rows)).join(',\n')+'\n'+pad+'}';
+  }
+  return str(v);
+}
+function aligned(pairs,ind){
+  const pad=' '.repeat(ind);
+  const w=pairs.reduce((m,p)=>Math.max(m,str(p[0]).length),0);
+  return pairs.map(p=>pad+str(p[0])+':'+' '.repeat(w-str(p[0]).length+1)+p[1]);
+}
+function resultValue(rec){
+  const f=[], raw=isObj(rec._raw)?rec._raw:{};
+  if(rec.value!==undefined) f.push(['value',rec.value]);
+  if(rec.text!==undefined) f.push(['text',rec.text]);
+  let origDone=false;
+  if(rec.orig!==undefined){
+    const s=reportedText(rec.orig);
+    if(s!==null){ f.push(['reported',s]); origDone=true; }
+  }
+  else if(raw.reported!==undefined) f.push(['reported',raw.reported]);
+  const rg=rangeText(rec.srcRefLow,rec.srcRefHigh);
+  if(typeof rg==='string') f.push(['labRange',rg]);
+  else if(rg===undefined&&raw.labRange!==undefined) f.push(['labRange',raw.labRange]);
+  if(rec.note!==undefined) f.push(['note',rec.note]);
+  Object.keys(rec).forEach(k=>{
+    if(rec[k]===undefined) return;
+    if(RESULT_KNOWN.indexOf(k)>=0){
+      if(k==='orig'&&!origDone) f.push([k,rec[k]]);
+      else if((k==='srcRefLow'||k==='srcRefHigh')&&rg===null&&rec[k]!==null) f.push([k,rec[k]]);
+      return;
+    }
+    f.push([k,rec[k]]);
+  });
+  if(!f.length) return raw.result!==undefined?inl(raw.result):'{}';
+  if(f.length===1&&f[0][0]==='value'&&typeof f[0][1]==='number') return str(f[0][1]);
+  if(f.length===1&&f[0][0]==='text'&&typeof f[0][1]==='string') return str(f[0][1]);
+  return rowOf(f);
+}
+/* panels in order of first appearance in the flat catalogue, each with its tests in order */
+function catalogGroups(d){
+  const cat=isObj(d.testCatalog)?d.testCatalog:{}, groups=[], idx={};
+  Object.keys(cat).forEach(k=>{
+    const e=cat[k], g=isObj(e)&&typeof e.category==='string'&&e.category?e.category:'Other';
+    if(!hasOwn(idx,g)){ idx[g]=groups.length; groups.push({name:g,keys:[]}); }
+    groups[idx[g]].keys.push(k);
+  });
+  return groups;
+}
+function visitsText(d){
+  /* results follow the catalogue as it is written to the file: panel by panel */
+  const order={}; let oi=0; catalogGroups(d).forEach(g=>g.keys.forEach(k=>{ order[k]=oi++; }));
+  const info=isObj(d.labVisitInfo)?d.labVisitInfo:{}, groups=new Map();
+  (Array.isArray(d.labResults)?d.labResults:[]).forEach(r=>{
+    if(!isObj(r)) return;
+    const date=r.date==null?'':String(r.date), lab=r.source==null?'':String(r.source), k=date+'|'+lab;
+    let g=groups.get(k); if(!g){ g={date:date,lab:lab,recs:[]}; groups.set(k,g); }
+    g.recs.push(r);
+  });
+  Object.keys(info).forEach(k=>{
+    if(groups.has(k)) return;
+    const p=k.indexOf('|');
+    groups.set(k,{date:p<0?k:k.slice(0,p),lab:p<0?'':k.slice(p+1),recs:[]});
+  });
+  const list=Array.from(groups.values()).sort((a,b)=>cmp(dateKey(b.date),dateKey(a.date))||cmp(a.lab,b.lab)||cmp(a.date,b.date));
+  const chunks=list.map(g=>{
+    const x=isObj(info[g.date+'|'+g.lab])?info[g.date+'|'+g.lab]:{};
+    const hdr=[['date',g.date]];
+    if(g.lab) hdr.push(['lab',g.lab]);
+    Object.keys(x).forEach(k=>{ if(k!=='date'&&k!=='results'&&!(k==='lab'&&g.lab)&&x[k]!==undefined) hdr.push([k,x[k]]); });
+    const recs=g.recs.map((r,ix)=>({r:r,ix:ix,k:String(r.test)})).sort((a,b)=>{
+      const oa=hasOwn(order,a.k)?order[a.k]:Infinity, ob=hasOwn(order,b.k)?order[b.k]:Infinity;
+      if(oa!==ob) return oa<ob?-1:1;
+      return oa===Infinity?(cmp(a.k,b.k)||a.ix-b.ix):a.ix-b.ix;
+    });
+    const head='    { '+hdr.map(p=>str(p[0])+': '+inl(p[1])).join(', ')+',';
+    if(!recs.length) return head+'\n      "results": {} }';
+    const lines=aligned(recs.map(o=>[o.k,resultValue(o.r)]),8).join(',\n');
+    return head+'\n      "results": {\n'+lines+'\n      } }';
+  });
+  (Array.isArray(d.labVisitsInvalid)?d.labVisitsInvalid:[]).forEach(v=>{ chunks.push('    '+inl(v)); });
+  return chunks.length?'[\n'+chunks.join(',\n')+'\n  ]':'[]';
+}
+function vitalsText(d){
+  const devices=isObj(d.devices)?Object.assign({},d.devices):{};
+  const rows=(Array.isArray(d.vitals)?d.vitals:[]).filter(isObj).map(v=>v);
+  const key=v=>String(v.date==null?'':v.date)+' '+String(v.time==null?'':v.time);
+  rows.sort((a,b)=>cmp(key(b),key(a)));
+  const raw=v=>isObj(v._raw)?v._raw:{};
+  const lines=rows.map(v=>{
+    const f=[];
+    if(v.date!==undefined) f.push(['at',v.date+(v.time?' '+v.time:'')]);
+    const bpOk=isNum(v.systolic)&&isNum(v.diastolic);
+    if(bpOk) f.push(['bp',v.systolic+'/'+v.diastolic]);
+    else if(v.systolic===undefined&&v.diastolic===undefined&&raw(v).bp!==undefined) f.push(['bp',raw(v).bp]);
+    VITAL_FIELDS.forEach(k=>{ if(v[k]!==undefined) f.push([k,v[k]]); });
+    const devOk=typeof v.source==='string'&&v.source!=='';
+    if(devOk) f.push(['device',deviceKey(devices,v.source)]);
+    ['quality','note','medTaken'].forEach(k=>{ if(v[k]!==undefined) f.push([k,v[k]]); });
+    Object.keys(v).forEach(k=>{
+      if(v[k]===undefined) return;
+      if(VITAL_HANDLED.indexOf(k)>=0){
+        if((k==='systolic'||k==='diastolic')&&!bpOk) f.push([k,v[k]]);
+        else if(k==='source'&&!devOk) f.push([k,v[k]]);
+        else if(k==='time'&&v.date===undefined) f.push([k,v[k]]);
+        return;
+      }
+      f.push([k,v[k]]);
+    });
+    return '    '+rowOf(f);
+  });
+  (Array.isArray(d.vitalsInvalid)?d.vitalsInvalid:[]).forEach(v=>{ lines.push('    '+inl(v)); });
+  return {vitals:lines.length?'[\n'+lines.join(',\n')+'\n  ]':'[]',devices:devices};
+}
+function catalogText(d){
+  const cat=isObj(d.testCatalog)?d.testCatalog:{}, groups=catalogGroups(d);
+  if(!groups.length) return '{}';
+  const out=groups.map(g=>{
+    const rows=g.keys.map(k=>{
+      const e=cat[k];
+      if(!isObj(e)) return [k,inl(e)];
+      const f=[], raw=isObj(e._raw)?e._raw:{};
+      if(e.name!==undefined) f.push(['name',e.name]);
+      if(e.unit!==undefined) f.push(['unit',e.unit]);
+      const rg=rangeText(e.refLow,e.refHigh);
+      if(typeof rg==='string') f.push(['ref',rg]);
+      else if(rg===undefined&&raw.ref!==undefined) f.push(['ref',raw.ref]);
+      ['decimals','higherBetter','qualitative','rangeSource'].forEach(c=>{ if(e[c]!==undefined) f.push([c,e[c]]); });
+      Object.keys(e).forEach(c=>{
+        if(e[c]===undefined) return;
+        if(CAT_KNOWN.indexOf(c)>=0){
+          if((c==='refLow'||c==='refHigh')&&rg===null&&e[c]!==null) f.push([c,e[c]]);
+          return;
+        }
+        f.push([c,e[c]]);
+      });
+      return [k,rowOf(f)];
+    });
+    return '    '+str(g.name)+': {\n'+aligned(rows,6).join(',\n')+'\n    }';
+  });
+  return '{\n'+out.join(',\n')+'\n  }';
+}
+function eventKey(e){ return isObj(e)?dateKey(e.date):''; }
+
+/* The canonical v2 text: deterministic, idempotent, "\n" line endings, final newline. */
+function toText(data){
+  const d=isObj(data)?data:{}, chunks=[];
+  const sec=(k,txt)=>chunks.push('  '+str(k)+': '+txt);
+  const arr=k=>Array.isArray(d[k])?d[k]:[];
+  sec('_guide',pretty(isObj(d._guide)?d._guide:DEFAULT_GUIDE,2));
+  const sc=[];
+  sc.push('  '+str('schemaVersion')+': '+str(d.schemaVersion!==undefined?d.schemaVersion:'2.0'));
+  const upd=d.updated!==undefined?d.updated:d.generated;
+  if(upd!==undefined) sc.push('  '+str('updated')+': '+str(upd));
+  ['referenceLab','unitPolicy'].forEach(k=>{ if(d[k]!==undefined) sc.push('  '+str(k)+': '+str(d[k])); });
+  chunks.push(sc.join(',\n'));
+  sec('profile',pretty(d.profile!==undefined?d.profile:{},2));
+  sec('allergies',pretty(arr('allergies'),2));
+  sec('familyHistory',pretty(arr('familyHistory'),2));
+  sec('socialHistory',pretty(isObj(d.socialHistory)?d.socialHistory:{smoking:null,alcohol:null,exercise:null,occupation:null},2));
+  sec('surgicalHistory',pretty(arr('surgicalHistory'),2));
+  sec('immunisations',pretty(arr('immunisations'),2));
+  sec('keyTests',inl(arr('keyTests')));
+  sec('followUps',pretty(arr('followUps'),2));
+  sec('conditions',pretty(arr('conditions'),2));
+  sec('medications',pretty(arr('medications'),2));
+  const ev=arr('events').slice().sort((a,b)=>cmp(eventKey(b),eventKey(a)));
+  sec('events',pretty(ev,2));
+  sec('labVisits',visitsText(d));
+  const vt=vitalsText(d);
+  sec('devices',pretty(vt.devices,2));
+  sec('qualityCodes',pretty(isObj(d.qualityCodes)?d.qualityCodes:{},2));
+  sec('vitals',vt.vitals);
+  if(d.foodIgG!==undefined) sec('foodIgG',pretty(d.foodIgG,2,true));
+  sec('testCatalog',catalogText(d));
+  Object.keys(d).forEach(k=>{
+    if(TOP_ORDER.indexOf(k)>=0||MEMORY_ONLY.indexOf(k)>=0||d[k]===undefined) return;
+    if(k==='generated'&&d.updated===undefined) return;
+    sec(k,pretty(d[k],2));
+  });
+  return '{\n'+chunks.join(',\n\n')+'\n}\n';
+}
+
+return {fromFile:fromFile,toText:toText,parseText:parseText,locateJsonError:locateJsonError,DEFAULT_GUIDE:DEFAULT_GUIDE};
+})();
+/* ==== RECORD-FORMAT:END ==== */
+
 /* ==================================================================== utils */
 const $  = (s,r)=> (r||document).querySelector(s);
 const $$ = (s,r)=> Array.from((r||document).querySelectorAll(s));
@@ -434,7 +1172,16 @@ const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","De
 const DAY=864e5;
 function pd(s){ if(!s) return null; const p=String(s).split("-"); return Date.UTC(+p[0],(+p[1]||1)-1,+p[2]||1); }
 function fmtT(t){ const d=new Date(t); return d.getUTCDate()+" "+MON[d.getUTCMonth()]+" "+d.getUTCFullYear(); }
-function fmtD(s){ return s?fmtT(pd(s)):"—"; }
+function isPartial(s){ return typeof s==="string" && /^\d{4}(-\d{2})?$/.test(s); }
+/* a date is approximate when flagged so, or when only the year or month is known */
+function isApprox(s,flag){ return !!flag || isPartial(s); }
+function fmtD(s){
+  if(!s) return "—";
+  if(/^\d{4}$/.test(s)) return String(s);
+  const m=/^(\d{4})-(\d{2})$/.exec(s);
+  if(m && +m[2]>=1 && +m[2]<=12) return MON[+m[2]-1]+" "+m[1];
+  return fmtT(pd(s));
+}
 function fmtDS(t){ const d=new Date(t); return MON[d.getUTCMonth()]+" "+String(d.getUTCFullYear()).slice(2); }
 function nf(v,d){ if(v==null||isNaN(v)) return "—"; return Number(v).toFixed(d==null?2:d).replace(/\.0+$|(\.\d*?)0+$/,"$1"); }
 function ageAt(dob,t){ if(!dob) return null; const b=new Date(pd(dob)),n=new Date(t||Date.now());
@@ -447,7 +1194,7 @@ function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("on"); 
 function todayISO(){ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
 
 /* ==================================================================== state */
-const KEY="healthrecord.v1";
+const KEY="healthrecord.v2";
 const LS={ get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
            set(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ return false; } },
            ok(){ try{ localStorage.setItem("__t","1"); localStorage.removeItem("__t"); return true; }catch(e){ return false; } } };
@@ -1333,7 +2080,7 @@ function vVitals(){
       '<td class="num"><b>'+(r.systolic?r.systolic+"/"+r.diastolic:"—")+'</b></td>'+
       '<td class="num">'+(r.pulse!=null?r.pulse:"—")+'</td>'+
       '<td>'+(c?'<span class="pill '+c.c+'">'+c.t+'</span>':"—")+'</td>'+
-      '<td class="small muted">'+esc(r.note||"")+(r.medTaken?' <span class="pill p-acc">med taken</span>':"")+'</td>'+
+      '<td class="small muted">'+(r.quality?'<span class="pill p-wn">'+esc((S.data.qualityCodes&&S.data.qualityCodes[r.quality])||r.quality)+'</span> ':'')+esc(r.note||"")+(r.medTaken?' <span class="pill p-acc">med taken</span>':"")+'</td>'+
       '<td><button class="del" data-del="'+reg(r)+'">×</button></td></tr>';
     }).join("")+'</tbody></table></div>';
   v.appendChild(s);
@@ -1464,8 +2211,8 @@ function vMeds(){
       return '<tr><td><b>'+esc(m.name)+'</b>'+(m.generic?'<br><span class="small muted">'+esc(m.generic)+'</span>':'')+'</td>'+
       '<td class="small">'+esc(m.cls||"—")+'</td><td class="small num">'+esc(m.dose||"—")+
         (m.freq?'<br><span class="muted">'+esc(m.freq)+'</span>':'')+'</td>'+
-      '<td class="small num">'+(m.start?fmtD(m.start):"—")+(m.startApprox?"*":"")+'<br>'+
-        '<span class="muted">'+(m.end?fmtD(m.end)+(m.endApprox?"*":""):"present")+'</span></td>'+
+      '<td class="small num">'+(m.start?fmtD(m.start):"—")+(isApprox(m.start,m.startApprox)?"*":"")+'<br>'+
+        '<span class="muted">'+(m.end?fmtD(m.end)+(isApprox(m.end,m.endApprox)?"*":""):"present")+'</span></td>'+
       '<td class="small num">'+(a?durTxt(a,b):"—")+'</td>'+
       '<td><span class="pill '+st+'">'+esc(m.status||"—")+'</span></td>'+
       '<td class="small muted">'+esc(m.prescriber||"—")+(m.note?'<br>'+esc(m.note):'')+'</td>'+
@@ -1488,7 +2235,7 @@ function medCard(m){
       '<div class="small muted">'+esc(m.generic||"")+'</div></div>'+
     '<span class="pill p-acc">'+esc(m.cls||"")+'</span></div>'+
     '<div class="kv"><b>Schedule</b><span>'+esc(m.freq||"—")+'</span></div>'+
-    '<div class="kv"><b>Started</b><span>'+(m.start?fmtD(m.start)+(m.startApprox?" (approx.)":""):"not recorded")+
+    '<div class="kv"><b>Started</b><span>'+(m.start?fmtD(m.start)+(isApprox(m.start,m.startApprox)?" (approx.)":""):"not recorded")+
       (m.start?' · <span class="muted">'+durTxt(pd(m.start),Date.now())+' ago</span>':"")+'</span></div>'+
     (m.note?'<div class="kv"><b>Note</b><span class="small">'+esc(m.note)+'</span></div>':'');
   return d;
@@ -1544,7 +2291,7 @@ function condCard(c){
       '<span class="pill p-mut">'+dur+'</span></div>'+
     '<div class="kv"><b>Onset</b><span>'+fmtD(c.onset)+
       (c.evidence&&c.evidence.derivedDate?' <span class="acc-warn">(estimated, no date recorded)</span>'
-        :(c.onsetApprox?" (approx.)":""))+
+        :(isApprox(c.onset,c.onsetApprox)?" (approx.)":""))+
       (c.resolved?' → resolved '+fmtD(c.resolved):"")+'</span></div>'+
     (c.note?'<div style="margin-top:9px;font-size:13px;color:var(--tx2);line-height:1.55">'+esc(c.note)+'</div>':'')+
     evidenceBlock(c)+
@@ -1631,7 +2378,7 @@ function vEvents(){
       '<div style="flex:1;min-width:0">'+
       '<div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap">'+
         '<b style="font-size:15px">'+esc(e.title)+'</b><span class="pill p-mut">'+esc(e.type)+'</span>'+
-        '<span class="small muted" style="margin-left:auto">'+fmtD(e.date)+(e.dateApprox?" (approx.)":"")+'</span></div>'+
+        '<span class="small muted" style="margin-left:auto">'+fmtD(e.date)+(isApprox(e.date,e.dateApprox)?" (approx.)":"")+'</span></div>'+
       '<div class="small muted" style="margin:3px 0 8px">'+esc(e.provider||"")+'</div>'+
       (e.findings?'<div style="font-size:13.5px;line-height:1.6;color:var(--tx2)">'+esc(e.findings)+'</div>':'')+
       (e.impression?'<div class="note" style="margin-top:9px"><b>Impression.</b> '+esc(e.impression)+'</div>':'')+
@@ -1704,6 +2451,10 @@ function openAdd(){
         '<div class="frow"><div class="fld"><label>Waist (cm)</label><input name="waist" type="number" step="any"></div>'+
         '<div class="fld"><label>Home glucose (mg/dL)</label><input name="glucose" type="number" step="any"></div></div>'+
         '<div class="fld"><label>Note</label><input name="note" placeholder="woke up, after exercise…"></div>'+
+        (Object.keys(S.data.qualityCodes||{}).length
+          ? '<div class="fld"><label>Reading quality <span class="muted">(optional)</span></label><select name="quality"><option value="">—</option>'+
+            Object.keys(S.data.qualityCodes).map(k=>'<option value="'+esc(k)+'">'+esc(S.data.qualityCodes[k])+'</option>').join("")+'</select></div>'
+          : '')+
         '<div class="fld"><label><input type="checkbox" name="medTaken" style="width:auto;height:auto;margin-right:8px;vertical-align:-2px">Medication taken before this reading</label></div>';
     }
     if(type==="med"){
@@ -1815,7 +2566,7 @@ function openAdd(){
       } else if(type==="vital"){
         if(!g("date")) throw new Error("Date is required.");
         const r={date:g("date")};
-        ["time","note"].forEach(k=>{ if(g(k)) r[k]=g(k); });
+        ["time","note","quality"].forEach(k=>{ if(g(k)) r[k]=g(k); });
         ["systolic","diastolic","pulse","weight","spo2","temp","waist","glucose"].forEach(k=>{
           if(num(k)!=null) r[k]=num(k); });
         if(g("medTaken")) r.medTaken=true;
@@ -1853,17 +2604,23 @@ function openAdd(){
 
 /* ==================================================================== io */
 const DATA_FILE="health-data.json";
+const DIRTY_KEY=KEY+".dirty";
 let FILE_HANDLE=null;          /* set when the browser hands us a writable handle */
 
 function markDirty(){
   const b=$("#bSave"); if(!b) return;
   b.classList.toggle("dirty",!!S.dirty);
-  b.title=S.dirty ? "Unsaved changes \u2014 write them back to "+DATA_FILE
+  b.title=S.dirty ? "Unsaved changes — write them back to "+DATA_FILE
                   : "Save the record to a JSON file";
 }
+/* The browser copy is the record in its canonical file text, plus a separate flag that
+   says whether it holds edits the file does not have yet. */
 function persist(dirty){
-  LS.set(KEY,JSON.stringify(S.data));
   if(dirty!==false) S.dirty=true;
+  try{
+    LS.set(KEY,RecordFormat.toText(S.data));
+    LS.set(DIRTY_KEY,S.dirty?"1":"0");
+  }catch(e){ console.error(e); }
   markDirty();
 }
 function save(){ persist(true); }
@@ -1871,16 +2628,67 @@ function save(){ persist(true); }
 function validRecord(o){
   return o && typeof o==="object" && (o.testCatalog || o.labResults);
 }
-function applyData(o,label,dirty){
+/* opts: {warnings, name (file name for the warning bar), keepStored} */
+function applyData(o,label,dirty,opts){
+  opts=opts||{};
   if(!validRecord(o)) throw new Error("That file does not look like a health record.");
   S.data=o;
-  ["labResults","vitals","medications","conditions","events"].forEach(k=>S.data[k]=S.data[k]||[]);
-  S.data.testCatalog=S.data.testCatalog||{};
+  ["labResults","vitals","medications","conditions","events","allergies","familyHistory",
+   "surgicalHistory","immunisations"].forEach(k=>S.data[k]=S.data[k]||[]);
+  S.data.socialHistory=S.data.socialHistory||{smoking:null,alcohol:null,exercise:null,occupation:null};
+  ["testCatalog","devices","qualityCodes","labVisitInfo"].forEach(k=>S.data[k]=S.data[k]||{});
   S.srcLabel=label||"";
   S.dirty=!!dirty;
-  persist(!!dirty);
+  if(opts.keepStored) markDirty(); else persist(!!dirty);
+  showWarnings(opts.warnings||[],opts.name);
   $("#splash").classList.remove("on");
   boot();
+}
+function loadText(text,label,dirty,opts){
+  const r=RecordFormat.parseText(text);
+  applyData(r.data,label,dirty,Object.assign({warnings:r.warnings},opts||{}));
+}
+
+/* ---- things to check (warnings never block loading) ------------------------ */
+function showWarnings(ws,name){
+  const bar=$("#warnBar"), list=$("#warnList");
+  if(!ws.length){ bar.classList.remove("on"); return; }
+  $("#warnMsg").textContent=ws.length+(ws.length===1?" thing":" things")+" to check in "+(name||DATA_FILE);
+  list.innerHTML=ws.slice(0,20).map(w=>"<li>"+esc(w.text)+"</li>").join("")+
+    (ws.length>20?"<li>…and "+(ws.length-20)+" more.</li>":"");
+  list.style.display="none"; $("#wShow").textContent="Show";
+  bar.classList.add("on");
+}
+$("#wShow").addEventListener("click",()=>{
+  const l=$("#warnList"), open=l.style.display==="none";
+  l.style.display=open?"block":"none"; $("#wShow").textContent=open?"Hide":"Show";
+});
+$("#wDrop").addEventListener("click",()=>$("#warnBar").classList.remove("on"));
+
+/* ---- a file that cannot be read ---------------------------------------------
+   Never falls back silently to the browser copy: the person is told where the
+   mistake is and chooses what to do next. */
+function showReadError(err,label,retry){
+  $("#splashTitle").textContent="This file could not be read";
+  $("#emptyMsg").innerHTML="<b>"+esc(label)+"</b> has a mistake in it, so it was not opened.<br>"+
+    "<b>Line "+err.line+", column "+err.col+".</b> "+esc(err.reason);
+  const box=$("#errBox");
+  box.textContent=err.context+(err.caret?"\n"+err.caret:""); box.style.display="block";
+  $("#emptyAlt").innerHTML="Fix the file in a text editor and save it, then press <b>Try again</b>. "+
+    "Nothing in the file was changed.";
+  const op=$("#eOpen"); op.textContent="Try again"; op.onclick=retry;
+  const st=$("#eStored"); st.style.display=LS.get(KEY)?"":"none"; st.onclick=openStored;
+  const keep=$("#eKeep"); keep.style.display=S.data?"":"none";
+  keep.onclick=()=>$("#splash").classList.remove("on");
+  $("#splash").classList.add("on");
+}
+function openStored(){
+  try{
+    const r=RecordFormat.parseText(LS.get(KEY));
+    applyData(r.data,"the copy saved in this browser",LS.get(DIRTY_KEY)==="1",
+      {warnings:r.warnings,name:"the browser copy"});
+    warnStale();
+  }catch(e){ alert("That copy could not be read: "+e.message); }
 }
 
 /* ---- opening ---------------------------------------------------------- */
@@ -1889,14 +2697,23 @@ function applyData(o,label,dirty){
    the file input, because the click gesture has already expired. So decide
    before calling, and reach the input synchronously. */
 function fsApiUsable(){ return /^https?:$/.test(location.protocol); }
+function openText(text,name){
+  try{ loadText(text,name,false,{name:name}); toast("Loaded "+name); return true; }
+  catch(err){
+    if(err && err.name==="RecordSyntaxError") showReadError(err,name,openFile);
+    else alert("Could not read that file: "+err.message);
+    return false;
+  }
+}
 function openFile(){
   if(window.showOpenFilePicker && fsApiUsable()){
     window.showOpenFilePicker({types:[{description:"Health record",accept:{"application/json":[".json"]}}]})
-      .then(hs=>{ const h=hs[0]; return h.getFile().then(f=>f.text()).then(t=>{
-          FILE_HANDLE=h; applyData(JSON.parse(t),f.name,false); toast("Loaded "+f.name); }); })
+      .then(hs=>{ const h=hs[0];
+        return h.getFile().then(f=>f.text().then(t=>({h:h,name:f.name,t:t}))); })
+      .then(r=>{ if(openText(r.t,r.name)) FILE_HANDLE=r.h; })
       .catch(err=>{
         if(err && err.name==="AbortError") return;
-        $("#fileIn").click();               /* picker unavailable here \u2014 use the input */
+        $("#fileIn").click();               /* picker unavailable here — use the input */
       });
     return;
   }
@@ -1905,15 +2722,15 @@ function openFile(){
 $("#fileIn").addEventListener("change",e=>{
   const f=e.target.files[0]; if(!f) return;
   const r=new FileReader();
-  r.onload=()=>{ try{ applyData(JSON.parse(r.result),f.name,false); toast("Loaded "+f.name); }
-    catch(err){ alert("Could not read that file: "+err.message); } };
+  r.onload=()=>{ if(openText(r.result,f.name)) FILE_HANDLE=null; };
   r.readAsText(f); e.target.value="";
 });
 
 /* ---- saving ----------------------------------------------------------- */
-function afterSave(where){ S.dirty=false; markDirty(); toast("Saved to "+where); }
+function afterSave(where){ S.dirty=false; persist(false); toast("Saved to "+where); }
 function exportJSON(){
-  const out=JSON.stringify(S.data,null,1);
+  S.data.updated=todayISO();
+  const out=RecordFormat.toText(S.data);
   if(FILE_HANDLE){
     FILE_HANDLE.createWritable()
       .then(w=>w.write(out).then(()=>w.close()))
@@ -1938,11 +2755,11 @@ function dl(text,name){
   const b=new Blob([text],{type:"application/json"}), u=URL.createObjectURL(b);
   const a=document.createElement("a"); a.href=u; a.download=name; document.body.appendChild(a); a.click();
   setTimeout(()=>{URL.revokeObjectURL(u); a.remove();},400);
-  S.dirty=false; markDirty(); toast("Downloaded "+name);
+  S.dirty=false; persist(false); toast("Downloaded "+name);
 }
 
 $("#bLoad").addEventListener("click",openFile);
-$("#eOpen").addEventListener("click",openFile);
+$("#eOpen").onclick=openFile;
 $("#bSave").addEventListener("click",exportJSON);
 $("#bAdd").addEventListener("click",openAdd);
 window.addEventListener("beforeunload",e=>{ if(S.dirty){ e.preventDefault(); e.returnValue=""; } });
@@ -1984,10 +2801,16 @@ applyTheme();
 /* ==================================================================== startup
    The record lives in health-data.json beside this page. Served over http it is
    fetched automatically; opened straight off the disk the browser forbids that,
-   so the last copy kept in this browser is used, or the file is asked for once. */
+   so the last copy kept in this browser is used, or the file is asked for once.
+   A file with a syntax error is never replaced by the browser copy behind the
+   person's back: the error is shown and they choose. */
 function showSplash(msg,alt){
+  $("#splashTitle").textContent="Open your health record";
   $("#emptyMsg").innerHTML=msg;
   $("#emptyAlt").innerHTML=alt||"";
+  $("#errBox").style.display="none";
+  const op=$("#eOpen"); op.textContent="Choose "+DATA_FILE; op.onclick=openFile;
+  $("#eStored").style.display="none"; $("#eKeep").style.display="none";
   $("#splash").classList.add("on");
 }
 /* The browser copy is a convenience, not the record. Say so, because the file on
@@ -2002,6 +2825,7 @@ function warnStale(){
   $("#rUse").onclick=()=>{ bar.classList.remove("on"); openFile(); };
   $("#rDrop").onclick=()=>bar.classList.remove("on");
 }
+/* Offered only when the browser copy holds edits that were never saved to the file. */
 function offerRestore(stored){
   const bar=$("#restoreBar");
   $("#restoreMsg").innerHTML="This browser holds a copy with <b>unsaved edits</b> that differs from "+
@@ -2010,42 +2834,65 @@ function offerRestore(stored){
   $("#rDrop").textContent="Discard";
   bar.classList.add("on");
   $("#rUse").onclick=()=>{ bar.classList.remove("on");
-    try{ applyData(JSON.parse(stored),"your unsaved working copy",true); toast("Restored your edits \u2014 remember to Save"); }
-    catch(e){ alert("That copy could not be read."); } };
-  $("#rDrop").onclick=()=>{ bar.classList.remove("on"); LS.set(KEY,JSON.stringify(S.data)); };
+    try{
+      const r=RecordFormat.parseText(stored);
+      applyData(r.data,"your unsaved working copy",true,{warnings:r.warnings,name:"your working copy"});
+      toast("Restored your edits — remember to Save");
+    }catch(e){ alert("That copy could not be read."); } };
+  $("#rDrop").onclick=()=>{ bar.classList.remove("on"); S.dirty=false; persist(false); };
 }
-(function init(){
+function loadFetched(text){
+  const stored=LS.get(KEY), wasDirty=LS.get(DIRTY_KEY)==="1";
+  let res;
+  try{ res=RecordFormat.parseText(text); }
+  catch(err){
+    if(err && err.name==="RecordSyntaxError") showReadError(err,DATA_FILE,startup);
+    else showSplash("<b>"+esc(DATA_FILE)+"</b> was found but cannot be used: "+esc(err.message)+
+      " Choose another file.");
+    return;
+  }
+  try{
+    const offer=!!(wasDirty && stored && stored!==RecordFormat.toText(res.data));
+    applyData(res.data,DATA_FILE+" (this folder)",false,
+      {warnings:res.warnings,name:DATA_FILE,keepStored:offer});
+    if(offer) offerRestore(stored);
+  }catch(err){
+    console.error(err);
+    showSplash("Something went wrong while showing the record: "+esc(err.message));
+  }
+}
+function loadFallback(fromDisk){
   const stored=LS.get(KEY);
+  if(stored){
+    try{
+      const r=RecordFormat.parseText(stored);
+      applyData(r.data,"the copy saved in this browser",LS.get(DIRTY_KEY)==="1",
+        {warnings:r.warnings,name:"the browser copy"});
+      warnStale();
+      return;
+    }catch(e){}
+  }
+  showSplash(
+    fromDisk
+      ? "This page was opened straight from the disk, and browsers do not let a "+
+        "<code>file://</code> page read other files on its own. Pick the record once — "+
+        "it is remembered on this device afterwards."
+      : "<b>"+esc(DATA_FILE)+"</b> was not found next to this page. Choose it to continue.",
+    fromDisk
+      ? "<b>To load it automatically instead</b>, serve the folder and open it over http:"+
+        "<br><code>python serve.py</code><br>"+
+        "That starts a small local server and opens the dashboard, which can then read "+
+        "<code>"+esc(DATA_FILE)+"</code> from the folder every time."
+      : "");
+}
+function startup(){
   /* anything that is not http(s) cannot fetch a sibling file */
   const fromDisk=!/^https?:$/.test(location.protocol);
   fetch(DATA_FILE,{cache:"no-store"})
-    .then(r=>r.ok?r.json():Promise.reject(new Error("HTTP "+r.status)))
-    .then(j=>{
-      applyData(j,DATA_FILE+" (this folder)",false);
-      if(stored && stored!==JSON.stringify(j)) offerRestore(stored);
-    })
-    .catch(()=>{
-      if(stored){
-        try{
-          applyData(JSON.parse(stored),"the copy saved in this browser",false);
-          warnStale();
-          return;
-        }catch(e){}
-      }
-      showSplash(
-        fromDisk
-          ? "This page was opened straight from the disk, and browsers do not let a "+
-            "<code>file://</code> page read other files on its own. Pick the record once \u2014 "+
-            "it is remembered on this device afterwards."
-          : "<b>"+esc(DATA_FILE)+"</b> was not found next to this page. Choose it to continue.",
-        fromDisk
-          ? "<b>To load it automatically instead</b>, serve the folder and open it over http:"+
-            "<br><code>python serve.py</code><br>"+
-            "That starts a small local server and opens the dashboard, which can then read "+
-            "<code>"+esc(DATA_FILE)+"</code> from the folder every time."
-          : "");
-    });
-})();
+    .then(r=>r.ok?r.text():Promise.reject(new Error("HTTP "+r.status)))
+    .then(loadFetched,()=>loadFallback(fromDisk));
+}
+startup();
 </script>
 </body>
 </html>
